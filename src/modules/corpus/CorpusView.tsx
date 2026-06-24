@@ -181,6 +181,11 @@ export function CorpusView() {
             </div>
           )}
 
+          {/* Scale check vs GPT-3 */}
+          <ScaleCompare
+            dataMb={active?.downloaded ? (active.sizeBytes ?? 0) / 1_048_576 : 4.4}
+          />
+
           {/* Sample preview */}
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
@@ -380,6 +385,58 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
       {children}
     </label>
+  );
+}
+
+function ScaleCompare({ dataMb }: { dataMb: number }) {
+  // BibleLM numbers reflect the default config; GPT-3 is the 175B model.
+  const rows: Array<[string, string, string]> = [
+    ["Parameters", "3.2M", "175B"],
+    ["Transformer layers", "4", "96"],
+    ["Embedding dim (d_model)", "256", "12,288"],
+    ["Context window", "256", "2,048"],
+    ["Vocabulary", "75", "50,257"],
+    ["Training text", `${dataMb.toFixed(1)} MB`, "~570 GB"],
+  ];
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="flex items-center gap-1.5 border-b border-border/60 px-4 py-2.5">
+        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Scale check — BibleLM vs GPT-3
+        </span>
+        <InfoTip>
+          GPT-3 is OpenAI's 2020 model — the one that made "large language model" a
+          household phrase. This shows just how tiny (and trainable-at-home) BibleLM
+          is by comparison.
+        </InfoTip>
+      </div>
+      <div className="grid grid-cols-[1fr_auto_auto] gap-x-8 px-4 py-2 text-xs">
+        <span />
+        <span className="py-1.5 text-right text-[11px] font-semibold uppercase tracking-wider text-brand">
+          BibleLM
+        </span>
+        <span className="py-1.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+          GPT-3
+        </span>
+        {rows.map(([label, a, b]) => (
+          <div className="contents" key={label}>
+            <span className="border-t border-border/40 py-1.5 text-muted-foreground">{label}</span>
+            <span className="border-t border-border/40 py-1.5 text-right font-mono tabular-nums text-foreground">
+              {a}
+            </span>
+            <span className="border-t border-border/40 py-1.5 text-right font-mono tabular-nums text-muted-foreground">
+              {b}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="border-t border-border/60 px-4 py-2.5 text-xs leading-relaxed text-muted-foreground">
+        GPT-3 has roughly <span className="font-medium text-foreground">55,000×</span>{" "}
+        more parameters and trained on about{" "}
+        <span className="font-medium text-foreground">130,000×</span> more text. BibleLM
+        is teaching-scale — small enough to train in minutes and actually watch it learn.
+      </p>
+    </div>
   );
 }
 

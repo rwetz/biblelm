@@ -5,6 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   PlayIcon,
   Delete01Icon,
+  ArrowReloadHorizontalIcon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +29,7 @@ export function InferenceView() {
   const output = useAppStore((s) => s.inferenceOutput);
   const isGenerating = useAppStore((s) => s.isGenerating);
   const updateConfig = useAppStore((s) => s.updateInferenceConfig);
+  const resetConfig = useAppStore((s) => s.resetInferenceConfig);
   const appendOutput = useAppStore((s) => s.appendInferenceOutput);
   const clearOutput = useAppStore((s) => s.clearInferenceOutput);
   const setGenerating = useAppStore((s) => s.setIsGenerating);
@@ -144,6 +146,17 @@ export function InferenceView() {
           />
 
           <div className="ml-auto flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={resetConfig}
+              disabled={isGenerating}
+              title="Reset temperature, max tokens, and top-k to recommended values"
+              className="gap-1.5 rounded-md text-muted-foreground"
+            >
+              <HugeiconsIcon icon={ArrowReloadHorizontalIcon} size={14} strokeWidth={1.75} />
+              Defaults
+            </Button>
             {output && (
               <Button
                 size="sm"

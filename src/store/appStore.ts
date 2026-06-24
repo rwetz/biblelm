@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type View = "corpus" | "train" | "inference" | "export";
+export type View = "corpus" | "train" | "inference" | "ask" | "export";
 export type TrainStatus = "idle" | "running" | "paused" | "completed" | "error";
 export type ExportStatus = "idle" | "running" | "completed" | "error";
 
@@ -80,6 +80,7 @@ interface AppState {
   addTrainMetric: (metric: TrainMetric) => void;
   clearTrainMetrics: () => void;
   updateInferenceConfig: (updates: Partial<InferenceConfig>) => void;
+  resetInferenceConfig: () => void;
   appendInferenceOutput: (token: string) => void;
   clearInferenceOutput: () => void;
   setIsGenerating: (generating: boolean) => void;
@@ -113,6 +114,7 @@ export const useAppStore = create<AppState>((set) => ({
   clearTrainMetrics: () => set({ trainMetrics: [] }),
   updateInferenceConfig: (updates) =>
     set((s) => ({ inferenceConfig: { ...s.inferenceConfig, ...updates } })),
+  resetInferenceConfig: () => set({ inferenceConfig: DEFAULT_INFERENCE_CONFIG }),
   appendInferenceOutput: (token) =>
     set((s) => ({ inferenceOutput: s.inferenceOutput + token })),
   clearInferenceOutput: () => set({ inferenceOutput: "" }),

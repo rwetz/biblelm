@@ -6,6 +6,7 @@ import { Nav } from "@/modules/nav/Nav";
 import { CorpusView } from "@/modules/corpus/CorpusView";
 import { TrainingView } from "@/modules/training/TrainingView";
 import { InferenceView } from "@/modules/inference/InferenceView";
+import { AskView } from "@/modules/ask/AskView";
 import { ExportView } from "@/modules/export/ExportView";
 import { useAppStore, type View } from "@/store/appStore";
 
@@ -13,6 +14,7 @@ const VIEWS: Record<View, React.ReactNode> = {
   corpus: <CorpusView />,
   train: <TrainingView />,
   inference: <InferenceView />,
+  ask: <AskView />,
   export: <ExportView />,
 };
 

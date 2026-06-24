@@ -3,6 +3,7 @@ import {
   BookOpen01Icon,
   AiChipIcon,
   BubbleChatIcon,
+  Search01Icon,
   Package01Icon,
 } from "@hugeicons/core-free-icons";
 import type { ComponentProps } from "react";
@@ -26,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { view: "corpus", label: "Corpus", icon: BookOpen01Icon },
   { view: "train", label: "Training", icon: AiChipIcon },
   { view: "inference", label: "Inference", icon: BubbleChatIcon },
+  { view: "ask", label: "Ask", icon: Search01Icon },
   { view: "export", label: "Export", icon: Package01Icon },
 ];
 

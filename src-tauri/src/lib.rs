@@ -491,6 +491,41 @@ async fn export_onnx(window: Window) -> Result<ExportResult, String> {
     result.ok_or_else(|| "export produced no output".into())
 }
 
+#[tauri::command]
+async fn bible_search(query: String) -> Result<serde_json::Value, String> {
+    let root = project_root();
+    let corpus = data_dir(&root).join("kjv.txt");
+    if !corpus.exists() {
+        return Err(
+            "KJV Bible not downloaded — download it on the Corpus tab first.".into(),
+        );
+    }
+    let args = vec![
+        "--corpus".into(),
+        corpus.to_string_lossy().into_owned(),
+        "--query".into(),
+        query,
+    ];
+    let mut child = py_command(&root, "biblelm.search", &args)
+        .spawn()
+        .map_err(|e| format!("failed to start python: {e}"))?;
+    let stdout = child.stdout.take().ok_or("no stdout")?;
+    let mut lines = BufReader::new(stdout).lines();
+    let mut result: Option<serde_json::Value> = None;
+    while let Some(line) = lines.next_line().await.map_err(|e| e.to_string())? {
+        let line = line.trim().to_string();
+        if line.is_empty() {
+            continue;
+        }
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&line) {
+            result = Some(v);
+            break;
+        }
+    }
+    let _ = child.wait().await;
+    result.ok_or_else(|| "search returned no output".into())
+}
+
 // ── helpers ─────────────────────────────────────────────────────────────
 
 fn kill_pid(pid: u32) {
@@ -526,6 +561,7 @@ pub fn run() {
             train_stop,
             inference_generate,
             export_onnx,
+            bible_search,
         ])
         .run(tauri::generate_context!())
         .expect("error while running BibleLM");
