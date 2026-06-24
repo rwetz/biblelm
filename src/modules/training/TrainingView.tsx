@@ -3,7 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { PlayIcon, StopIcon } from "@hugeicons/core-free-icons";
+import { PlayIcon, StopIcon, ArrowReloadHorizontalIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -22,6 +22,7 @@ export function TrainingView() {
   const status = useAppStore((s) => s.trainStatus);
   const metrics = useAppStore((s) => s.trainMetrics);
   const updateConfig = useAppStore((s) => s.updateTrainConfig);
+  const resetConfig = useAppStore((s) => s.resetTrainConfig);
   const setStatus = useAppStore((s) => s.setTrainStatus);
   const addMetric = useAppStore((s) => s.addTrainMetric);
   const clearMetrics = useAppStore((s) => s.clearTrainMetrics);
@@ -121,6 +122,22 @@ export function TrainingView() {
       <div className="flex min-h-0 flex-1">
         {/* Config panel */}
         <div className="flex w-64 shrink-0 flex-col border-r border-border/60 bg-sidebar">
+          <div className="flex items-center justify-between border-b border-border/60 px-4 py-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Config
+            </p>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={resetConfig}
+              disabled={status === "running"}
+              title="Reset all settings to recommended defaults"
+              className="h-6 gap-1 px-2 text-xs text-muted-foreground rounded"
+            >
+              <HugeiconsIcon icon={ArrowReloadHorizontalIcon} size={11} strokeWidth={1.75} />
+              Defaults
+            </Button>
+          </div>
           <ScrollArea className="flex-1">
             <div className="px-4 py-4 space-y-5">
               <ConfigSection title="Architecture">
@@ -308,8 +325,16 @@ export function TrainingView() {
         {/* Metrics panel */}
         <div className="flex min-w-0 flex-1 flex-col p-5 gap-4">
           {/* Loss chart — grows to fill the available height */}
-          <div className="flex min-h-[200px] flex-1 rounded-xl border border-border bg-card p-4">
+          <div className="relative flex min-h-[200px] flex-1 rounded-xl border border-border bg-card p-4">
             <LossChart trainLoss={trainLoss} valLoss={valLoss} />
+            {status === "running" && metrics.length === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-card/80 backdrop-blur-sm">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="size-3 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground animate-spin" />
+                  Waiting for first metric…
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Metric cards */}
@@ -349,10 +374,14 @@ export function TrainingView() {
           <div className="rounded-xl border border-border bg-card p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">
-                {status === "running"
+                {status === "running" && metrics.length === 0
+                  ? "Starting Python process — first batch may take a moment…"
+                  : status === "running"
                   ? `Training — epoch ${currentMetric?.epoch ?? 0}/${config.epochs}`
                   : status === "completed"
                   ? "Training complete"
+                  : status === "error"
+                  ? "Training failed — check the error toast"
                   : "Not started"}
               </span>
               {currentMetric && (

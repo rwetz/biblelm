@@ -76,6 +76,7 @@ interface AppState {
   setCorpusLoading: (loading: boolean) => void;
   setActiveCorpus: (version: string) => void;
   updateTrainConfig: (updates: Partial<TrainConfig>) => void;
+  resetTrainConfig: () => void;
   setTrainStatus: (status: TrainStatus) => void;
   addTrainMetric: (metric: TrainMetric) => void;
   clearTrainMetrics: () => void;
@@ -108,6 +109,7 @@ export const useAppStore = create<AppState>((set) => ({
   setActiveCorpus: (version) => set({ activeCorpus: version }),
   updateTrainConfig: (updates) =>
     set((s) => ({ trainConfig: { ...s.trainConfig, ...updates } })),
+  resetTrainConfig: () => set({ trainConfig: DEFAULT_TRAIN_CONFIG }),
   setTrainStatus: (status) => set({ trainStatus: status }),
   addTrainMetric: (metric) =>
     set((s) => ({ trainMetrics: [...s.trainMetrics, metric] })),
