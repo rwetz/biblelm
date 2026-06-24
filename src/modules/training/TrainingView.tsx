@@ -27,6 +27,8 @@ export function TrainingView() {
   const addMetric = useAppStore((s) => s.addTrainMetric);
   const clearMetrics = useAppStore((s) => s.clearTrainMetrics);
   const activeCorpus = useAppStore((s) => s.activeCorpus);
+  const trainDevice = useAppStore((s) => s.trainDevice);
+  const setTrainDevice = useAppStore((s) => s.setTrainDevice);
 
   useEffect(() => {
     const metric = listen<TrainMetric>("train:metric", (e) =>
@@ -37,15 +39,25 @@ export function TrainingView() {
       setStatus("error");
       toast.error("Training failed", { description: e.payload.message });
     });
+    const statusEvt = listen<{ phase: string; device?: string }>(
+      "train:status",
+      (e) => {
+        if (e.payload.phase === "start" && e.payload.device) {
+          setTrainDevice(e.payload.device);
+        }
+      },
+    );
     return () => {
       metric.then((un) => un());
       complete.then((un) => un());
       failed.then((un) => un());
+      statusEvt.then((un) => un());
     };
-  }, [addMetric, setStatus]);
+  }, [addMetric, setStatus, setTrainDevice]);
 
   const handleStart = async () => {
     clearMetrics();
+    setTrainDevice(null);
     setStatus("running");
     try {
       await invoke("train_start", {
@@ -338,7 +350,7 @@ export function TrainingView() {
           </div>
 
           {/* Metric cards */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
             <MetricCard
               label="Step"
               value={currentMetric?.step.toLocaleString() ?? "—"}
@@ -367,6 +379,19 @@ export function TrainingView() {
                   ? Math.round(currentMetric.tokensPerSec).toLocaleString()
                   : "—"
               }
+            />
+            <MetricCard
+              label="Device"
+              value={
+                trainDevice
+                  ? trainDevice === "cuda"
+                    ? "CUDA (GPU)"
+                    : trainDevice.toUpperCase()
+                  : status === "running"
+                  ? "detecting…"
+                  : "—"
+              }
+              highlight={trainDevice === "cuda"}
             />
           </div>
 

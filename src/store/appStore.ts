@@ -70,6 +70,7 @@ interface AppState {
   isGenerating: boolean;
   exportStatus: ExportStatus;
   exportPath: string | null;
+  trainDevice: string | null;
 
   setActiveView: (view: View) => void;
   setCorpus: (corpus: CorpusInfo | null) => void;
@@ -87,6 +88,7 @@ interface AppState {
   setIsGenerating: (generating: boolean) => void;
   setExportStatus: (status: ExportStatus) => void;
   setExportPath: (path: string | null) => void;
+  setTrainDevice: (device: string | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -102,6 +104,7 @@ export const useAppStore = create<AppState>((set) => ({
   isGenerating: false,
   exportStatus: "idle",
   exportPath: null,
+  trainDevice: null,
 
   setActiveView: (view) => set({ activeView: view }),
   setCorpus: (corpus) => set({ corpus }),
@@ -123,4 +126,5 @@ export const useAppStore = create<AppState>((set) => ({
   setIsGenerating: (generating) => set({ isGenerating: generating }),
   setExportStatus: (status) => set({ exportStatus: status }),
   setExportPath: (path) => set({ exportPath: path }),
+  setTrainDevice: (device) => set({ trainDevice: device }),
 }));
