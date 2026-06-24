@@ -1,0 +1,118 @@
+{
+  "account": [
+    0,
+    0
+  ],
+  "alias": [
+    0,
+    0
+  ],
+  "all_scroll": [
+    9,
+    9
+  ],
+  "progress": [
+    0,
+    0
+  ],
+  "arrow": [
+    0,
+    0
+  ],
+  "nesw_resize": [
+    10,
+    10
+  ],
+  "cell": [
+    8,
+    8
+  ],
+  "grabbing": [
+    11,
+    8
+  ],
+  "col_resize": [
+    8,
+    8
+  ],
+  "copy": [
+    0,
+    0
+  ],
+  "crosshair": [
+    14,
+    14
+  ],
+  "drag_alias": [
+    0,
+    0
+  ],
+  "drag_copy": [
+    0,
+    0
+  ],
+  "nwse_resize": [
+    10,
+    10
+  ],
+  "text_h": [
+    12,
+    14
+  ],
+  "handwriting": [
+    0,
+    0
+  ],
+  "help": [
+    0,
+    0
+  ],
+  "ew_resize": [
+    7,
+    14
+  ],
+  "wait": [
+    8,
+    8
+  ],
+  "text": [
+    14,
+    12
+  ],
+  "location": [
+    8,
+    8
+  ],
+  "grab": [
+    11,
+    8
+  ],
+  "pointer": [
+    10,
+    10
+  ],
+  "no_drop": [
+    12,
+    12
+  ],
+  "not_allowed": [
+    12,
+    12
+  ],
+  "row_resize": [
+    8,
+    8
+  ],
+  "ns_resize": [
+    14,
+    7
+  ],
+  "zoom_in": [
+    10,
+    10
+  ],
+  "zoom_out": [
+    10,
+    10
+  ]
+}

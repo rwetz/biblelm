@@ -1,0 +1,340 @@
+@import "tailwindcss";
+@import "./fonts.css";
+@import "tw-animate-css";
+
+/* ─── Theme tokens ─────────────────────────────────────────────────────────── */
+
+@theme inline {
+  --font-sans: "Inter Variable", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-heading: var(--font-sans);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 3);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+}
+
+/* ─── Light mode ────────────────────────────────────────────────────────────── */
+
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.148 0.004 228.8);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.148 0.004 228.8);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.148 0.004 228.8);
+  --primary: oklch(0.218 0.008 223.9);
+  --primary-foreground: oklch(0.987 0.002 197.1);
+  --secondary: oklch(0.963 0.002 197.1);
+  --secondary-foreground: oklch(0.218 0.008 223.9);
+  --muted: oklch(0.963 0.002 197.1);
+  --muted-foreground: oklch(0.56 0.021 213.5);
+  --accent: oklch(0.963 0.002 197.1);
+  --accent-foreground: oklch(0.218 0.008 223.9);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.925 0.005 214.3);
+  --input: oklch(0.925 0.005 214.3);
+  --ring: oklch(0.723 0.014 214.4);
+
+  /* Brand: parchment amber — evokes manuscript gold */
+  --brand: oklch(0.72 0.17 62);
+  --brand-foreground: oklch(0.14 0.02 60);
+
+  --sidebar: oklch(0.987 0.002 197.1);
+  --sidebar-foreground: oklch(0.148 0.004 228.8);
+  --sidebar-primary: oklch(0.218 0.008 223.9);
+  --sidebar-primary-foreground: oklch(0.987 0.002 197.1);
+  --sidebar-accent: oklch(0.963 0.002 197.1);
+  --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
+  --sidebar-border: oklch(0.925 0.005 214.3);
+  --sidebar-ring: oklch(0.723 0.014 214.4);
+}
+
+/* ─── Dark mode ─────────────────────────────────────────────────────────────── */
+
+.dark {
+  --background: oklch(0.148 0.004 228.8);
+  --foreground: oklch(0.987 0.002 197.1);
+  --card: oklch(0.218 0.008 223.9);
+  --card-foreground: oklch(0.987 0.002 197.1);
+  --popover: oklch(0.218 0.008 223.9);
+  --popover-foreground: oklch(0.987 0.002 197.1);
+  --primary: oklch(0.925 0.005 214.3);
+  --primary-foreground: oklch(0.218 0.008 223.9);
+  --secondary: oklch(0.275 0.011 216.9);
+  --secondary-foreground: oklch(0.987 0.002 197.1);
+  --muted: oklch(0.275 0.011 216.9);
+  --muted-foreground: oklch(0.723 0.014 214.4);
+  --accent: oklch(0.275 0.011 216.9);
+  --accent-foreground: oklch(0.987 0.002 197.1);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.56 0.021 213.5);
+
+  --brand: oklch(0.78 0.18 65);
+  --brand-foreground: oklch(0.14 0.02 60);
+
+  --sidebar: oklch(0.218 0.008 223.9);
+  --sidebar-foreground: oklch(0.987 0.002 197.1);
+  --sidebar-accent: oklch(0.275 0.011 216.9);
+  --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.56 0.021 213.5);
+}
+
+/* ─── Window chrome (Windows / Linux) ──────────────────────────────────────── */
+
+html[data-chrome="borderless"],
+html[data-chrome="borderless"] body {
+  background: transparent !important;
+}
+
+html[data-chrome="borderless"] #root {
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--background);
+}
+
+/* ─── Base resets ───────────────────────────────────────────────────────────── */
+
+body {
+  margin: 0;
+  overflow: hidden;
+  /* Base text/background so any element without an explicit color inherits the
+     theme foreground — without this, uncolored text falls back to UA black and
+     is invisible in dark mode. */
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+@layer base {
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply text-foreground;
+  }
+}
+
+/* ─── Large-display scaling ─────────────────────────────────────────────────
+   The UI is rem-based, so bumping the root font-size zooms the whole interface
+   proportionally on big/high-res screens (e.g. 4K), where the default would
+   otherwise feel small. The loss chart fills its container independently. */
+@media (min-width: 2200px) {
+  html {
+    font-size: 18px;
+  }
+}
+@media (min-width: 3200px) {
+  html {
+    font-size: 20px;
+  }
+}
+
+/* ─── Scrollbar strategy ────────────────────────────────────────────────────── */
+
+html,
+html *,
+html *::before,
+html *::after {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html *::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.nexis-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(1 0 0 / 12%) transparent;
+}
+.nexis-scrollbar::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+  display: block;
+}
+.nexis-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nexis-scrollbar::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 12%);
+  border-radius: 99px;
+}
+.nexis-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 22%);
+}
+:root:not(.dark) .nexis-scrollbar {
+  scrollbar-color: oklch(0 0 0 / 12%) transparent;
+}
+:root:not(.dark) .nexis-scrollbar::-webkit-scrollbar-thumb {
+  background: oklch(0 0 0 / 12%);
+}
+:root:not(.dark) .nexis-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: oklch(0 0 0 / 22%);
+}
+
+/* ─── Spice utilities ───────────────────────────────────────────────────────── */
+
+.brand-glow {
+  box-shadow: 0 0 12px -2px color-mix(in oklch, var(--brand) 60%, transparent);
+}
+
+.pane-focus-ring {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--brand) 55%, transparent),
+    inset 0 0 16px -6px color-mix(in oklch, var(--brand) 45%, transparent);
+  transition: box-shadow 0.2s ease;
+}
+
+@property --aurora-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes aurora-spin {
+  to {
+    --aurora-angle: 360deg;
+  }
+}
+
+.aurora-border {
+  position: relative;
+}
+.aurora-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--aurora-angle),
+    transparent 0%,
+    var(--brand) 16%,
+    transparent 34%,
+    transparent 66%,
+    var(--brand) 84%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: aurora-spin 4s linear infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora-border::before {
+    animation: none;
+    background: conic-gradient(from 90deg, transparent, var(--brand), transparent 50%);
+  }
+}
+
+/* ─── Custom cursors ────────────────────────────────────────────────────────── */
+
+html {
+  cursor: url("/cursors/arrow.png") 5 5, default;
+}
+
+a,
+button,
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+[role="option"],
+select,
+summary,
+[type="button"] {
+  cursor: url("/cursors/pointer.png") 6 5, pointer;
+}
+
+input:not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]),
+textarea,
+[contenteditable="true"] {
+  cursor: url("/cursors/text.png") 10 14, text;
+}
+
+.cursor-default {
+  cursor: url("/cursors/arrow.png") 5 5, default;
+}
+.cursor-pointer {
+  cursor: url("/cursors/pointer.png") 6 5, pointer;
+}
+.cursor-text {
+  cursor: url("/cursors/text.png") 10 14, text;
+}
+.cursor-not-allowed {
+  cursor: url("/cursors/not_allowed.png") 9 11, not-allowed;
+}
+.cursor-grab {
+  cursor: url("/cursors/grab.png") 10 14, grab;
+}
+.cursor-grabbing {
+  cursor: url("/cursors/grabbing.png") 10 14, grabbing;
+}
+.cursor-col-resize {
+  cursor: url("/cursors/col_resize.png") 16 13, col-resize;
+}
+.cursor-row-resize {
+  cursor: url("/cursors/row_resize.png") 16 13, row-resize;
+}
+.cursor-ew-resize {
+  cursor: url("/cursors/ew_resize.png") 16 13, ew-resize;
+}
+.cursor-ns-resize {
+  cursor: url("/cursors/ns_resize.png") 16 13, ns-resize;
+}
+.cursor-zoom-in {
+  cursor: url("/cursors/zoom_in.png") 9 9, zoom-in;
+}
+.cursor-zoom-out {
+  cursor: url("/cursors/zoom_out.png") 9 9, zoom-out;
+}
+
+/* ─── View transition for theme switch ──────────────────────────────────────── */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 250ms;
+}

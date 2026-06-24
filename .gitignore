@@ -1,0 +1,22 @@
+# dependencies / build output
+node_modules/
+dist/
+src-tauri/target/
+*.tsbuildinfo
+
+# unrelated project context doc that lived in this folder
+NEXIS.md
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# generated/downloaded data (large, reproducible)
+data/
+runs/
+
+# design reference scratch (duplicates public/cursors)
+_design/
+
+.DS_Store

@@ -1,0 +1,12 @@
+# BibleLM training stack — install into the project venv (.venv, Python 3.13).
+#
+#   py -3.13 -m venv .venv
+#   .venv\Scripts\python -m pip install -U pip
+#   .venv\Scripts\python -m pip install -r python/requirements.txt
+#
+# For an NVIDIA GPU, install the CUDA build instead of the default CPU wheel:
+#   .venv\Scripts\python -m pip install torch --index-url https://download.pytorch.org/whl/cu124
+torch>=2.2
+numpy>=1.26
+# Optional — only needed by export_onnx.py.
+onnx>=1.16
