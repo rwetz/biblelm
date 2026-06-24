@@ -33,6 +33,16 @@ export interface CorpusInfo {
   vocabSize: number;
 }
 
+export interface GpuInfo {
+  available: boolean;
+  name: string;
+  totalMb: number;
+  freeMb: number;
+  allocatedMb: number;
+  reservedMb: number;
+  deviceCount: number;
+}
+
 export interface InferenceConfig {
   temperature: number;
   maxTokens: number;
@@ -71,6 +81,7 @@ interface AppState {
   exportStatus: ExportStatus;
   exportPath: string | null;
   trainDevice: string | null;
+  gpuInfo: GpuInfo | null;
 
   setActiveView: (view: View) => void;
   setCorpus: (corpus: CorpusInfo | null) => void;
@@ -89,6 +100,7 @@ interface AppState {
   setExportStatus: (status: ExportStatus) => void;
   setExportPath: (path: string | null) => void;
   setTrainDevice: (device: string | null) => void;
+  setGpuInfo: (info: GpuInfo | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -105,6 +117,7 @@ export const useAppStore = create<AppState>((set) => ({
   exportStatus: "idle",
   exportPath: null,
   trainDevice: null,
+  gpuInfo: null,
 
   setActiveView: (view) => set({ activeView: view }),
   setCorpus: (corpus) => set({ corpus }),
@@ -127,4 +140,5 @@ export const useAppStore = create<AppState>((set) => ({
   setExportStatus: (status) => set({ exportStatus: status }),
   setExportPath: (path) => set({ exportPath: path }),
   setTrainDevice: (device) => set({ trainDevice: device }),
+  setGpuInfo: (info) => set({ gpuInfo: info }),
 }));

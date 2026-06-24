@@ -12,6 +12,7 @@ import { InfoTip } from "@/components/InfoTip";
 import { LossChart } from "@/components/LossChart";
 import {
   useAppStore,
+  type GpuInfo,
   type TrainConfig,
   type TrainMetric,
 } from "@/store/appStore";
@@ -29,6 +30,11 @@ export function TrainingView() {
   const activeCorpus = useAppStore((s) => s.activeCorpus);
   const trainDevice = useAppStore((s) => s.trainDevice);
   const setTrainDevice = useAppStore((s) => s.setTrainDevice);
+  const gpuInfo = useAppStore((s) => s.gpuInfo);
+  const corpus = useAppStore((s) => s.corpus);
+  const vocabSize = corpus?.vocabSize ?? 75;
+  const estimatedVramMb = estimateVramMb(config, vocabSize);
+  const willOOM = !!(gpuInfo?.available && estimatedVramMb > gpuInfo.totalMb * 0.9);
 
   useEffect(() => {
     const metric = listen<TrainMetric>("train:metric", (e) =>
@@ -120,12 +126,14 @@ export function TrainingView() {
           ) : (
             <Button
               size="sm"
-              variant="brand"
-              onClick={handleStart}
+              variant={willOOM ? "destructive" : "brand"}
+              onClick={willOOM ? undefined : handleStart}
+              disabled={willOOM}
+              title={willOOM ? "Estimated VRAM exceeds GPU capacity — reduce parameters in the config panel" : undefined}
               className="gap-1.5 rounded-md"
             >
               <HugeiconsIcon icon={PlayIcon} size={13} strokeWidth={2} />
-              {status === "completed" ? "Retrain" : "Start Training"}
+              {willOOM ? "Over VRAM limit" : status === "completed" ? "Retrain" : "Start Training"}
             </Button>
           )}
         </div>
@@ -330,6 +338,9 @@ export function TrainingView() {
                   {estimateParams(config)}
                 </p>
               </div>
+
+              {/* VRAM estimate */}
+              <VramMeter estimatedMb={estimatedVramMb} gpuInfo={gpuInfo} />
             </div>
           </ScrollArea>
         </div>
@@ -436,6 +447,100 @@ function estimateParams(config: TrainConfig): string {
   const total = embed + attn + ff;
   if (total >= 1_000_000) return `${(total / 1_000_000).toFixed(1)}M`;
   return `${(total / 1000).toFixed(0)}K`;
+}
+
+// Conservative VRAM estimate in MB for training (fp32, Adam optimizer).
+// Deliberately over-estimates to ensure we catch OOM before the run starts.
+function estimateVramMb(config: TrainConfig, vocabSize: number): number {
+  const { dModel, nLayers, nHeads, contextLen, batchSize } = config;
+
+  // Parameter count (embeddings + transformer blocks)
+  const nParams =
+    vocabSize * dModel +                              // token embedding (= LM head, tied weights)
+    contextLen * dModel +                             // position embedding
+    nLayers * (12 * dModel * dModel + 13 * dModel) + // attention + FFN + layernorms per block
+    2 * dModel;                                       // final layernorm
+
+  // Parameters + gradients + Adam m/v (×4 total)
+  const modelBytes = nParams * 4 * 4;
+
+  // Attention activation map stored for backprop: [B, H, T, T] per layer
+  const attnBytes = nLayers * batchSize * nHeads * contextLen * contextLen * 4;
+
+  // Residual stream + FFN intermediates: [B, T, D] × several copies per layer
+  const actBytes = nLayers * batchSize * contextLen * dModel * 8 * 4;
+
+  // CUDA runtime / allocator overhead (~400 MB on typical NVIDIA drivers)
+  const overheadBytes = 400 * 1024 * 1024;
+
+  return ((modelBytes + attnBytes + actBytes + overheadBytes) / (1024 * 1024)) * 1.15;
+}
+
+function VramMeter({ estimatedMb, gpuInfo }: { estimatedMb: number; gpuInfo: GpuInfo | null }) {
+  if (!gpuInfo) {
+    return (
+      <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+        <p className="text-xs text-muted-foreground/60">VRAM — querying GPU…</p>
+      </div>
+    );
+  }
+  if (!gpuInfo.available) {
+    return (
+      <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+        <p className="text-xs text-muted-foreground">No GPU detected — training on CPU</p>
+        <p className="mt-0.5 text-xs text-muted-foreground/50">Expect significantly slower throughput</p>
+      </div>
+    );
+  }
+
+  const pct = Math.min(100, (estimatedMb / gpuInfo.totalMb) * 100);
+  const isOOM = pct >= 90;
+  const isWarn = pct >= 65 && !isOOM;
+  const fmtMb = (mb: number) =>
+    mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${Math.round(mb)} MB`;
+
+  return (
+    <div className={cn(
+      "rounded-lg border px-3 py-2.5",
+      isOOM ? "border-destructive/40 bg-destructive/5" : "border-border/60 bg-muted/30",
+    )}>
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-1">
+          <p className="text-xs text-muted-foreground">Est. VRAM</p>
+          <InfoTip side="right">
+            Conservative estimate of GPU memory needed for training at this
+            config. Includes model weights, gradients, Adam optimizer states,
+            and activations. Over 90% is likely to crash with out-of-memory.
+            Reduce batch_size or d_model first — they have the biggest impact.
+          </InfoTip>
+        </div>
+        <p className={cn(
+          "text-xs font-mono font-semibold tabular-nums",
+          isOOM ? "text-destructive" : isWarn ? "text-yellow-500" : "text-foreground/70",
+        )}>
+          {fmtMb(estimatedMb)} / {fmtMb(gpuInfo.totalMb)}
+        </p>
+      </div>
+
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div
+          className={cn(
+            "h-full rounded-full transition-all duration-300",
+            isOOM ? "bg-destructive" : isWarn ? "bg-yellow-500" : "bg-brand",
+          )}
+          style={{ width: `${pct.toFixed(1)}%` }}
+        />
+      </div>
+
+      <p className="mt-1 text-xs text-muted-foreground/50">{gpuInfo.name}</p>
+
+      {isOOM && (
+        <p className="mt-1.5 text-xs font-medium text-destructive">
+          Will OOM — reduce batch_size, d_model, or context length
+        </p>
+      )}
+    </div>
+  );
 }
 
 function StatusBadge({ status }: { status: string }) {

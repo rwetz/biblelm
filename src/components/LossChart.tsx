@@ -100,7 +100,10 @@ function Plot({
           .join(" ")
       : "";
 
-  const yTicks = 5;
+  // Limit tick count so labels never crowd regardless of chart height.
+  // Minimum 20px between tick centres avoids overlap at any aspect ratio.
+  const maxTicks = Math.max(1, Math.floor(IH / 20));
+  const yTicks = Math.min(4, maxTicks);
   const yLabels = Array.from({ length: yTicks + 1 }, (_, i) => {
     const v = minY + (i / yTicks) * range;
     return { label: v.toFixed(3), y: PAD_T + (1 - i / yTicks) * IH };
@@ -139,9 +142,9 @@ function Plot({
       ))}
 
       {/* Y-axis labels */}
-      {yLabels.map(({ label, y }) => (
+      {yLabels.map(({ label, y }, i) => (
         <text
-          key={label}
+          key={i}
           x={PAD_L - 6}
           y={y}
           textAnchor="end"

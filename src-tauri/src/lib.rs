@@ -47,6 +47,18 @@ pub struct TrainConfig {
 
 #[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct GpuInfo {
+    pub available: bool,
+    pub name: String,
+    pub total_mb: u64,
+    pub free_mb: u64,
+    pub allocated_mb: u64,
+    pub reserved_mb: u64,
+    pub device_count: u32,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ExportResult {
     pub path: String,
     pub size_bytes: u64,
@@ -492,6 +504,37 @@ async fn export_onnx(window: Window) -> Result<ExportResult, String> {
 }
 
 #[tauri::command]
+async fn gpu_info() -> Result<GpuInfo, String> {
+    let root = project_root();
+    let mut child = py_command(&root, "biblelm.gpu_info", &[])
+        .spawn()
+        .map_err(|e| format!("failed to start python: {e}"))?;
+    let stdout = child.stdout.take().ok_or("no stdout")?;
+    let mut lines = BufReader::new(stdout).lines();
+    let mut result: Option<GpuInfo> = None;
+    while let Some(line) = lines.next_line().await.map_err(|e| e.to_string())? {
+        let line = line.trim().to_string();
+        if line.is_empty() {
+            continue;
+        }
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&line) {
+            result = Some(GpuInfo {
+                available: v["available"].as_bool().unwrap_or(false),
+                name: v["name"].as_str().unwrap_or("Unknown").to_string(),
+                total_mb: v["total_mb"].as_u64().unwrap_or(0),
+                free_mb: v["free_mb"].as_u64().unwrap_or(0),
+                allocated_mb: v["allocated_mb"].as_u64().unwrap_or(0),
+                reserved_mb: v["reserved_mb"].as_u64().unwrap_or(0),
+                device_count: v["device_count"].as_u64().unwrap_or(0) as u32,
+            });
+            break;
+        }
+    }
+    let _ = child.wait().await;
+    result.ok_or_else(|| "gpu_info returned no output".into())
+}
+
+#[tauri::command]
 async fn bible_search(query: String) -> Result<serde_json::Value, String> {
     let root = project_root();
     let corpus = data_dir(&root).join("kjv.txt");
@@ -562,6 +605,7 @@ pub fn run() {
             inference_generate,
             export_onnx,
             bible_search,
+            gpu_info,
         ])
         .run(tauri::generate_context!())
         .expect("error while running BibleLM");

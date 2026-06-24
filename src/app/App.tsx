@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { ThemeProvider } from "@/modules/theme/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -8,7 +10,7 @@ import { TrainingView } from "@/modules/training/TrainingView";
 import { InferenceView } from "@/modules/inference/InferenceView";
 import { AskView } from "@/modules/ask/AskView";
 import { ExportView } from "@/modules/export/ExportView";
-import { useAppStore, type View } from "@/store/appStore";
+import { useAppStore, type View, type GpuInfo } from "@/store/appStore";
 
 const VIEWS: Record<View, React.ReactNode> = {
   corpus: <CorpusView />,
@@ -23,10 +25,19 @@ function ActiveView() {
   return <>{VIEWS[activeView]}</>;
 }
 
+function AppInit() {
+  const setGpuInfo = useAppStore((s) => s.setGpuInfo);
+  useEffect(() => {
+    invoke<GpuInfo>("gpu_info").then(setGpuInfo).catch(() => {});
+  }, [setGpuInfo]);
+  return null;
+}
+
 export default function App() {
   return (
     <ThemeProvider>
       <TooltipProvider delayDuration={0}>
+        <AppInit />
         <div className="flex h-full flex-col">
           <Header />
           <div className="flex min-h-0 flex-1">
