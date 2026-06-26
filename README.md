@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="public/icon.svg" width="80" height="80" alt="BibleLM" />
+
 # BibleLM
 
 **A tiny GPT-style transformer, trained from scratch on the Bible — with a live training dashboard.**
