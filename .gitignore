@@ -16,6 +16,9 @@ __pycache__/
 data/
 runs/
 
+# ablation study: keep metrics/logs/eval results, exclude model weights
+ablations/runs/**/*.pt
+
 # design reference scratch (duplicates public/cursors)
 _design/
 
