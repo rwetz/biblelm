@@ -30,7 +30,7 @@ def load(run_dir: Path, checkpoint: Path | None, tokenizer: Path | None, device:
     if not ckpt_path.exists():
         raise FileNotFoundError(f"no checkpoint at {ckpt_path} — train a model first")
 
-    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+    ckpt = torch.load(ckpt_path, map_location=device, weights_only=True)
     cfg = GPTConfig(**ckpt["config"])
     model = GPTMini(cfg).to(device)
     model.load_state_dict(ckpt["model"])

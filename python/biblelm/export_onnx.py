@@ -46,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
             raise FileNotFoundError(f"no checkpoint at {ckpt_path}")
 
         protocol.status("load", "Loading checkpoint")
-        ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+        ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
         cfg = GPTConfig(**ckpt["config"])
         model = GPTMini(cfg)
         model.load_state_dict(ckpt["model"])

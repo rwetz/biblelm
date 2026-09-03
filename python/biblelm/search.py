@@ -173,23 +173,45 @@ def resolve_book(name: str) -> str | None:
 # ── parser ───────────────────────────────────────────────────────────────
 
 _VERSE_SPLIT_RE = re.compile(r"(\d+:\d+)(?= |$)")
+_VERSE_MARKER_RE = re.compile(r"\d+:\d+")
 
 Verse = dict  # {book, chapter, verse, text, ref}
+
+
+def _find_body_start(lines: list[str]) -> int:
+    """Line index of the first *body* book header, or -1 if there is none.
+
+    The file opens with a table of contents that repeats every book name, so a
+    header line alone doesn't mean the scripture has started. The distinguishing
+    feature is what follows: a TOC entry is followed by the next header, while a
+    body header is followed by verse content.
+
+    This used to be a hardcoded `TOC_END = 140` line offset. Project Gutenberg
+    reformatted the file since that number was measured — the front matter is
+    now much shorter — so both Genesis headers fell *before* the cutoff, the
+    parser skipped them, and the whole book silently vanished from every answer
+    (29,569 verses parsed instead of 31,102, starting at Exodus).
+    """
+    header_lines = [i for i, line in enumerate(lines) if line.strip() in _HEADERS]
+    for pos, start in enumerate(header_lines):
+        nxt = header_lines[pos + 1] if pos + 1 < len(header_lines) else len(lines)
+        if any(_VERSE_MARKER_RE.search(lines[j]) for j in range(start + 1, nxt)):
+            return start
+    return -1
 
 
 def parse_kjv(corpus_path: Path) -> list[Verse]:
     text = corpus_path.read_text(encoding="utf-8", errors="replace")
     lines = text.splitlines()
 
+    body_start = _find_body_start(lines)
+    if body_start < 0:
+        return []
+
     verses: list[Verse] = []
-    current_book: str | None = None
+    current_book: str | None = _HEADERS[lines[body_start].strip()]
     current_ref: str | None = None  # "chapter:verse"
     text_parts: list[str] = []
-    # The TOC occupies lines 2–136 (0-indexed). Body Genesis starts at line 156.
-    # We ignore header matches until we're past the TOC so body headers drive
-    # book-detection instead of the TOC copies.
-    TOC_END = 140
-    in_body = False
     skip_otherwise = False
 
     def flush() -> None:
@@ -206,15 +228,8 @@ def parse_kjv(corpus_path: Path) -> list[Verse]:
                 }
             )
 
-    for lineno, raw_line in enumerate(lines):
+    for raw_line in lines[body_start + 1 :]:
         line = raw_line.strip()
-
-        # ── locate body start (skip TOC region) ──
-        if not in_body:
-            if lineno > TOC_END and line in _HEADERS:
-                in_body = True
-                current_book = _HEADERS[line]
-            continue
 
         if not line:
             continue

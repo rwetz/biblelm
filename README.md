@@ -30,7 +30,8 @@ to **see a transformer learn**, and to own every piece of the stack.
 ### The app provides
 
 - A full desktop UI: corpus manager, live training dashboard, inference panel, exact
-  KJV search engine, and ONNX export, all wired together.
+  KJV search engine, and a Model tab for importing or exporting a model, all wired
+  together.
 - The PyTorch training stack (`python/biblelm/`): tokenizer, GPT model, training loop,
   generation, search engine, and ONNX export script.
 - KJV Bible download built in (Project Gutenberg #10, ~4.4 MB, fetched from inside
@@ -154,7 +155,17 @@ quality), then `context_len`, then `d_model`.
 The Corpus tab isn't limited to the KJV. Click **Add translation**, give it a name and
 language, and paste any plain-text Bible URL. The character-level tokenizer adapts to
 any script. Greek, Latin, Spanish, Hebrew (romanized), etc. all work. Added
-translations are saved to `data/custom_sources.json`.
+translations are saved to `data/custom_sources.json`, and the trash icon on a custom
+row removes it again (along with anything it downloaded).
+
+**Point at the `.txt`, not the book page.** On Project Gutenberg the URL in your
+address bar (`gutenberg.org/ebooks/8294`) is an HTML page, not the book. Paste the
+link to the **Plain Text UTF-8** file instead. The plain `/ebooks/<id>` form is
+rewritten to its `.txt` automatically, and anything else that returns a web page is
+rejected with an explanation rather than being trained on as if it were scripture.
+
+Your selected translation persists across restarts, and the Corpus tab's sample
+panel, vocabulary count, and the Training tab's VRAM estimate all follow it.
 
 ---
 
@@ -167,8 +178,21 @@ KJV model trained with this app:
 - `model.onnx`: same model exported to ONNX  
 - `tokenizer.json`: character vocabulary  
 
-Drop `ckpt.pt` and `tokenizer.json` into `runs/current/` to generate from it without
-training, or load `model.onnx` in any ONNX runtime.
+**To use it, just drag the files onto the app** — the **Model** tab has a drop zone.
+Each file is validated before it replaces anything, so a wrong or corrupt file fails
+there with a real message instead of at generation time. You can also paste a full
+path, or copy the files into `runs/current/` by hand.
+
+Checkpoints written by this app embed their own vocabulary, so dropping `ckpt.pt`
+alone is enough — `tokenizer.json` is unpacked from it. (A checkpoint from an older
+build carries only a reference to `tokenizer.json`; drop that file alongside it, which
+the import report will tell you.)
+
+`model.onnx` is for running the model *outside* this app, in any ONNX runtime — the
+Inference tab always generates from the PyTorch checkpoint. Importing the `.onnx`
+validates it and keeps it beside the checkpoint; it doesn't change how inference runs
+here. The Model tab is also where you export a checkpoint you trained back out to
+ONNX.
 
 Model specs: 256 d_model / 4 layers / 4 heads / 256 context, 3.2M parameters, 15
 epochs on KJV, val loss 1.19, ~290K tok/s on RTX 4070 SUPER.
@@ -188,6 +212,7 @@ python/biblelm/       PyTorch stack:
   search.py             Deterministic KJV verse parser + query engine (31,102 verses)
   gpu_info.py           CUDA device probe: total/free VRAM, GPU name
   corpus.py             Multi-version corpus registry + streaming download
+  model_io.py           Validate + install dropped-in .pt / .onnx / tokenizer files
   export_onnx.py        PyTorch → ONNX conversion
 ```
 

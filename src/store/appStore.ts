@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type View = "corpus" | "train" | "inference" | "ask" | "export";
+export type View = "corpus" | "train" | "inference" | "ask" | "model";
 export type TrainStatus = "idle" | "running" | "paused" | "completed" | "error";
 export type ExportStatus = "idle" | "running" | "completed" | "error";
 
@@ -43,6 +43,28 @@ export interface GpuInfo {
   deviceCount: number;
 }
 
+export interface ModelInfo {
+  runDir: string;
+  hasCheckpoint: boolean;
+  hasOnnx: boolean;
+  hasTokenizer: boolean;
+  checkpointBytes?: number;
+  onnxBytes?: number;
+  vocabSize?: number;
+  params?: number;
+  step?: number | null;
+  valLoss?: number | null;
+  checkpointError?: string;
+  config?: {
+    vocab_size: number;
+    context_len: number;
+    d_model: number;
+    n_layers: number;
+    n_heads: number;
+    dropout: number;
+  };
+}
+
 export interface InferenceConfig {
   temperature: number;
   maxTokens: number;
@@ -60,6 +82,19 @@ const DEFAULT_TRAIN_CONFIG: TrainConfig = {
   evalInterval: 200,
   tokenizerType: "char",
 };
+
+// The chosen translation is persisted: without this the app silently reverted
+// to "kjv" on every restart, so a run started after a restart trained on a
+// different corpus than the one still showing as selected.
+const CORPUS_KEY = "biblelm.activeCorpus";
+
+function loadActiveCorpus(): string {
+  try {
+    return localStorage.getItem(CORPUS_KEY) || "kjv";
+  } catch {
+    return "kjv";
+  }
+}
 
 const DEFAULT_INFERENCE_CONFIG: InferenceConfig = {
   temperature: 0.8,
@@ -82,6 +117,8 @@ interface AppState {
   exportPath: string | null;
   trainDevice: string | null;
   gpuInfo: GpuInfo | null;
+  gpuError: string | null;
+  modelInfo: ModelInfo | null;
 
   setActiveView: (view: View) => void;
   setCorpus: (corpus: CorpusInfo | null) => void;
@@ -101,13 +138,15 @@ interface AppState {
   setExportPath: (path: string | null) => void;
   setTrainDevice: (device: string | null) => void;
   setGpuInfo: (info: GpuInfo | null) => void;
+  setGpuError: (error: string | null) => void;
+  setModelInfo: (info: ModelInfo | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
   activeView: "corpus",
   corpus: null,
   corpusLoading: false,
-  activeCorpus: "kjv",
+  activeCorpus: loadActiveCorpus(),
   trainConfig: DEFAULT_TRAIN_CONFIG,
   trainStatus: "idle",
   trainMetrics: [],
@@ -118,11 +157,21 @@ export const useAppStore = create<AppState>((set) => ({
   exportPath: null,
   trainDevice: null,
   gpuInfo: null,
+  gpuError: null,
+  modelInfo: null,
 
   setActiveView: (view) => set({ activeView: view }),
   setCorpus: (corpus) => set({ corpus }),
   setCorpusLoading: (loading) => set({ corpusLoading: loading }),
-  setActiveCorpus: (version) => set({ activeCorpus: version }),
+  setActiveCorpus: (version) =>
+    set(() => {
+      try {
+        localStorage.setItem(CORPUS_KEY, version);
+      } catch {
+        // Private mode / storage disabled — the selection just won't persist.
+      }
+      return { activeCorpus: version };
+    }),
   updateTrainConfig: (updates) =>
     set((s) => ({ trainConfig: { ...s.trainConfig, ...updates } })),
   resetTrainConfig: () => set({ trainConfig: DEFAULT_TRAIN_CONFIG }),
@@ -141,4 +190,6 @@ export const useAppStore = create<AppState>((set) => ({
   setExportPath: (path) => set({ exportPath: path }),
   setTrainDevice: (device) => set({ trainDevice: device }),
   setGpuInfo: (info) => set({ gpuInfo: info }),
+  setGpuError: (error) => set({ gpuError: error }),
+  setModelInfo: (info) => set({ modelInfo: info }),
 }));

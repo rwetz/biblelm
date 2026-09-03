@@ -70,17 +70,30 @@ def estimate_loss(model: GPTMini, ds: Dataset, args, device, iters: int = 20) ->
     return out
 
 
-def save_checkpoint(path: Path, model: GPTMini, cfg: GPTConfig, step: int, val_loss: float | None) -> None:
-    torch.save(
-        {
-            "model": model.state_dict(),
-            "config": asdict(cfg),
-            "tokenizer": "tokenizer.json",
-            "step": step,
-            "val_loss": val_loss,
-        },
-        path,
-    )
+def save_checkpoint(
+    path: Path,
+    model: GPTMini,
+    cfg: GPTConfig,
+    step: int,
+    val_loss: float | None,
+    tokenizer=None,
+) -> None:
+    """Write a *self-contained* checkpoint.
+
+    The vocabulary is embedded (``tokenizer_stoi``), not just referenced by
+    filename, so a single .pt can be handed to someone else and still decode —
+    which is what makes the Import Model drop zone work with one file."""
+    payload = {
+        "model": model.state_dict(),
+        "config": asdict(cfg),
+        "tokenizer": "tokenizer.json",
+        "step": step,
+        "val_loss": val_loss,
+    }
+    if tokenizer is not None:
+        payload["tokenizer_type"] = "char"
+        payload["tokenizer_stoi"] = tokenizer.stoi
+    torch.save(payload, path)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -200,7 +213,7 @@ def _run(args) -> int:
                 val_loss = est["val"]
                 if val_loss < best_val:
                     best_val = val_loss
-                    save_checkpoint(args.run_dir / "ckpt.pt", model, cfg, step, val_loss)
+                    save_checkpoint(args.run_dir / "ckpt.pt", model, cfg, step, val_loss, tokenizer)
 
             protocol.metric(step, epoch, train_loss, val_loss, tps)
             metrics_file.write(
@@ -216,7 +229,14 @@ def _run(args) -> int:
             protocol.status("stopping", "Stopped by request")
             break
 
-    save_checkpoint(args.run_dir / "last.pt", model, cfg, step, best_val if best_val != float("inf") else None)
+    save_checkpoint(
+        args.run_dir / "last.pt",
+        model,
+        cfg,
+        step,
+        best_val if best_val != float("inf") else None,
+        tokenizer,
+    )
     metrics_file.close()
     protocol.done(
         checkpoint=str(args.run_dir / "ckpt.pt"),

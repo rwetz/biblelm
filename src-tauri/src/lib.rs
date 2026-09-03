@@ -272,6 +272,106 @@ async fn corpus_download(window: Window, version: Option<String>) -> Result<(), 
     Ok(())
 }
 
+/// Run a python module that prints one JSON event of type `want` and return it.
+/// An `error` event on the stream becomes an `Err`, so Python-side failures
+/// arrive in the UI as their real message rather than a generic exit code.
+async fn py_json(
+    root: &Path,
+    module: &str,
+    args: &[String],
+    want: &str,
+) -> Result<serde_json::Value, String> {
+    let mut child = py_command(root, module, args)
+        .spawn()
+        .map_err(|e| format!("failed to start python: {e}"))?;
+    let stdout = child.stdout.take().ok_or("no stdout")?;
+    let mut lines = BufReader::new(stdout).lines();
+    let mut found: Option<serde_json::Value> = None;
+    let mut err: Option<String> = None;
+    while let Some(line) = lines.next_line().await.map_err(|e| e.to_string())? {
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(line.trim()) else {
+            continue;
+        };
+        match event_type(&v) {
+            Some(t) if t == want => found = Some(v),
+            Some("error") => err = v["message"].as_str().map(str::to_string),
+            _ => {}
+        }
+    }
+    let status = child.wait().await.map_err(|e| e.to_string())?;
+    if let Some(msg) = err {
+        return Err(msg);
+    }
+    found.ok_or_else(|| {
+        if status.success() {
+            format!("{module} returned no {want} event")
+        } else {
+            format!("{module} failed")
+        }
+    })
+}
+
+#[tauri::command]
+async fn corpus_remove(id: String) -> Result<(), String> {
+    let root = project_root();
+    let args = vec![
+        "remove".into(),
+        "--data-dir".into(),
+        data_dir(&root).to_string_lossy().into_owned(),
+        "--id".into(),
+        id,
+    ];
+    py_json(&root, "biblelm.corpus", &args, "done").await.map(|_| ())
+}
+
+#[tauri::command]
+async fn corpus_preview(version: String, chars: Option<u32>) -> Result<String, String> {
+    let root = project_root();
+    let args = vec![
+        "preview".into(),
+        "--data-dir".into(),
+        data_dir(&root).to_string_lossy().into_owned(),
+        "--version".into(),
+        version,
+        "--chars".into(),
+        chars.unwrap_or(600).to_string(),
+    ];
+    let v = py_json(&root, "biblelm.corpus", &args, "preview").await?;
+    Ok(v["text"].as_str().unwrap_or_default().to_string())
+}
+
+#[tauri::command]
+async fn model_status() -> Result<serde_json::Value, String> {
+    let root = project_root();
+    let args = vec![
+        "inspect".into(),
+        "--run-dir".into(),
+        run_dir(&root).to_string_lossy().into_owned(),
+    ];
+    py_json(&root, "biblelm.model_io", &args, "model").await
+}
+
+/// Install model files the user dropped on the window (or picked by path) into
+/// the current run directory. Each file is validated by `model_io` *before* it
+/// replaces anything, so a wrong file can't break a working model.
+#[tauri::command]
+async fn model_import(paths: Vec<String>) -> Result<serde_json::Value, String> {
+    if paths.is_empty() {
+        return Err("No files to import".into());
+    }
+    let root = project_root();
+    let mut args = vec![
+        "import".into(),
+        "--run-dir".into(),
+        run_dir(&root).to_string_lossy().into_owned(),
+    ];
+    for p in paths {
+        args.push("--file".into());
+        args.push(p);
+    }
+    py_json(&root, "biblelm.model_io", &args, "imported").await
+}
+
 #[tauri::command]
 async fn train_start(
     config: TrainConfig,
@@ -600,12 +700,16 @@ pub fn run() {
             corpus_list,
             corpus_add,
             corpus_download,
+            corpus_remove,
+            corpus_preview,
             train_start,
             train_stop,
             inference_generate,
             export_onnx,
             bible_search,
             gpu_info,
+            model_status,
+            model_import,
         ])
         .run(tauri::generate_context!())
         .expect("error while running BibleLM");

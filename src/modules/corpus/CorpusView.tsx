@@ -7,6 +7,7 @@ import {
   CheckmarkCircle01Icon,
   PlusSignIcon,
   Cancel01Icon,
+  Delete02Icon,
 } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { InfoTip } from "@/components/InfoTip";
-import { useAppStore } from "@/store/appStore";
+import { useAppStore, type CorpusInfo } from "@/store/appStore";
 import { cn } from "@/lib/utils";
 
 interface Translation {
@@ -33,19 +34,16 @@ interface Translation {
   vocabSize?: number;
 }
 
-const KJV_SAMPLE = `In the beginning God created the heaven and the earth.
-And the earth was without form, and void; and darkness was upon the face of the deep.
-And the Spirit of God moved upon the face of the waters.
-And God said, Let there be light: and there was light.`;
-
 export function CorpusView() {
   const activeCorpus = useAppStore((s) => s.activeCorpus);
   const setActiveCorpus = useAppStore((s) => s.setActiveCorpus);
+  const setCorpus = useAppStore((s) => s.setCorpus);
 
   const [translations, setTranslations] = useState<Translation[]>([]);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ bytes: number; total: number } | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [sample, setSample] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -58,6 +56,50 @@ export function CorpusView() {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // Keep the selection honest. It is restored from localStorage before the list
+  // is known, so it can point at a translation that was since removed or was
+  // never downloaded — in which case training would fail with a confusing
+  // "corpus isn't downloaded". Fall back to whatever is actually available.
+  useEffect(() => {
+    if (translations.length === 0) return;
+    const current = translations.find((t) => t.id === activeCorpus);
+    if (current?.downloaded) return;
+    const fallback = translations.find((t) => t.downloaded);
+    if (fallback && fallback.id !== activeCorpus) setActiveCorpus(fallback.id);
+  }, [translations, activeCorpus, setActiveCorpus]);
+
+  // Publish the selected corpus's stats to the store. Nothing did this before,
+  // so the training view's VRAM estimate always assumed a 75-token vocabulary
+  // no matter which translation was picked.
+  useEffect(() => {
+    let stale = false;
+    invoke<CorpusInfo>("corpus_status", { version: activeCorpus })
+      .then((info) => {
+        if (!stale) setCorpus(info.downloaded ? info : null);
+      })
+      .catch(() => {
+        if (!stale) setCorpus(null);
+      });
+    return () => {
+      stale = true;
+    };
+  }, [activeCorpus, setCorpus]);
+
+  // Show the opening of the translation actually selected, rather than a
+  // hardcoded KJV snippet that stayed put whichever language you chose.
+  useEffect(() => {
+    let stale = false;
+    setSample(null);
+    invoke<string>("corpus_preview", { version: activeCorpus })
+      .then((text) => {
+        if (!stale) setSample(text);
+      })
+      .catch(() => {});
+    return () => {
+      stale = true;
+    };
+  }, [activeCorpus, translations]);
 
   useEffect(() => {
     const un = listen<{ bytes: number; total: number }>("corpus:progress", (e) =>
@@ -82,6 +124,16 @@ export function CorpusView() {
     } finally {
       setDownloading(null);
       setProgress(null);
+    }
+  };
+
+  const handleRemove = async (t: Translation) => {
+    try {
+      await invoke("corpus_remove", { id: t.id });
+      await refresh();
+      toast.success(`Removed ${t.name}`);
+    } catch (err) {
+      toast.error("Couldn't remove translation", { description: String(err) });
     }
   };
 
@@ -163,6 +215,7 @@ export function CorpusView() {
                         progress={downloading === t.id ? progress : null}
                         onDownload={() => handleDownload(t.id)}
                         onSelect={() => setActiveCorpus(t.id)}
+                        onRemove={t.verified ? undefined : () => handleRemove(t)}
                       />
                     ))}
                   </div>
@@ -184,22 +237,31 @@ export function CorpusView() {
           {/* Scale check vs GPT-3 */}
           <ScaleCompare
             dataMb={active?.downloaded ? (active.sizeBytes ?? 0) / 1_048_576 : 4.4}
+            vocabSize={active?.downloaded ? active.vocabSize : undefined}
           />
 
-          {/* Sample preview */}
+          {/* Sample preview — the opening of the selected translation itself */}
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Sample — KJV, Genesis 1:1–4
+              <span className="truncate text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Sample{active ? ` — ${active.name}` : ""}
               </span>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="shrink-0 text-xs">
                 Preview
               </Badge>
             </div>
             <div className="p-4">
-              <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground/80">
-                {KJV_SAMPLE}
-              </pre>
+              {sample ? (
+                <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground/80">
+                  {sample}
+                </pre>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {active?.downloaded
+                    ? "Loading preview…"
+                    : "Download a translation to see how its text looks."}
+                </p>
+              )}
             </div>
           </div>
 
@@ -210,9 +272,9 @@ export function CorpusView() {
               BibleLM uses{" "}
               <span className="font-medium text-foreground">character-level tokenization</span>{" "}
               — each distinct character becomes a token. This keeps the vocabulary
-              tiny (~75 symbols for English) and works for any language, including
-              non-Latin scripts. The vocabulary is rebuilt from whichever
-              translation you train on.
+              tiny{active?.vocabSize ? ` (${active.vocabSize} symbols in ${active.name})` : " (~75 symbols for English)"}{" "}
+              and works for any language, including non-Latin scripts. The
+              vocabulary is rebuilt from whichever translation you train on.
             </p>
           </div>
         </div>
@@ -229,6 +291,7 @@ function TranslationRow({
   progress,
   onDownload,
   onSelect,
+  onRemove,
 }: {
   t: Translation;
   active: boolean;
@@ -237,6 +300,8 @@ function TranslationRow({
   progress: { bytes: number; total: number } | null;
   onDownload: () => void;
   onSelect: () => void;
+  /** Only user-added translations can be removed; presets pass undefined. */
+  onRemove?: () => void;
 }) {
   return (
     <div className={cn("px-4 py-3 transition-colors", active && "bg-brand/[0.06]")}>
@@ -276,7 +341,7 @@ function TranslationRow({
         </div>
 
         {/* Status / action */}
-        <div className="shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5">
           {t.downloaded ? (
             <Badge variant={active ? "brand" : "success"} className="gap-1">
               <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} strokeWidth={2} />
@@ -294,8 +359,22 @@ function TranslationRow({
               title={t.hasUrl ? undefined : "No source URL set for this translation"}
             >
               <HugeiconsIcon icon={Download01Icon} size={13} strokeWidth={2} />
-              Download
+              {t.downloaded ? "Re-download" : "Download"}
             </Button>
+          )}
+          {/* Without this a mistyped URL was permanent — the broken row stayed
+              in the list forever with no way to correct it. */}
+          {onRemove && (
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={busy}
+              aria-label={`Remove ${t.name}`}
+              title="Remove this translation"
+              className="grid size-7 place-items-center rounded-md text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+            >
+              <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={1.75} />
+            </button>
           )}
         </div>
       </div>
@@ -322,11 +401,22 @@ function AddForm({
   const [language, setLanguage] = useState("");
   const [url, setUrl] = useState("");
 
-  const id = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  const valid = id.length > 0 && language.trim().length > 0 && /^https?:\/\//.test(url);
+  const id = slugify(name);
+  const hasName = name.trim().length > 0;
+  const hasLanguage = language.trim().length > 0;
+  const hasUrl = /^https?:\/\//.test(url.trim());
+  const valid = hasName && hasLanguage && hasUrl;
+
+  // Say which field is holding things up. The Add button used to just sit there
+  // disabled — most confusingly for a name in a non-Latin script, which slugged
+  // to an empty id and could never be added at all.
+  const blocker = !hasName
+    ? "Give the translation a name"
+    : !hasLanguage
+      ? "Add a language"
+      : !hasUrl
+        ? "Paste a URL starting with http:// or https://"
+        : null;
 
   return (
     <div className="space-y-3 border-b border-border/60 bg-muted/20 px-4 py-4">
@@ -361,9 +451,9 @@ function AddForm({
           className="h-8 font-mono text-xs"
         />
       </Field>
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-[11px] text-muted-foreground/60">
-          {id ? `id: ${id}` : " "}
+      <div className="flex items-center justify-between gap-3">
+        <span className="min-w-0 truncate text-[11px] text-muted-foreground/60">
+          {blocker ? blocker : <span className="font-mono">id: {id}</span>}
         </span>
         <Button
           size="sm"
@@ -379,6 +469,31 @@ function AddForm({
   );
 }
 
+/**
+ * A filesystem-safe id for a translation, derived from its name.
+ *
+ * The name is used verbatim as a filename (`<id>.txt`), so it has to reduce to
+ * ASCII. Accents fold to their base letters; a name in a script that leaves
+ * nothing behind (Greek, Cyrillic, Chinese, …) falls back to a short stable
+ * hash rather than an empty id, which previously made those translations
+ * impossible to add at all.
+ */
+function slugify(name: string): string {
+  const ascii = name
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (ascii) return ascii.slice(0, 40);
+
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+  let hash = 0;
+  for (const ch of trimmed) hash = (hash * 31 + ch.codePointAt(0)!) >>> 0;
+  return `bible-${hash.toString(36)}`;
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1">
@@ -388,14 +503,22 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function ScaleCompare({ dataMb }: { dataMb: number }) {
+function ScaleCompare({
+  dataMb,
+  vocabSize,
+}: {
+  dataMb: number;
+  vocabSize?: number;
+}) {
   // BibleLM numbers reflect the default config; GPT-3 is the 175B model.
+  // Vocabulary is the exception — it comes from the corpus, not the config, so
+  // it tracks whichever translation is selected.
   const rows: Array<[string, string, string]> = [
     ["Parameters", "3.2M", "175B"],
     ["Transformer layers", "4", "96"],
     ["Embedding dim (d_model)", "256", "12,288"],
     ["Context window", "256", "2,048"],
-    ["Vocabulary", "75", "50,257"],
+    ["Vocabulary", vocabSize ? vocabSize.toLocaleString() : "—", "50,257"],
     ["Training text", `${dataMb.toFixed(1)} MB`, "~570 GB"],
   ];
   return (

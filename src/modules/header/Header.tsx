@@ -3,14 +3,17 @@ import { Moon02Icon, Sun01Icon } from "@hugeicons/core-free-icons";
 import { WindowControls } from "@/components/WindowControls";
 import { IS_MAC, USE_CUSTOM_WINDOW_CONTROLS } from "@/lib/platform";
 import { useTheme } from "@/modules/theme/ThemeProvider";
-import { useAppStore } from "@/store/appStore";
+import { useAppStore, type View } from "@/store/appStore";
 import { cn } from "@/lib/utils";
 
-const VIEW_LABELS: Record<string, string> = {
+// Typed by View (not string) so adding a view without a label fails to compile
+// rather than silently rendering a blank title, which is how "Ask" lost its.
+const VIEW_LABELS: Record<View, string> = {
   corpus: "Corpus",
   train: "Training",
   inference: "Inference",
-  export: "Export",
+  ask: "Ask",
+  model: "Model",
 };
 
 export function Header() {

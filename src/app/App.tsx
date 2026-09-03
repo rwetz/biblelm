@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { ThemeProvider } from "@/modules/theme/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -9,15 +8,16 @@ import { CorpusView } from "@/modules/corpus/CorpusView";
 import { TrainingView } from "@/modules/training/TrainingView";
 import { InferenceView } from "@/modules/inference/InferenceView";
 import { AskView } from "@/modules/ask/AskView";
-import { ExportView } from "@/modules/export/ExportView";
-import { useAppStore, type View, type GpuInfo } from "@/store/appStore";
+import { ModelView } from "@/modules/model/ModelView";
+import { refreshGpuInfo } from "@/lib/gpu";
+import { useAppStore, type View } from "@/store/appStore";
 
 const VIEWS: Record<View, React.ReactNode> = {
   corpus: <CorpusView />,
   train: <TrainingView />,
   inference: <InferenceView />,
   ask: <AskView />,
-  export: <ExportView />,
+  model: <ModelView />,
 };
 
 function ActiveView() {
@@ -26,10 +26,9 @@ function ActiveView() {
 }
 
 function AppInit() {
-  const setGpuInfo = useAppStore((s) => s.setGpuInfo);
   useEffect(() => {
-    invoke<GpuInfo>("gpu_info").then(setGpuInfo).catch(() => {});
-  }, [setGpuInfo]);
+    refreshGpuInfo();
+  }, []);
   return null;
 }
 

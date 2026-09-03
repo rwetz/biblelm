@@ -43,7 +43,7 @@ const EXAMPLES = [
   "how many verses in Psalms",
   "longest verse",
   "shortest verse",
-  "find do unto others",
+  "find fishers of men",
   "how many books",
 ];
 
@@ -246,7 +246,7 @@ export function AskView() {
         <div>
           <h1 className="text-base font-semibold text-foreground">Ask</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Search the King James Bible — exact answers, no guessing
+            Search the King James Bible
           </p>
         </div>
       </div>

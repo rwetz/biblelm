@@ -16,6 +16,7 @@ import {
   type TrainConfig,
   type TrainMetric,
 } from "@/store/appStore";
+import { refreshGpuInfo } from "@/lib/gpu";
 import { cn } from "@/lib/utils";
 
 export function TrainingView() {
@@ -31,6 +32,7 @@ export function TrainingView() {
   const trainDevice = useAppStore((s) => s.trainDevice);
   const setTrainDevice = useAppStore((s) => s.setTrainDevice);
   const gpuInfo = useAppStore((s) => s.gpuInfo);
+  const gpuError = useAppStore((s) => s.gpuError);
   const corpus = useAppStore((s) => s.corpus);
   const vocabSize = corpus?.vocabSize ?? 75;
   const estimatedVramMb = estimateVramMb(config, vocabSize);
@@ -282,44 +284,53 @@ export function TrainingView() {
 
               <ConfigSection title="Tokenizer">
                 <div className="space-y-1">
-                  {(["char", "bpe"] as const).map((t) => (
-                    <div
-                      key={t}
-                      className={cn(
-                        "flex items-center justify-between gap-2 rounded-md px-2 py-1.5 transition-colors",
-                        status === "running"
-                          ? "opacity-50"
-                          : "hover:bg-accent",
-                      )}
-                    >
-                      <label
+                  {(["char", "bpe"] as const).map((t) => {
+                    // BPE is stubbed in tokenizer.py and raises. Leaving the
+                    // radio live meant you could pick it, hit Start Training,
+                    // and watch the run die immediately — so it stays visible
+                    // (it's on the roadmap) but can't be selected.
+                    const unavailable = t === "bpe";
+                    const locked = unavailable || status === "running";
+                    return (
+                      <div
+                        key={t}
                         className={cn(
-                          "flex min-w-0 flex-1 items-center gap-2.5",
-                          status === "running"
-                            ? "cursor-not-allowed"
-                            : "cursor-pointer",
+                          "flex items-center justify-between gap-2 rounded-md px-2 py-1.5 transition-colors",
+                          locked ? "opacity-50" : "hover:bg-accent",
                         )}
                       >
-                        <input
-                          type="radio"
-                          name="tokenizer"
-                          value={t}
-                          checked={config.tokenizerType === t}
-                          disabled={status === "running"}
-                          onChange={() => updateConfig({ tokenizerType: t })}
-                          className="accent-brand"
-                        />
-                        <span className="text-xs font-medium">
-                          {t === "char" ? "Character-level" : "BPE"}
-                        </span>
-                      </label>
-                      <InfoTip side="right">
-                        {t === "char"
-                          ? "The model reads one character at a time. Tiny vocabulary (~75 symbols), dead simple, and surprisingly good at this scale — the default here."
-                          : "Groups frequent character sequences into single tokens (closer to words). More efficient for big models, but more complex — not implemented yet."}
-                      </InfoTip>
-                    </div>
-                  ))}
+                        <label
+                          className={cn(
+                            "flex min-w-0 flex-1 items-center gap-2.5",
+                            locked ? "cursor-not-allowed" : "cursor-pointer",
+                          )}
+                        >
+                          <input
+                            type="radio"
+                            name="tokenizer"
+                            value={t}
+                            checked={config.tokenizerType === t}
+                            disabled={locked}
+                            onChange={() => updateConfig({ tokenizerType: t })}
+                            className="accent-brand"
+                          />
+                          <span className="text-xs font-medium">
+                            {t === "char" ? "Character-level" : "BPE"}
+                          </span>
+                          {unavailable && (
+                            <Badge variant="outline" className="text-[10px]">
+                              Soon
+                            </Badge>
+                          )}
+                        </label>
+                        <InfoTip side="right">
+                          {t === "char"
+                            ? "The model reads one character at a time. The vocabulary is just the distinct characters in your corpus — tiny, dead simple, and surprisingly good at this scale. The default here."
+                            : "Groups frequent character sequences into single tokens (closer to words). More efficient for big models, but more complex. Not implemented yet, so it can't be selected."}
+                        </InfoTip>
+                      </div>
+                    );
+                  })}
                 </div>
               </ConfigSection>
 
@@ -340,7 +351,7 @@ export function TrainingView() {
               </div>
 
               {/* VRAM estimate */}
-              <VramMeter estimatedMb={estimatedVramMb} gpuInfo={gpuInfo} />
+              <VramMeter estimatedMb={estimatedVramMb} gpuInfo={gpuInfo} gpuError={gpuError} />
             </div>
           </ScrollArea>
         </div>
@@ -476,7 +487,37 @@ function estimateVramMb(config: TrainConfig, vocabSize: number): number {
   return ((modelBytes + attnBytes + actBytes + overheadBytes) / (1024 * 1024)) * 1.15;
 }
 
-function VramMeter({ estimatedMb, gpuInfo }: { estimatedMb: number; gpuInfo: GpuInfo | null }) {
+function VramMeter({
+  estimatedMb,
+  gpuInfo,
+  gpuError,
+}: {
+  estimatedMb: number;
+  gpuInfo: GpuInfo | null;
+  gpuError: string | null;
+}) {
+  // The probe runs Python + torch, so it fails for ordinary setup reasons. Say
+  // which one, and offer a retry — this used to sit on "querying GPU…" forever.
+  if (!gpuInfo && gpuError) {
+    return (
+      <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-xs text-muted-foreground">Couldn't query the GPU</p>
+          <button
+            type="button"
+            onClick={() => refreshGpuInfo()}
+            className="shrink-0 text-xs text-brand hover:underline"
+          >
+            Retry
+          </button>
+        </div>
+        <p className="mt-0.5 break-words text-xs text-muted-foreground/50">{gpuError}</p>
+        <p className="mt-1 text-xs text-muted-foreground/50">
+          Training can still run; the VRAM guard is just unavailable.
+        </p>
+      </div>
+    );
+  }
   if (!gpuInfo) {
     return (
       <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">

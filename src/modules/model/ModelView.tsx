@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ModelCard } from "@/modules/model/ModelCard";
 import { useAppStore } from "@/store/appStore";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +29,7 @@ interface Step {
   detail?: string;
 }
 
-export function ExportView() {
+export function ModelView() {
   const exportStatus = useAppStore((s) => s.exportStatus);
   const exportPath = useAppStore((s) => s.exportPath);
   const setExportStatus = useAppStore((s) => s.setExportStatus);
@@ -95,9 +96,9 @@ export function ExportView() {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
         <div>
-          <h1 className="text-base font-semibold text-foreground">Export</h1>
+          <h1 className="text-base font-semibold text-foreground">Model</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Convert the trained checkpoint to ONNX for Rust inference
+            Bring a trained model in, or export this one to ONNX
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -136,6 +137,9 @@ export function ExportView() {
 
       <ScrollArea className="flex-1">
         <div className="p-6 space-y-4 max-w-2xl">
+          {/* What's loaded, plus the drop zone for bringing your own */}
+          <ModelCard />
+
           {/* Pipeline steps */}
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="border-b border-border/60 px-4 py-2.5">

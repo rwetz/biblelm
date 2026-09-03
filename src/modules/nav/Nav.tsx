@@ -28,7 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { view: "train", label: "Training", icon: AiChipIcon },
   { view: "inference", label: "Inference", icon: BubbleChatIcon },
   { view: "ask", label: "Ask", icon: Search01Icon },
-  { view: "export", label: "Export", icon: Package01Icon },
+  { view: "model", label: "Model", icon: Package01Icon },
 ];
 
 export function Nav() {
