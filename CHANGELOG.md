@@ -4,6 +4,17 @@ All notable changes to BibleLM. Format based on
 [Keep a Changelog](https://keepachangelog.com/); this project follows
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Planning docs for 2.0**: `AGENTS.md` and `docs/` (audit, roadmap, study,
+  ML, design, art, ideas) describing the move to an illustrated study tool.
+- **Tests and CI**: pytest for the corpus cleaner and the KJV parser/Ask engine
+  (31,102 verses, 66 books, 1,189 chapters), a vitest smoke test that mounts
+  every view with the Tauri APIs stubbed, and a GitHub Actions workflow running
+  both plus `cargo check`.
+
 ## [1.2.0] — 2026-09-02
 
 ### Added
