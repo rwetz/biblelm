@@ -10,8 +10,9 @@ the text of the Bible. Generated text is always labelled.
 > Jev handles query routing and reranking only; a book's genre is a lookup table
 > in code. **No large hosted model is used, by choice** (see section 3). The
 > Lab's inspection tools (attention, logit lens, surprise) are in
-> `python/biblelm/inspect_model.py`. Moving training to Axon waits on a
-> transformer in Axon itself (its own repo).
+> `python/biblelm/inspect_model.py`. Axon now has the transformer (branch
+> `text-gpt`, v0.11.0: `axon new text`, same shape as `model.py`, `serve`
+> streams characters); wiring the Lab's Training and Generate tabs to it is next.
 
 ## Which model for which job
 
