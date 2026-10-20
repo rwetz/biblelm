@@ -47,9 +47,8 @@ and PyTorch; nothing else in the app does.
 
 - **Jev** (TypeSafe): routes queries and reranks results with bounded
   judgments, using `TYPESAFE_API_KEY` from your own environment.
-- **Grounded commentary**: opt-in historical context and reflection questions
-  from Claude, answering only from verses the app retrieved, with your key kept
-  in the OS keychain.
+
+No large hosted model is used: everything else runs on your computer.
 
 ## Run it
 

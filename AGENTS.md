@@ -9,7 +9,7 @@ plan), then the doc for the area you are touching:
 | Why it changed from 1.x | [docs/AUDIT.md](docs/AUDIT.md) |
 | Texts, canon shelves, notebooks | [docs/STUDY.md](docs/STUDY.md) |
 | The data files and how to rebuild them | [docs/DATA.md](docs/DATA.md) |
-| Embeddings, Jev, commentary, the Lab | [docs/ML.md](docs/ML.md) |
+| Embeddings, Jev, the Lab | [docs/ML.md](docs/ML.md) |
 | Nexis design, themes, typography | [docs/DESIGN.md](docs/DESIGN.md) |
 | Illustrations | [docs/ART.md](docs/ART.md), [docs/art-credits.md](docs/art-credits.md) |
 | Algorithm ideas | [docs/IDEAS.md](docs/IDEAS.md) |
@@ -28,7 +28,7 @@ plan), then the doc for the area you are touching:
    `VERSION` with a migration and a test.
 4. **Public domain (or CC-BY, credited) only**, provenance recorded.
 5. **Study features need no Python and no backend.** Python is for the Lab;
-   Rust only stores notes, holds keys and makes the two opt-in network calls.
+   Rust only stores notes and makes the one opt-in network call (Jev).
 
 ## Layout
 
@@ -39,9 +39,9 @@ src/
   features/         home, read (+VersePanel), search, topics (+map, structure),
                     notebooks, lab (corpus, training, inference, model, inside), settings
   lib/              canon, bible (verse store), search, xrefs (graph), topics,
-                    semantic (+ worker), jev, commentary, art, backend
+                    semantic (+ worker), jev, art, backend
   store/            study (prefs + place), notebooks (your notes)
-src-tauri/src/      lib.rs (Lab workers, paths), study.rs (notes, keys, Jev, commentary)
+src-tauri/src/      lib.rs (Lab workers, paths), study.rs (notes, export, Jev)
 python/biblelm/     the Lab: GPT, training, generation, ONNX, inspect_model
 scripts/data|art/   offline builders (pnpm data); outputs are git-ignored
 ```
@@ -61,8 +61,8 @@ scripts/data|art/   offline builders (pnpm data); outputs are git-ignored
   (`PAGE_PLATES` in `src/lib/art.ts`).
 - Never commit `data/`, `runs/`, `data-src/`, `art-src/`, `public/data`,
   `public/art/dore|heroes`, `public/models`, weights or keys.
-  `TYPESAFE_API_KEY` stays in the user's environment; the Anthropic key in the
-  OS keychain. Neither may reach the webview.
+  `TYPESAFE_API_KEY` stays in the user's environment and never reaches the
+  webview. No hosted large model (Opus 5.5 or larger) is used: ask first.
 - Importers parse downloads as text; never execute downloaded content.
 
 ## Verify

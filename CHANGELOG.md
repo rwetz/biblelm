@@ -32,9 +32,8 @@ BibleLM becomes an illustrated Bible study tool with the ML lab inside it.
 - **Canon shelves**: Protestant, Deuterocanon, Apocrypha.
 - **Lab, Inside the model**: attention heads, the logit lens, and the most and
   least surprising verses to the model.
-- **Optional machine help**: Jev query routing and reranking (with the user's
-  own TypeSafe key), and grounded commentary (opt-in, key in the OS keychain,
-  answers only from retrieved verses, always labelled).
+- **Optional machine help**: Jev query routing and reranking, with the user's
+  own TypeSafe key. No large hosted model is used.
 - The Scriptorium theme (Vellum and Nocturne) on `@nexis/design`, with a command
   palette for every action.
 - Planning docs, tests (TypeScript, Python, Rust), and CI.

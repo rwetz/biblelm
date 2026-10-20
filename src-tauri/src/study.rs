@@ -1,6 +1,6 @@
-//! Study-side commands: durable notes, Markdown export, the keychain, and the
-//! two optional network calls (Jev and grounded commentary). Reading and
-//! searching need none of this: the Bible data is static files in the bundle.
+//! Study-side commands: durable notes, Markdown export, and the one optional
+//! network call (Jev). Reading and searching need none of this: the Bible data
+//! is static files in the bundle.
 //!
 //! Notes are the one irreplaceable thing the app holds, so writes are atomic
 //! (temp file + rename) and the previous file is copied to a dated backup once
@@ -138,40 +138,6 @@ pub fn app_data_dir() -> Result<String, String> {
     Ok(data_dir()?.to_string_lossy().into_owned())
 }
 
-// ── keychain ───────────────────────────────────────────────────────────
-
-const SERVICE: &str = "dev.biblelm.app";
-const SECRET_NAMES: &[&str] = &["anthropic"];
-
-fn entry(name: &str) -> Result<keyring::Entry, String> {
-    if !SECRET_NAMES.contains(&name) {
-        return Err(format!("unknown secret {name}"));
-    }
-    keyring::Entry::new(SERVICE, name).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub fn secret_get(name: String) -> Result<Option<String>, String> {
-    // The page only learns whether a key exists, never the key itself.
-    match entry(&name)?.get_password() {
-        Ok(_) => Ok(Some("saved".into())),
-        Err(keyring::Error::NoEntry) => Ok(None),
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-#[tauri::command]
-pub fn secret_set(name: String, value: Option<String>) -> Result<(), String> {
-    let e = entry(&name)?;
-    match value {
-        Some(v) if !v.trim().is_empty() => e.set_password(v.trim()).map_err(|e| e.to_string()),
-        _ => match e.delete_credential() {
-            Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
-            Err(err) => Err(err.to_string()),
-        },
-    }
-}
-
 fn agent() -> ureq::Agent {
     ureq::AgentBuilder::new().timeout(Duration::from_secs(120)).build()
 }
@@ -206,77 +172,6 @@ pub async fn jev(task: String, input: serde_json::Value) -> Result<serde_json::V
     })
     .await
     .map_err(|e| e.to_string())?
-}
-
-// ── grounded commentary (Claude Messages API, raw HTTP) ───────────────
-
-const MESSAGES_ENDPOINT: &str = "https://api.anthropic.com/v1/messages";
-const ALLOWED_MODELS: &[&str] = &["claude-opus-5-5"];
-
-/// Non-streaming Messages API call. `fallbacks: "default"` lets the API retry
-/// a safety decline on Anthropic's recommended fallback model; a refusal that
-/// survives that is reported as such, never as an empty answer.
-#[tauri::command]
-pub async fn commentary(system: String, prompt: String, model: String) -> Result<String, String> {
-    if !ALLOWED_MODELS.contains(&model.as_str()) {
-        return Err(format!("model {model} is not allowed"));
-    }
-    let key = entry("anthropic")?.get_password().map_err(|_| "No API key saved. Add one in Settings.".to_string())?;
-    let body = serde_json::json!({
-        "model": model,
-        "max_tokens": 16000,
-        "system": system,
-        "output_config": { "effort": "medium" },
-        "fallbacks": "default",
-        "messages": [{ "role": "user", "content": prompt }],
-    });
-    let res: serde_json::Value = tauri::async_runtime::spawn_blocking(move || {
-        match agent()
-            .post(MESSAGES_ENDPOINT)
-            .set("x-api-key", &key)
-            .set("anthropic-version", "2023-06-01")
-            .set("anthropic-beta", "server-side-fallback-2026-07-01")
-            .set("content-type", "application/json")
-            .send_json(body)
-        {
-            Ok(r) => r.into_json::<serde_json::Value>().map_err(|e| e.to_string()),
-            Err(ureq::Error::Status(code, r)) => {
-                let detail = r
-                    .into_json::<serde_json::Value>()
-                    .ok()
-                    .and_then(|v| v["error"]["message"].as_str().map(str::to_string))
-                    .unwrap_or_default();
-                Err(match code {
-                    401 => "The API key was rejected.".to_string(),
-                    429 => "Rate limited. Try again in a minute.".to_string(),
-                    _ => format!("API error {code}: {detail}"),
-                })
-            }
-            Err(e) => Err(format!("Could not reach the API: {e}")),
-        }
-    })
-    .await
-    .map_err(|e| e.to_string())??;
-
-    if res["stop_reason"] == "refusal" {
-        let why = res["stop_details"]["explanation"].as_str().unwrap_or("no reason given");
-        return Err(format!("The model declined this request ({why})."));
-    }
-    let text: String = res["content"]
-        .as_array()
-        .map(|blocks| {
-            blocks
-                .iter()
-                .filter(|b| b["type"] == "text")
-                .filter_map(|b| b["text"].as_str())
-                .collect::<Vec<_>>()
-                .join("")
-        })
-        .unwrap_or_default();
-    if text.trim().is_empty() {
-        return Err("The model returned no text.".into());
-    }
-    Ok(text)
 }
 
 #[cfg(test)]

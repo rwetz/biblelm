@@ -4,13 +4,11 @@ import {
   Button,
   Field,
   Icon,
-  Input,
   IN_TAURI,
   Panel,
   Segmented,
   Slider,
   Switch,
-  toast,
   useTheme,
 } from "@nexis/design";
 import { CornerPlate, usePagePlate } from "@/art/Art";
@@ -19,7 +17,6 @@ import { backend } from "@/lib/backend";
 import { SHELVES } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
 import { jevAvailable, setJevBypass } from "@/lib/jev";
-import { COMMENTARY_MODEL } from "@/lib/commentary";
 import { useStudy } from "@/store/study";
 
 export function SettingsView() {
@@ -29,12 +26,9 @@ export function SettingsView() {
   const plate = usePagePlate(PAGE_PLATES.settings);
   const [jev, setJev] = useState<boolean | null>(null);
   const [bypass, setBypass] = useState(false);
-  const [key, setKey] = useState("");
-  const [hasKey, setHasKey] = useState(false);
   const [dataDir, setDataDir] = useState<string | null>(null);
   useEffect(() => {
     jevAvailable().then(setJev);
-    backend.secretGet("anthropic").then((k) => setHasKey(!!k)).catch(() => {});
     backend.dataDir().then(setDataDir).catch(() => {});
   }, []);
 
@@ -135,7 +129,7 @@ export function SettingsView() {
           </div>
         </Panel>
 
-        <Panel title="Machine help" meta="optional, and always citing real verses">
+        <Panel title="Machine help" meta="small models only, always citing real verses">
           <div className="space-y-5">
             <Field label="Semantic search" hint="A small embedding model (bge-small, MIT) that runs on this computer. Finds verses by meaning." inline>
               <Badge variant="success">On, offline</Badge>
@@ -151,31 +145,6 @@ export function SettingsView() {
                   <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Switch size="sm" checked={bypass} onCheckedChange={(b) => { setBypass(b); setJevBypass(b); }} /> Bypass
                   </label>
-                )}
-              </div>
-            </Field>
-            <Field
-              label="Grounded commentary"
-              hint={`Off unless you add a key. Uses ${COMMENTARY_MODEL} for historical context and study outlines, answering only from verses the app retrieved, with every claim cited. Your key is kept in the operating system's keychain.`}
-            >
-              <div className="flex gap-2">
-                <Input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder={hasKey ? "A key is saved" : "Anthropic API key"} className="max-w-xs" />
-                <Button
-                  variant="outline"
-                  disabled={!key}
-                  onClick={async () => {
-                    await backend.secretSet("anthropic", key);
-                    setKey("");
-                    setHasKey(true);
-                    toast.success("Key saved to the keychain");
-                  }}
-                >
-                  Save
-                </Button>
-                {hasKey && (
-                  <Button variant="ghost" onClick={async () => { await backend.secretSet("anthropic", null); setHasKey(false); }}>
-                    Remove
-                  </Button>
                 )}
               </div>
             </Field>

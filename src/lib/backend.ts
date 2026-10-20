@@ -48,28 +48,6 @@ async function dataDir(): Promise<string | null> {
   return IN_TAURI ? tauriInvoke<string>("app_data_dir") : null;
 }
 
-// ── secrets (opt-in model keys) ──────────────────────────────────────────
-
-async function secretGet(name: string): Promise<string | null> {
-  if (!IN_TAURI) return sessionStorage.getItem(`biblelm:secret:${name}`);
-  return tauriInvoke<string | null>("secret_get", { name });
-}
-
-async function secretSet(name: string, value: string | null): Promise<void> {
-  if (!IN_TAURI) {
-    if (value) sessionStorage.setItem(`biblelm:secret:${name}`, value);
-    else sessionStorage.removeItem(`biblelm:secret:${name}`);
-    return;
-  }
-  return tauriInvoke("secret_set", { name, value });
-}
-
-/** Opt-in grounded commentary: the request is made by Rust, never from the page. */
-async function commentary(req: { system: string; prompt: string; model: string }): Promise<string> {
-  if (!IN_TAURI) throw new Error("Commentary calls the model from the desktop app, which keeps your key in the OS keychain.");
-  return tauriInvoke<string>("commentary", req);
-}
-
 /** Jev (TypeSafe) bounded judgments: made by Rust with the user's own key. */
 async function jev(req: { task: string; input: unknown }): Promise<unknown> {
   if (!IN_TAURI) throw new Error("Jev runs from the desktop app with TYPESAFE_API_KEY from your environment.");
@@ -85,9 +63,6 @@ export const backend = {
   notesSave,
   exportMarkdown,
   dataDir,
-  secretGet,
-  secretSet,
-  commentary,
   jev,
   jevAvailable,
 };

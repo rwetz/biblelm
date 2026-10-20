@@ -156,7 +156,7 @@ M0 ─┬─ M1 ─┬─ M3 ─┬─ M5
 - [~] M9 Jev (built and unit-tested; the live shadow eval waits on TYPESAFE_API_KEY)
 - [x] M10 Map and structure
 - [~] M11 Lab 2.0 (inspection tools done; the Axon transformer is separate work in the Axon repo)
-- [x] M12 Grounded commentary
+- [-] M12 Grounded commentary (dropped: no large hosted model, see ML.md)
 - [~] M13 Release 2.0 (release paths, bundled scripts and version done; installer not built or tagged)
 
 ## What changed from the plan
