@@ -13,8 +13,12 @@ export default defineConfig({
       ignored: [
         "**/src-tauri/**",
         "**/.venv/**",
-        "**/data/**",
-        "**/runs/**",
+        // The Lab's data/ and runs/ at the repo root. Not "**/data/**": that
+        // also hid public/data, so Vite never saw newly built data files.
+        resolve(__dirname, "data") + "/**",
+        resolve(__dirname, "runs") + "/**",
+        "**/data-src/**",
+        "**/art-src/**",
       ],
     },
   },

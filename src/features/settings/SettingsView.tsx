@@ -82,6 +82,9 @@ export function SettingsView() {
             <Field label={`Text size · ${study.textSize}px`} inline>
               <Slider className="w-56" min={14} max={28} step={1} value={[study.textSize]} onValueChange={([v]) => study.set({ textSize: v })} />
             </Field>
+            <Field label="Red letter" hint="The words of Christ in red, in the KJV and WEB." inline>
+              <Switch checked={study.redLetter} onCheckedChange={(redLetter) => study.set({ redLetter })} />
+            </Field>
             <Field label="Two columns, like a printed Bible" inline>
               <Switch checked={study.columns} onCheckedChange={(columns) => study.set({ columns })} />
             </Field>
@@ -162,6 +165,7 @@ export function SettingsView() {
               <li>Cross references and topics: OpenBible.info, CC-BY.</li>
               <li>Illustrations: Gustave Doré, La Grande Bible de Tours (1866), public domain, via Wikimedia Commons.</li>
               <li>Faces: UnifrakturMaguntia, Grenze Gotisch, IM Fell English, EB Garamond (SIL Open Font License).</li>
+              <li>Strong's dictionaries: Open Scriptures JSON edition, CC-BY-SA.</li>
               <li>Embeddings: BAAI bge-small-en-v1.5 (MIT).</li>
             </ul>
             {dataDir && (

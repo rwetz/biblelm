@@ -34,6 +34,11 @@
   color: var(--brand);
   font-variant-numeric: tabular-nums;
 }
+/* Red letter: rubricated, as in printed red-letter Bibles. Slightly deeper
+   than the accent so it reads as text, not as a control. */
+.red-letter .wj {
+  color: color-mix(in oklab, var(--brand) 82%, var(--foreground));
+}
 .scripture .supplied {
   font-style: italic;
   opacity: 0.85;

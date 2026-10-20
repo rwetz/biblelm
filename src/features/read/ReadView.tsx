@@ -26,7 +26,7 @@ import {
 } from "@nexis/design";
 import { Fleuron, PlateFigure, usePlates } from "@/art/Art";
 import { platesInBook, platesInChapter } from "@/lib/art";
-import { loadTranslation, runs, type Translation, type Verse } from "@/lib/bible";
+import { loadTranslation, runs, type Run, type Translation, type Verse } from "@/lib/bible";
 import { BOOKS, book as bookOf, bookName, SHELVES, type Ref } from "@/lib/canon";
 import { useCatalog, useTranslations } from "@/lib/hooks";
 import { noteCovers, useNotebooks } from "@/store/notebooks";
@@ -225,7 +225,15 @@ function Chapter({
   );
 }
 
-/** Printed text: the KJV's supplied words in italics, an optional drop cap. */
+function RunText({ r }: { r: Run }) {
+  const body = r.supplied ? <em className="supplied">{r.text}</em> : r.text;
+  return r.wj ? <span className="wj">{body}</span> : <>{body}</>;
+}
+
+/**
+ * Printed text: the KJV's supplied words in italics, the words of Christ
+ * marked (red when red letter is on), an optional drop cap.
+ */
 export function VerseText({ raw, dropcap = false }: { raw: string; dropcap?: boolean }) {
   const parts = runs(raw);
   if (dropcap && parts[0] && !parts[0].supplied && parts[0].text) {
@@ -234,12 +242,12 @@ export function VerseText({ raw, dropcap = false }: { raw: string; dropcap?: boo
       <>
         <span className="dropcap" aria-hidden>{head.text[0]}</span>
         <span className="sr-only">{head.text[0]}</span>
-        {head.text.slice(1)}
-        {rest.map((r, i) => (r.supplied ? <em key={i} className="supplied">{r.text}</em> : <Fragment key={i}>{r.text}</Fragment>))}
+        <RunText r={{ ...head, text: head.text.slice(1) }} />
+        {rest.map((r, i) => <RunText key={i} r={r} />)}
       </>
     );
   }
-  return <>{parts.map((r, i) => (r.supplied ? <em key={i} className="supplied">{r.text}</em> : <Fragment key={i}>{r.text}</Fragment>))}</>;
+  return <>{parts.map((r, i) => <RunText key={i} r={r} />)}</>;
 }
 
 function Parallel({ ts, bookId, chapter }: { ts: Translation[]; bookId: string; chapter: number }) {

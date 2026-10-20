@@ -19,6 +19,8 @@ interface StudyState {
   face: ReadingFace;
   textSize: number;
   columns: boolean;
+  /** Words of Christ in red, where the translation marks them. */
+  redLetter: boolean;
   location: Ref;
   /** The verse the verse panel is open on. */
   selected: Ref | null;
@@ -34,7 +36,7 @@ interface StudyState {
   openTopic: (name: string) => void;
   openWalk: (ref: Ref) => void;
   searchFor: (q: string) => void;
-  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns">>) => void;
+  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter">>) => void;
 }
 
 const KEY = "biblelm:study";
@@ -47,6 +49,7 @@ const DEFAULTS = {
   face: "garamond" as ReadingFace,
   textSize: 18,
   columns: false,
+  redLetter: true,
   location: { book: "John", chapter: 1, verse: 0 } as Ref,
   history: [] as Ref[],
 };
@@ -62,8 +65,8 @@ function load(): typeof DEFAULTS {
 
 function save(s: StudyState) {
   try {
-    const { translation, parallel, shelves, illustrations, face, textSize, columns, location, history } = s;
-    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, location, history }));
+    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, location, history } = s;
+    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, location, history }));
   } catch {
     // Storage blocked: preferences just won't persist.
   }

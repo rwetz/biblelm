@@ -29,6 +29,11 @@ BibleLM becomes an illustrated Bible study tool with the ML lab inside it.
   a map of every verse placed by meaning, and a chiasm finder.
 - **Notebooks**: one per study, each with its own translations, canon and cover
   plate; verse-anchored notes with tags; Markdown export; daily backups.
+- **Word study**: Strong's numbers for every tagged word of the KJV and WEB,
+  with the Hebrew or Greek lemma, Strong's definition, how the translation
+  renders it, and every verse that uses it; type a number like G26 into Search.
+- **Red letter**: the words of Christ in red in the KJV and WEB (Settings or
+  the command palette).
 - **Canon shelves**: Protestant, Deuterocanon, Apocrypha.
 - **Lab, Inside the model**: attention heads, the logit lens, and the most and
   least surprising verses to the model.

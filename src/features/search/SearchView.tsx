@@ -11,6 +11,9 @@ import { findTopics } from "@/lib/topics";
 import { jevAvailable, rerank, routeQuery } from "@/lib/jev";
 import { useStudy, shelfSet } from "@/store/study";
 import { DataMissing, VerseText } from "@/features/read/ReadView";
+import { StrongsEntry } from "@/features/read/WordStudy";
+import { parseCode } from "@/lib/strongs";
+import { loadTranslation, type Translation as T2 } from "@/lib/bible";
 
 const EXAMPLES = [
   "John 3:16",
@@ -21,6 +24,7 @@ const EXAMPLES = [
   "shortest verse",
   "angels",
   "when I feel anxious",
+  "G26",
 ];
 
 export function SearchView() {
@@ -88,7 +92,9 @@ export function SearchView() {
           </div>
         )}
 
-        {t && exact && index && (
+        {t && index && parseCode(submitted) && <StrongsSearch code={parseCode(submitted)!} t={t} onOpen={(r) => read(r, { select: true })} />}
+
+        {t && exact && index && !parseCode(submitted) && (
           <ResultArrival replayKey={submitted} className="mt-8 space-y-8">
             <Exact r={exact} t={t} onOpen={(r) => read(r, { select: true })} />
             {topicHits.length > 0 && (
@@ -278,6 +284,24 @@ function Meaning({ query, t, index, onOpen }: { query: string; t: Translation; i
           Ranked by a small embedding model on this computer, which matches meaning rather than words. It can be wrong; the verses are the text.
         </p>
       )}
+    </section>
+  );
+}
+
+/** A Strong's number typed into search: the entry and its concordance. */
+function StrongsSearch({ code, t, onOpen }: { code: string; t: T2; onOpen: (r: Ref) => void }) {
+  // The reading translation if it is tagged, else the KJV.
+  const [tagged, setTagged] = useState<T2 | null>(t.meta.strongs ? t : null);
+  const [c, setC] = useState(code);
+  useEffect(() => setC(code), [code]);
+  useEffect(() => {
+    if (t.meta.strongs) setTagged(t);
+    else loadTranslation("kjv").then(setTagged, () => setTagged(null));
+  }, [t]);
+  if (!tagged) return <div className="mt-8"><Spinner /></div>;
+  return (
+    <section className="mt-8 rounded-xl bg-card p-6 ring-1 ring-foreground/6">
+      <StrongsEntry code={c} t={tagged} onNavigate={onOpen} onStudy={setC} />
     </section>
   );
 }

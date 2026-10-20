@@ -9,6 +9,7 @@ import { noteCovers, useNotebooks } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
 import { VerseText } from "./ReadView";
 import { wordDiff } from "./diff";
+import { StrongsEntry, VerseWords } from "./WordStudy";
 
 /** Everything about one verse: other translations, cross references, topics, similar verses, your notes. */
 export function VersePanel({
@@ -31,6 +32,10 @@ export function VersePanel({
   const main = translations[0];
   const v = main.verse(refSel);
   const { openWalk, openTopic } = useStudy();
+  // Word study reads the first open translation that carries Strong's tags.
+  const tagged = translations.find((t) => t.meta.strongs);
+  const [study, setStudy] = useState<string | null>(null);
+  useEffect(() => setStudy(null), [osis]);
 
   return (
     <aside className="flex w-[25rem] shrink-0 flex-col border-l border-border/60 bg-card/60">
@@ -72,6 +77,18 @@ export function VersePanel({
             })}
             <CompareAll refSel={refSel} base={main} />
           </section>
+
+          {tagged && <VerseWords osis={osis} t={tagged} onStudy={setStudy} />}
+          {tagged && study && (
+            <div className="rounded-lg bg-muted/40 p-3">
+              <div className="mb-2 flex justify-end">
+                <Button variant="ghost" size="icon-xs" aria-label="Close word study" onClick={() => setStudy(null)}>
+                  <Icon name="close" size="xs" />
+                </Button>
+              </div>
+              <StrongsEntry code={study} t={tagged} onNavigate={onNavigate} onStudy={setStudy} />
+            </div>
+          )}
 
           <Notes osis={osis} />
 

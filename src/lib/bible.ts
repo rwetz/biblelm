@@ -17,6 +17,10 @@ export interface TranslationMeta {
   verses: number;
   source: string;
   licence: string;
+  /** Has a Strong's word list (bible/<id>.strongs.json). */
+  strongs?: boolean;
+  /** Marks the words of Christ (⸢ … ⸣ in the printed text). */
+  redLetter?: boolean;
 }
 
 interface ChapterData {
@@ -27,7 +31,7 @@ interface BookData {
   osis: string;
   chapters: ChapterData[];
 }
-interface TranslationData extends Omit<TranslationMeta, "books" | "verses" | "source" | "licence"> {
+interface TranslationData extends Omit<TranslationMeta, "books" | "verses" | "source" | "licence" | "strongs" | "redLetter"> {
   books: BookData[];
 }
 
@@ -35,7 +39,7 @@ export interface Verse {
   book: string;
   chapter: number;
   verse: number;
-  /** As printed: may hold [supplied words] and a leading pilcrow. */
+  /** As printed: may hold [supplied words] and ⸢words of Christ⸣. */
   raw: string;
   /** Plain text for search and display without markup. */
   text: string;
@@ -105,22 +109,43 @@ function toVerse(bookId: string, chapter: number, verse: number, raw: string): V
     chapter,
     verse,
     raw: body,
-    text: body.replace(SUPPLIED, "$1").replace(/¶\s*/g, "").replace(/\s+/g, " ").trim(),
+    text: body.replace(SUPPLIED, "$1").replace(WJ, "").replace(/¶\s*/g, "").replace(/\s+/g, " ").trim(),
     para,
   };
 }
 
-/** Split printed text into plain and supplied-word runs, for italics. */
-export function runs(raw: string): { text: string; supplied: boolean }[] {
-  const out: { text: string; supplied: boolean }[] = [];
-  let last = 0;
-  for (const m of raw.matchAll(SUPPLIED)) {
-    if (m.index! > last) out.push({ text: raw.slice(last, m.index), supplied: false });
-    out.push({ text: m[1], supplied: true });
-    last = m.index! + m[0].length;
+export const WJ_OPEN = "⸢";
+export const WJ_CLOSE = "⸣";
+const WJ = /[⸢⸣]/g;
+
+export interface Run {
+  text: string;
+  /** A word the translators supplied (KJV italics). */
+  supplied: boolean;
+  /** Spoken by Christ (red letter). */
+  wj: boolean;
+}
+
+/** Split printed text into runs: plain, supplied words (italics), words of Christ. */
+export function runs(raw: string): Run[] {
+  const out: Run[] = [];
+  let supplied = false;
+  let wj = false;
+  let buf = "";
+  const push = () => {
+    if (buf) out.push({ text: buf, supplied, wj });
+    buf = "";
+  };
+  for (const ch of raw.replace(/¶\s*/g, "")) {
+    if (ch === "[" || ch === "]" || ch === WJ_OPEN || ch === WJ_CLOSE) {
+      push();
+      if (ch === "[") supplied = true;
+      else if (ch === "]") supplied = false;
+      else wj = ch === WJ_OPEN;
+    } else buf += ch;
   }
-  if (last < raw.length) out.push({ text: raw.slice(last), supplied: false });
-  return out.map((r) => ({ ...r, text: r.text.replace(/¶\s*/g, "") }));
+  push();
+  return out;
 }
 
 // ── loading ───────────────────────────────────────────────────────────────

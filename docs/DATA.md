@@ -16,7 +16,9 @@ node scripts/data/check-semantic.mjs "your query"   # spot-check the index
 
 | Output | Built by | What |
 |---|---|---|
-| `data/translations.json`, `data/bible/<id>.json` | build-bible | Six translations from eBible.org verse-per-line files, each in its own versification |
+| `data/translations.json`, `data/bible/<id>.json` | build-bible | Six translations from eBible.org, each in its own versification. KJV and WEB from USFM (words of Christ marked ⸢ ⸣ in the text), the rest from verse-per-line files |
+| `data/bible/<id>.strongs.json` | build-bible | KJV and WEB: each verse's tagged words, `[[word, "G25"], ...]` |
+| `data/strongs-lexicon.json` | build-bible | Strong's Hebrew and Greek dictionaries, 14,197 entries (Open Scriptures JSON, CC-BY-SA) |
 | `data/refs.json` | build-bible | The verse index: the KJV with Apocrypha, 36,822 verses. Cross references, topics and embeddings key on it |
 | `data/xrefs.bin` | build-bible | 341,290 OpenBible cross references as Int32 quads `[from, toStart, toEnd, votes]`, sorted by source |
 | `data/topics.json` | build-bible | 6,712 OpenBible topics, passages as `[start, end, score]` triples |
@@ -27,7 +29,8 @@ node scripts/data/check-semantic.mjs "your query"   # spot-check the index
 | `models/Xenova/bge-small-en-v1.5` | embed | The same model files, for offline query embedding in the app |
 
 Licences: texts public domain (eBible.org); cross references and topics CC-BY
-(OpenBible.info, credited in Settings, About); plates public domain
+(OpenBible.info, credited in Settings, About); Strong's dictionaries CC-BY-SA
+(Open Scriptures, credited beside each entry); plates public domain
 ([art-credits.md](art-credits.md)); bge-small MIT.
 
 Notes are not here: they live in the app data folder (`notes.json`, with

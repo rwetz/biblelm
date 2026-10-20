@@ -69,6 +69,7 @@ Texts: public domain, from [eBible.org](https://ebible.org). Cross references
 and topics: [OpenBible.info](https://www.openbible.info), CC-BY. Illustrations:
 Gustave Doré, *La Grande Bible de Tours* (1866), public domain, via Wikimedia
 Commons ([list](docs/art-credits.md)). Embeddings: BAAI bge-small-en-v1.5 (MIT).
+Strong's dictionaries: [Open Scriptures](https://github.com/openscriptures/strongs), CC-BY-SA.
 Faces: UnifrakturMaguntia, Grenze Gotisch, IM Fell English, EB Garamond (OFL).
 
 ## License

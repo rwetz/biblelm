@@ -165,5 +165,6 @@ Decisions taken while building 2.0, recorded in each doc's "As built" note:
 JSON verse store in the webview instead of SQLite in Rust (M2), OpenBible
 topics instead of Nave's (M7), a parallel grid instead of dockview (M5),
 transformers.js instead of `ort` (M7), engraved rather than dithered plates
-(M4), genre as a lookup rather than a Jev question (M9). Not built yet:
-Strong's word study, red-letter text (needs USFM markup), the Axon transformer.
+(M4), genre as a lookup rather than a Jev question (M9), no hosted large model
+(M12). Added after: Strong's word study and red-letter text, from eBible's USFM.
+Not built yet: the Axon transformer.

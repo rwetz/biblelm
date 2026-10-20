@@ -8,8 +8,11 @@
 > 6,712 topics with reader-scored passages) instead of Nave's, which is only
 > distributed in hard-to-parse formats. Notes are one JSON file written by Rust
 > (atomic, with 14 daily backups), not `notes.db`. Parallel reading is a
-> verse-aligned grid rather than dockview. Strong's word study is not built
-> yet. Details: [DATA.md](DATA.md).
+> verse-aligned grid rather than dockview. The KJV and WEB are built from
+> eBible's USFM, which adds Strong's numbers (word study in the verse panel and
+> by typing a number like G26 into Search) and the words of Christ (red letter,
+> on by default); the KJV text is checked identical to the verse-per-line edition
+> (`scripts/data/check-usfm.mjs`). Details: [DATA.md](DATA.md).
 
 ## Verse store (replaces Gutenberg parsing)
 

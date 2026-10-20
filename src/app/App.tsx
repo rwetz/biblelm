@@ -60,6 +60,7 @@ const VIEWS: Record<Page, () => React.ReactNode> = {
 
 export default function App() {
   const page = useStudy((s) => s.page);
+  const redLetter = useStudy((s) => s.redLetter);
   const go = useStudy((s) => s.go);
   const [palette, setPalette] = useState(false);
   useCommandPaletteShortcut(() => setPalette((o) => !o));
@@ -72,7 +73,7 @@ export default function App() {
   }, [loadNotes]);
 
   return (
-    <div className="flex h-full flex-col bg-background text-foreground">
+    <div className={`flex h-full flex-col bg-background text-foreground ${redLetter ? "red-letter" : ""}`}>
       <WindowResizeEdges />
       <TitleBar
         brand={<Heptagram className="size-[18px] text-brand" />}
@@ -159,6 +160,7 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       { id: "next-ch", label: "Next chapter", group: "Read", icon: "chevron-right", shortcut: "]", run: () => chapterStep(1) },
       { id: "prev-ch", label: "Previous chapter", group: "Read", icon: "chevron-left", shortcut: "[", run: () => chapterStep(-1) },
       { id: "columns", label: study.columns ? "Read in one column" : "Read in two columns", group: "Read", icon: "split-vertical", run: () => study.set({ columns: !study.columns }) },
+      { id: "red-letter", label: study.redLetter ? "Words of Christ in black" : "Words of Christ in red", group: "Read", icon: "quote", keywords: ["red letter", "jesus"], run: () => study.set({ redLetter: !study.redLetter }) },
       { id: "bigger", label: "Larger text", group: "Read", icon: "zoom-in", run: () => study.set({ textSize: Math.min(28, study.textSize + 1) }) },
       { id: "smaller", label: "Smaller text", group: "Read", icon: "zoom-out", run: () => study.set({ textSize: Math.max(14, study.textSize - 1) }) },
       ...(["garamond", "fell", "gothic"] as const).map((f) => ({
