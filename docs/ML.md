@@ -4,6 +4,16 @@
 real verses with references. Nothing generated is ever shown as, or mixed into,
 the text of the Bible. Generated text is always labelled.
 
+> **As built (2.0):** embeddings use bge-small-en-v1.5 through transformers.js,
+> both offline (scripts/data/embed.mjs) and in the app, where a Web Worker
+> embeds queries and scans 36,822 int8 vectors; no `ort` in Rust and no Python.
+> Jev handles query routing and reranking only; a book's genre is a lookup table
+> in code. Commentary uses `claude-opus-5-5` at `medium` effort with server-side
+> `fallbacks: "default"`, called from Rust with the key in the OS keychain. The
+> Lab's inspection tools (attention, logit lens, surprise) are in
+> `python/biblelm/inspect_model.py`. Moving training to Axon waits on a
+> transformer in Axon itself (its own repo).
+
 ## Which model for which job
 
 | Job | Best tool | Why not the others |

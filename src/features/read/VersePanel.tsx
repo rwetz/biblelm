@@ -1,0 +1,392 @@
+import { useEffect, useMemo, useState } from "react";
+import { Badge, Button, Icon, ScrollArea, SectionLabel, Spinner, Textarea, toast, Tooltip, TooltipContent, TooltipTrigger, cn } from "@nexis/design";
+import { listTranslations, loadTranslation, type Translation, type VerseIndex } from "@/lib/bible";
+import { formatRef, osisOf, type Ref, type Shelf } from "@/lib/canon";
+import { useGraph, useIndex } from "@/lib/hooks";
+import { moreLikeThis, type Hit } from "@/lib/semantic";
+import { topicsForVerse, type Topic } from "@/lib/topics";
+import { noteCovers, useNotebooks } from "@/store/notebooks";
+import { useStudy } from "@/store/study";
+import { VerseText } from "./ReadView";
+import { wordDiff } from "./diff";
+import { backend } from "@/lib/backend";
+import { commentary, COMMENTARY_MODEL, uncited } from "@/lib/commentary";
+
+/** Everything about one verse: other translations, cross references, topics, similar verses, your notes. */
+export function VersePanel({
+  refSel,
+  translations,
+  shelves,
+  onClose,
+  onNavigate,
+}: {
+  refSel: Ref;
+  translations: Translation[];
+  shelves: Shelf[];
+  onClose: () => void;
+  onNavigate: (r: Ref) => void;
+  onSetParallel: (ids: string[]) => void;
+}) {
+  const osis = osisOf(refSel);
+  const [index] = useIndex();
+  const vi = index?.of(osis);
+  const main = translations[0];
+  const v = main.verse(refSel);
+  const { openWalk, openTopic } = useStudy();
+
+  return (
+    <aside className="flex w-[25rem] shrink-0 flex-col border-l border-border/60 bg-card/60">
+      <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border/60 px-4">
+        <h2 className="font-gothic text-lg">{formatRef(refSel)}</h2>
+        <span className="flex-1" />
+        <HighlightButton osis={osis} />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Copy verse"
+              onClick={() => {
+                navigator.clipboard?.writeText(`${v?.text ?? ""} (${formatRef(refSel)}, ${main.meta.abbr})`);
+                toast.success("Copied");
+              }}
+            >
+              <Icon name="copy" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Copy with reference</TooltipContent>
+        </Tooltip>
+        <Button variant="ghost" size="icon-sm" aria-label="Close" onClick={onClose}>
+          <Icon name="close" />
+        </Button>
+      </header>
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="space-y-6 p-4">
+          <section className="space-y-3">
+            {translations.map((t) => {
+              const tv = t.verse(refSel);
+              return (
+                <div key={t.meta.id}>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{t.meta.abbr}</p>
+                  <p className="scripture mt-1 !text-base !leading-7">{tv ? <VerseText raw={tv.raw} /> : <span className="text-muted-foreground">Not in this translation.</span>}</p>
+                </div>
+              );
+            })}
+            <CompareAll refSel={refSel} base={main} />
+          </section>
+
+          <Notes osis={osis} />
+
+          {vi !== undefined && index && (
+            <>
+              <CrossRefs vi={vi} index={index} main={main} onNavigate={onNavigate} />
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => openWalk(refSel)}>
+                  <Icon name="nodes" /> Study walk from here
+                </Button>
+              </div>
+              <Topics vi={vi} onOpen={(t) => openTopic(t.name)} />
+              <Similar vi={vi} index={index} main={main} shelves={shelves} onNavigate={onNavigate} />
+              <StudyNotes refSel={refSel} vi={vi} index={index} main={main} />
+            </>
+          )}
+        </div>
+      </ScrollArea>
+    </aside>
+  );
+}
+
+function HighlightButton({ osis }: { osis: string }) {
+  const { active, highlights, toggleHighlight } = useNotebooks();
+  const on = !!active && highlights.some((h) => h.notebook === active && h.ref === osis);
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant={on ? "secondary" : "ghost"}
+          size="icon-sm"
+          aria-label="Highlight"
+          disabled={!active}
+          onClick={() => active && toggleHighlight(active, osis)}
+        >
+          <Icon name="format-highlight" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{active ? (on ? "Remove highlight" : "Highlight in this notebook") : "Open a notebook to highlight"}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+function CompareAll({ refSel, base }: { refSel: Ref; base: Translation }) {
+  const [all, setAll] = useState<Translation[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => setAll(null), [refSel.book, refSel.chapter, refSel.verse]);
+  if (!all)
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-ml-2 text-muted-foreground"
+        disabled={loading}
+        onClick={async () => {
+          setLoading(true);
+          const metas = await listTranslations();
+          setAll(await Promise.all(metas.map((m) => loadTranslation(m.id))));
+          setLoading(false);
+        }}
+      >
+        {loading ? <Spinner /> : <Icon name="git-compare" />} Compare every translation
+      </Button>
+    );
+  const baseText = base.verse(refSel)?.text ?? "";
+  return (
+    <div className="space-y-3 rounded-lg bg-muted/40 p-3">
+      <SectionLabel>Every translation, differences from the {base.meta.abbr} marked</SectionLabel>
+      {all
+        .filter((t) => t.meta.id !== base.meta.id)
+        .map((t) => {
+          const tv = t.verse(refSel);
+          return (
+            <div key={t.meta.id}>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{t.meta.abbr} · {t.meta.language}</p>
+              <p className="mt-0.5 font-garamond text-[15px] leading-6">
+                {tv
+                  ? t.meta.language === base.meta.language
+                    ? wordDiff(baseText, tv.text).map((d, i) => (
+                        <span key={i} className={cn(d.kind === "add" && "rounded-sm bg-brand/12 text-foreground", d.kind === "del" && "hidden")}>{d.text}</span>
+                      ))
+                    : tv.text
+                  : <span className="text-muted-foreground">Not in this translation (or numbered differently).</span>}
+              </p>
+            </div>
+          );
+        })}
+    </div>
+  );
+}
+
+function Notes({ osis }: { osis: string }) {
+  const { active, notebooks, notes, addNote, updateNote, deleteNote, createNotebook } = useNotebooks();
+  const study = useStudy();
+  const [draft, setDraft] = useState("");
+  const mine = useMemo(() => notes.filter((n) => n.notebook === active && noteCovers(n, osis)), [notes, active, osis]);
+  const nb = notebooks.find((b) => b.id === active);
+
+  if (!nb)
+    return (
+      <section className="space-y-2">
+        <SectionLabel>Notes</SectionLabel>
+        <p className="text-xs text-muted-foreground">Notes live in a notebook, one per study.</p>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => createNotebook({ title: "My study", description: "", translations: [study.translation, ...study.parallel], shelves: study.shelves })}
+        >
+          <Icon name="add" /> Start a notebook
+        </Button>
+      </section>
+    );
+
+  return (
+    <section className="space-y-2">
+      <SectionLabel>Notes in {nb.title}</SectionLabel>
+      {mine.map((n) => (
+        <div key={n.id} className="group rounded-lg bg-muted/40 p-2">
+          <Textarea
+            value={n.body}
+            onChange={(e) => updateNote(n.id, { body: e.target.value })}
+            className="min-h-16 resize-y border-none bg-transparent p-1 text-sm shadow-none"
+          />
+          <div className="flex items-center gap-2 px-1 text-[11px] text-muted-foreground">
+            {n.translation && <Badge variant="outline">{n.translation.toUpperCase()} wording</Badge>}
+            <span className="flex-1" />
+            <button type="button" className="opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100" onClick={() => deleteNote(n.id)}>
+              Delete
+            </button>
+          </div>
+        </div>
+      ))}
+      <Textarea
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder="Write a note on this verse. Markdown is fine."
+        className="min-h-20 text-sm"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && draft.trim()) {
+            addNote({ notebook: nb.id, start: osis, body: draft.trim() });
+            setDraft("");
+          }
+        }}
+      />
+      <div className="flex gap-2">
+        <Button size="sm" variant="brand" disabled={!draft.trim()} onClick={() => { addNote({ notebook: nb.id, start: osis, body: draft.trim() }); setDraft(""); }}>
+          Add note
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={!draft.trim()}
+          onClick={() => { addNote({ notebook: nb.id, start: osis, body: draft.trim(), translation: study.translation }); setDraft(""); }}
+        >
+          About the {study.translation.toUpperCase()} wording
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+function CrossRefs({ vi, index, main, onNavigate }: { vi: number; index: VerseIndex; main: Translation; onNavigate: (r: Ref) => void }) {
+  const [g] = useGraph();
+  const [all, setAll] = useState(false);
+  if (!g) return null;
+  const links = g.out(vi);
+  if (!links.length) return null;
+  const shown = all ? links : links.slice(0, 8);
+  return (
+    <section className="space-y-2">
+      <SectionLabel>Cross references · {links.length}</SectionLabel>
+      {shown.map((l) => {
+        const r = index.ref(l.to);
+        const end = l.toEnd !== l.to ? index.ref(l.toEnd) : null;
+        const label = formatRef(end && end.chapter === r.chapter ? { ...r, verseEnd: end.verse } : r);
+        const text = main.verse(r)?.text;
+        return (
+          <button key={`${l.to}-${l.toEnd}`} type="button" onClick={() => onNavigate(r)} className="block w-full rounded-md p-1.5 text-left hover:bg-muted">
+            <span className="text-xs font-semibold text-brand">{label}</span>
+            <span className="ml-2 font-mono text-[10px] text-muted-foreground">{l.votes}</span>
+            {text && <span className="mt-0.5 line-clamp-2 block font-garamond text-sm text-foreground/85">{text}</span>}
+          </button>
+        );
+      })}
+      {links.length > 8 && (
+        <Button variant="ghost" size="sm" className="-ml-2" onClick={() => setAll(!all)}>
+          {all ? "Fewer" : `All ${links.length}`}
+        </Button>
+      )}
+      <p className="text-[10px] text-muted-foreground/70">Votes from OpenBible.info readers (CC-BY).</p>
+    </section>
+  );
+}
+
+function Topics({ vi, onOpen }: { vi: number; onOpen: (t: Topic) => void }) {
+  const [topics, setTopics] = useState<{ topic: Topic; score: number }[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    topicsForVerse(vi).then((t) => live && setTopics(t), () => live && setTopics([]));
+    return () => {
+      live = false;
+    };
+  }, [vi]);
+  if (!topics?.length) return null;
+  return (
+    <section className="space-y-2">
+      <SectionLabel>Topics</SectionLabel>
+      <div className="flex flex-wrap gap-1.5">
+        {topics.map(({ topic }) => (
+          <button key={topic.name} type="button" onClick={() => onOpen(topic)} className="rounded-full bg-muted px-2.5 py-0.5 text-xs capitalize text-foreground/85 hover:bg-accent">
+            {topic.name}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Similar({ vi, index, main, shelves, onNavigate }: { vi: number; index: VerseIndex; main: Translation; shelves: Shelf[]; onNavigate: (r: Ref) => void }) {
+  const [hits, setHits] = useState<Hit[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    setHits(null);
+    setError(null);
+  }, [vi]);
+  return (
+    <section className="space-y-2">
+      <SectionLabel>Like this verse</SectionLabel>
+      {!hits && !error && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-ml-2"
+          onClick={() => moreLikeThis(vi, new Set(shelves)).then(setHits, (e) => setError(String(e.message ?? e)))}
+        >
+          <Icon name="sparkle" /> Find verses that say something similar
+        </Button>
+      )}
+      {error && <p className="text-xs text-muted-foreground">The semantic index is not built ({error}). Run <code className="font-mono">pnpm data:embed</code>.</p>}
+      {hits?.map((h) => {
+        const r = index.ref(h.verse);
+        return (
+          <button key={h.verse} type="button" onClick={() => onNavigate(r)} className="block w-full rounded-md p-1.5 text-left hover:bg-muted">
+            <span className="text-xs font-semibold text-brand">{formatRef(r)}</span>
+            <span className="mt-0.5 line-clamp-2 block font-garamond text-sm text-foreground/85">{main.verse(r)?.text}</span>
+          </button>
+        );
+      })}
+      {hits && <p className="text-[10px] text-muted-foreground/70">Found by meaning with a small embedding model, run on this computer. The verses are the text; the ranking is the machine's.</p>}
+    </section>
+  );
+}
+
+/** Opt-in, grounded commentary (docs/ML.md, section 3). Hidden until a key is saved. */
+function StudyNotes({ refSel, vi, index, main }: { refSel: Ref; vi: number; index: VerseIndex; main: Translation }) {
+  const [g] = useGraph();
+  const [hasKey, setHasKey] = useState(false);
+  const [text, setText] = useState<string | null>(null);
+  const [stray, setStray] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    backend.secretGet("anthropic").then((k) => setHasKey(!!k), () => setHasKey(false));
+  }, []);
+  useEffect(() => {
+    setText(null);
+    setError(null);
+    setStray([]);
+  }, [vi]);
+  if (!hasKey) return null;
+
+  const run = async () => {
+    const v = main.verse(refSel);
+    if (!v) return;
+    const context = (g?.out(vi) ?? []).slice(0, 8).flatMap((l) => {
+      const r = index.ref(l.to);
+      const t = main.verse(r)?.text;
+      return t ? [{ ref: formatRef(r), text: t }] : [];
+    });
+    const grounding = { ref: formatRef(refSel), text: v.text, translation: main.meta.abbr, context };
+    setBusy(true);
+    setError(null);
+    try {
+      const out = await commentary(grounding);
+      setText(out);
+      setStray(uncited(out, grounding));
+    } catch (e) {
+      setError(String((e as Error)?.message ?? e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="space-y-2">
+      <SectionLabel>Study notes · generated</SectionLabel>
+      {!text && (
+        <Button variant="ghost" size="sm" className="-ml-2" disabled={busy} onClick={run}>
+          {busy ? <Spinner /> : <Icon name="ai-generate" />} Context and questions for reflection
+        </Button>
+      )}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      {text && (
+        <div className="rounded-lg border border-dashed border-border p-3">
+          <div className="whitespace-pre-wrap font-garamond text-[15px] leading-6">{text}</div>
+          {stray.length > 0 && (
+            <p className="mt-2 text-[11px] text-warning">Cites references it was not given: {stray.join(", ")}. Check them before relying on them.</p>
+          )}
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            Commentary generated by {COMMENTARY_MODEL} from this verse and its cross references. Read the passage, and your church's teachers.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}

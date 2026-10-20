@@ -1,5 +1,16 @@
 # Study features: texts, canon, notebooks
 
+> **As built (2.0):** the verse store is compact JSON per translation, loaded
+> into the webview, not SQLite in Rust. Search, the cross-reference graph and
+> topics run in TypeScript over in-memory arrays (31k verses scan in
+> milliseconds), so every study feature works in `pnpm dev` with real data and
+> needs no backend. Topics come from OpenBible.info's topical Bible (CC-BY,
+> 6,712 topics with reader-scored passages) instead of Nave's, which is only
+> distributed in hard-to-parse formats. Notes are one JSON file written by Rust
+> (atomic, with 14 daily backups), not `notes.db`. Parallel reading is a
+> verse-aligned grid rather than dockview. Strong's word study is not built
+> yet. Details: [DATA.md](DATA.md).
+
 ## Verse store (replaces Gutenberg parsing)
 
 All text lives in one SQLite file, `bible.db`, owned by Rust (`rusqlite`), so

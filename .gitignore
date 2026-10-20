@@ -23,3 +23,11 @@ ablations/runs/**/*.pt
 _design/
 
 .DS_Store
+
+# offline data (rebuilt by scripts/data, see docs/DATA.md)
+data-src/
+public/data/
+art-src/
+public/art/dore/
+public/art/heroes/
+public/models/

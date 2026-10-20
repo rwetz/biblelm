@@ -144,17 +144,26 @@ M0 ─┬─ M1 ─┬─ M3 ─┬─ M5
 
 ## Status
 
-- [ ] M0 Housekeeping
-- [ ] M1 Nexis shell
-- [ ] M2 Verse store in Rust
-- [ ] M3 Reader
-- [ ] M4 Art pipeline and placement
-- [ ] M5 Translations and shelves
-- [ ] M6 Notebooks
-- [ ] M7 Semantic search and topics
-- [ ] M8 Cross-reference graph
-- [ ] M9 Jev
-- [ ] M10 Map and structure
-- [ ] M11 Lab 2.0
-- [ ] M12 Grounded commentary
-- [ ] M13 Release 2.0
+- [x] M0 Housekeeping
+- [x] M1 Nexis shell
+- [x] M2 Verse store (built as JSON in the webview, see STUDY.md)
+- [x] M3 Reader
+- [x] M4 Art pipeline and placement
+- [x] M5 Translations and shelves
+- [x] M6 Notebooks
+- [x] M7 Semantic search and topics
+- [x] M8 Cross-reference graph
+- [~] M9 Jev (built and unit-tested; the live shadow eval waits on TYPESAFE_API_KEY)
+- [x] M10 Map and structure
+- [~] M11 Lab 2.0 (inspection tools done; the Axon transformer is separate work in the Axon repo)
+- [x] M12 Grounded commentary
+- [~] M13 Release 2.0 (release paths, bundled scripts and version done; installer not built or tagged)
+
+## What changed from the plan
+
+Decisions taken while building 2.0, recorded in each doc's "As built" note:
+JSON verse store in the webview instead of SQLite in Rust (M2), OpenBible
+topics instead of Nave's (M7), a parallel grid instead of dockview (M5),
+transformers.js instead of `ort` (M7), engraved rather than dithered plates
+(M4), genre as a lookup rather than a Jev question (M9). Not built yet:
+Strong's word study, red-letter text (needs USFM markup), the Axon transformer.

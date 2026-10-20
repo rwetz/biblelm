@@ -1,8 +1,10 @@
+mod study;
+
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use std::sync::{Arc, Mutex};
-use tauri::{Emitter, State, Window};
+use std::sync::{Arc, Mutex, OnceLock};
+use tauri::{Emitter, Manager, State, Window};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
@@ -77,16 +79,50 @@ pub struct AppState {
 
 // ── path / interpreter resolution ───────────────────────────────────────
 
-/// Project root. Overridable with `BIBLELM_ROOT`; in `tauri dev` it falls back
-/// to the parent of the crate manifest dir (i.e. the repo root).
-fn project_root() -> PathBuf {
-    if let Ok(r) = std::env::var("BIBLELM_ROOT") {
-        return PathBuf::from(r);
-    }
+/// Where the Lab works and where its Python lives.
+///
+/// - `work`: data/, runs/ and the .venv the Lab trains with.
+/// - `scripts`: the folder holding python/biblelm.
+///
+/// In `tauri dev` both are the repo. A release build used to fall back to the
+/// compile-time CARGO_MANIFEST_DIR, which only existed on the machine that
+/// built it; now the scripts come from the bundle's resources and the work
+/// folder is the per-user app data folder. `BIBLELM_ROOT` overrides both.
+struct Roots {
+    work: PathBuf,
+    scripts: PathBuf,
+}
+
+static ROOTS: OnceLock<Roots> = OnceLock::new();
+
+fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .map(Path::to_path_buf)
         .unwrap_or_else(|| PathBuf::from("."))
+}
+
+fn init_roots(app: &tauri::AppHandle) {
+    let roots = if let Ok(r) = std::env::var("BIBLELM_ROOT") {
+        Roots { work: PathBuf::from(&r), scripts: PathBuf::from(r) }
+    } else if cfg!(debug_assertions) {
+        Roots { work: repo_root(), scripts: repo_root() }
+    } else {
+        let work = app.path().app_data_dir().unwrap_or_else(|_| repo_root());
+        let _ = std::fs::create_dir_all(&work);
+        let scripts = app.path().resource_dir().unwrap_or_else(|_| repo_root());
+        Roots { work, scripts }
+    };
+    let _ = ROOTS.set(roots);
+}
+
+/// The Lab's work folder (data/, runs/, .venv).
+fn project_root() -> PathBuf {
+    ROOTS.get().map(|r| r.work.clone()).unwrap_or_else(repo_root)
+}
+
+fn scripts_root() -> PathBuf {
+    ROOTS.get().map(|r| r.scripts.clone()).unwrap_or_else(repo_root)
 }
 
 /// The Python interpreter to spawn. Prefers the project `.venv`, then a
@@ -124,7 +160,7 @@ fn py_command(root: &Path, module: &str, args: &[String]) -> Command {
         .arg(module)
         .args(args)
         .current_dir(root)
-        .env("PYTHONPATH", root.join("python"))
+        .env("PYTHONPATH", scripts_root().join("python"))
         .env("PYTHONIOENCODING", "utf-8")
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit());
@@ -634,39 +670,27 @@ async fn gpu_info() -> Result<GpuInfo, String> {
     result.ok_or_else(|| "gpu_info returned no output".into())
 }
 
+/// Look inside the trained model (python/biblelm/inspect_model.py).
 #[tauri::command]
-async fn bible_search(query: String) -> Result<serde_json::Value, String> {
+async fn lab_inspect(mode: String, text: Option<String>) -> Result<serde_json::Value, String> {
     let root = project_root();
-    let corpus = data_dir(&root).join("kjv.txt");
-    if !corpus.exists() {
-        return Err(
-            "KJV Bible not downloaded — download it on the Corpus tab first.".into(),
-        );
-    }
-    let args = vec![
-        "--corpus".into(),
-        corpus.to_string_lossy().into_owned(),
-        "--query".into(),
-        query,
+    let mut args = vec![
+        mode.clone(),
+        "--run-dir".into(),
+        run_dir(&root).to_string_lossy().into_owned(),
     ];
-    let mut child = py_command(&root, "biblelm.search", &args)
-        .spawn()
-        .map_err(|e| format!("failed to start python: {e}"))?;
-    let stdout = child.stdout.take().ok_or("no stdout")?;
-    let mut lines = BufReader::new(stdout).lines();
-    let mut result: Option<serde_json::Value> = None;
-    while let Some(line) = lines.next_line().await.map_err(|e| e.to_string())? {
-        let line = line.trim().to_string();
-        if line.is_empty() {
-            continue;
+    match mode.as_str() {
+        "lens" => {
+            args.push("--text".into());
+            args.push(text.unwrap_or_default());
         }
-        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&line) {
-            result = Some(v);
-            break;
+        "surprise" => {
+            args.push("--corpus".into());
+            args.push(data_dir(&root).join("kjv.txt").to_string_lossy().into_owned());
         }
+        _ => return Err(format!("unknown inspect mode {mode}")),
     }
-    let _ = child.wait().await;
-    result.ok_or_else(|| "search returned no output".into())
+    py_json(&root, "biblelm.inspect_model", &args, "inspect").await
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────
@@ -695,6 +719,11 @@ pub fn run() {
             training: Arc::new(Mutex::new(TrainingState::default())),
         })
         .plugin(tauri_plugin_os::init())
+        .setup(|app| {
+            init_roots(app.handle());
+            study::init(app.handle());
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             corpus_status,
             corpus_list,
@@ -706,7 +735,16 @@ pub fn run() {
             train_stop,
             inference_generate,
             export_onnx,
-            bible_search,
+            lab_inspect,
+            study::notes_load,
+            study::notes_save,
+            study::notes_export_markdown,
+            study::app_data_dir,
+            study::secret_get,
+            study::secret_set,
+            study::jev_available,
+            study::jev,
+            study::commentary,
             gpu_info,
             model_status,
             model_import,

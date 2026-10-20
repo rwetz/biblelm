@@ -6,6 +6,17 @@ plates and ornaments sit in an old printed Bible. Reference: Zeron's dithered
 sky behind its prompt box, Gustave Doré's engravings, and the woodcut plates in
 illustrated study Bibles.
 
+> **As built (2.0):** all 241 plates of the 1866 Bible are in, each tied to
+> its verse and set beside it in the reader (deuterocanon plates appear only on
+> that shelf). Plates are **not** dithered and **not** tinted masks: a tint mask
+> turned Doré's many night scenes into glowing negatives in dark mode. They are
+> positive grayscale engravings, multiplied into the parchment on Vellum and
+> shown as a dim, lamp-lit page on Nocturne; only faint corner plates invert in
+> the dark. Dithering is used for the hero tier only (11 heroes; the reveal is
+> canvas-drawn and, in dark mode, lights the paper dots instead of the ink).
+> Plates are 1000 px single-channel JPEG (hatching defeats AVIF and WebP), 40 MB
+> for all 241. Provenance: [art-credits.md](art-credits.md).
+
 ## Rules
 
 1. **Public domain only, provenance recorded.** Every image has a row in

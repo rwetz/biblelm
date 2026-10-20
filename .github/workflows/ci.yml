@@ -26,7 +26,15 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
+      # Public-domain texts + OpenBible data, so the full-KJV search tests run.
+      - uses: actions/cache@v4
+        with:
+          path: data-src
+          key: data-src-${{ hashFiles('scripts/data/build-bible.mjs') }}
+      - run: pnpm data:bible
       - run: pnpm test
+        env:
+          BIBLELM_REQUIRE_DATA: '1'
 
   python:
     runs-on: ubuntu-latest
@@ -67,4 +75,7 @@ jobs:
       # generate_context! embeds ../dist, so it must exist; contents don't matter for a check.
       - run: mkdir -p dist && echo '<!doctype html>' > dist/index.html
       - run: cargo check --locked
+        working-directory: src-tauri
+      # Notes persistence (atomic writes, backup rotation, dates).
+      - run: cargo test --locked --lib
         working-directory: src-tauri
