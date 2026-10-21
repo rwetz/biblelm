@@ -32,6 +32,14 @@ class _LogitsOnly(torch.nn.Module):
         return logits
 
 
+def _has_onnxscript() -> bool:
+    try:
+        import onnxscript  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="biblelm.export_onnx")
     ap.add_argument("--run-dir", type=Path, default=Path("."))
@@ -45,6 +53,10 @@ def main(argv: list[str] | None = None) -> int:
         if not ckpt_path.exists():
             raise FileNotFoundError(f"no checkpoint at {ckpt_path}")
 
+        try:
+            import onnx  # noqa: F401  torch's exporters both need it
+        except ImportError:
+            raise RuntimeError("The onnx package is missing. Install it with: python -m pip install onnx") from None
         protocol.status("load", "Loading checkpoint")
         ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
         cfg = GPTConfig(**ckpt["config"])
@@ -65,10 +77,13 @@ def main(argv: list[str] | None = None) -> int:
             output_names=["logits"],
             dynamic_axes={"idx": {0: "batch", 1: "seq"}, "logits": {0: "batch", 1: "seq"}},
             opset_version=args.opset,
+            # torch 2.9+ defaults to the torch.export path, which also needs
+            # onnxscript; the TorchScript tracer handles this plain GPT fine.
+            dynamo=_has_onnxscript(),
         )
 
         protocol.status("validate", "Validating ONNX graph")
-        import onnx  # local import so the export path stays torch-only until needed
+        import onnx
 
         onnx.checker.check_model(str(args.out))
 

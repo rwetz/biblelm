@@ -1,0 +1,158 @@
+/* The design system. It scans its own components (@source inside). */
+@import "@nexis/design/styles/globals.css";
+
+/* App-specific rules below. Anything general belongs upstream in @nexis/design. */
+
+@theme inline {
+  /* Scripture faces (docs/DESIGN.md): blackletter for display only, a
+     17th-century Fell face or Garamond for reading. */
+  --font-blackletter: "UnifrakturMaguntia", "Grenze Gotisch Variable", serif;
+  --font-gothic: "Grenze Gotisch Variable", "UnifrakturMaguntia", serif;
+  --font-fell: "IM Fell English", "EB Garamond Variable", Georgia, serif;
+  --font-garamond: "EB Garamond Variable", "IM Fell English", Georgia, serif;
+  --color-ink: var(--foreground);
+  --color-rubric: var(--brand);
+}
+
+/* ── Reading ──────────────────────────────────────────────────────────── */
+
+.scripture {
+  font-family: var(--scripture-face, var(--font-garamond));
+  font-size: var(--scripture-size, 1.125rem);
+  line-height: 1.75;
+  text-wrap: pretty;
+  hanging-punctuation: first;
+  font-feature-settings: "liga", "dlig", "onum";
+}
+.scripture .vnum {
+  font-family: var(--font-sans);
+  font-size: 0.6em;
+  font-weight: 600;
+  vertical-align: super;
+  line-height: 0;
+  margin-inline: 0.15em 0.25em;
+  color: var(--brand);
+  font-variant-numeric: tabular-nums;
+}
+/* Red letter: rubricated, as in printed red-letter Bibles. On Vellum the
+   accent is close to the ink in lightness, so the words of Christ take a
+   brighter, more saturated vermilion that reads apart from black at a glance.
+   On Nocturne the accent is gilt and already stands apart. */
+.red-letter .wj {
+  color: oklch(from var(--brand) 0.54 calc(c + 0.05) calc(h + 4));
+}
+.dark .red-letter .wj,
+.dark.red-letter .wj {
+  color: color-mix(in oklab, var(--brand) 82%, var(--foreground));
+}
+.scripture .supplied {
+  font-style: italic;
+  opacity: 0.85;
+}
+.scripture [data-active="true"] {
+  background: color-mix(in oklab, var(--brand) 14%, transparent);
+  border-radius: 3px;
+  box-decoration-break: clone;
+}
+.scripture [data-hl="true"] {
+  background: color-mix(in oklab, var(--warning) 22%, transparent);
+  border-radius: 3px;
+  box-decoration-break: clone;
+}
+.scripture.columns {
+  columns: 2;
+  column-gap: 3rem;
+  column-rule: 1px solid var(--border);
+}
+
+/* A blackletter initial at the head of a chapter. */
+.dropcap {
+  float: left;
+  font-family: var(--font-blackletter);
+  font-size: 6.2em;
+  line-height: 0.8;
+  padding: 0.02em 0.1em 0 0;
+  margin-bottom: -0.08em;
+  color: var(--brand);
+}
+
+/* ── Engraved art ─────────────────────────────────────────────────────── */
+
+/* A Doré plate is a positive grayscale engraving. On Vellum it multiplies
+   into the parchment (white paper vanishes, ink stays, warmed slightly). On
+   Nocturne it is a dim, lamp-lit page, so night scenes stay night instead of
+   turning into negatives. */
+.engraving {
+  display: block;
+  mix-blend-mode: multiply;
+  filter: sepia(0.35) contrast(1.05);
+  /* Feather the edges so an off-white scan never shows as a rectangle. */
+  mask-image: linear-gradient(to right, transparent, #000 0.8%, #000 99.2%, transparent),
+    linear-gradient(to bottom, transparent, #000 0.8%, #000 99.2%, transparent);
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+}
+.dark .engraving {
+  mix-blend-mode: normal;
+  filter: sepia(0.4) brightness(0.86) contrast(1.08);
+  border-radius: 2px;
+}
+/* Faint corner plates in the dark read best as a ghostly inverted print. */
+.dark .engraving.ghost {
+  mix-blend-mode: screen;
+  filter: invert(1) sepia(0.4) brightness(0.9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .art-anim {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── Printing a notebook ──────────────────────────────────────────────── */
+
+/* The illustrated notebook (PrintNotebook) exists only on paper. Paper is
+   always Vellum: the dark schemes' light text would vanish on white. */
+.print-sheet {
+  display: none;
+}
+@media print {
+  #root,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+  .print-sheet {
+    display: block;
+    --background: #ffffff;
+    --foreground: #1d1711;
+    --muted-foreground: #4f4336;
+    --brand: #a3311d;
+    --border: rgba(0, 0, 0, 0.2);
+    color: var(--foreground);
+    background: var(--background);
+    padding: 0 8mm;
+  }
+  .print-sheet .engraving {
+    mix-blend-mode: normal;
+    filter: none;
+  }
+  .print-title {
+    display: flex;
+    min-height: 92vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    break-after: page;
+  }
+  .print-note {
+    break-inside: avoid-page;
+  }
+  .print-sheet blockquote {
+    border-color: var(--brand);
+  }
+  @page {
+    margin: 16mm 14mm;
+  }
+}

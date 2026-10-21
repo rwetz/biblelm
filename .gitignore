@@ -13,8 +13,8 @@ __pycache__/
 *.pyc
 
 # generated/downloaded data (large, reproducible)
-data/
-runs/
+/data/
+/runs/
 
 # ablation study: keep metrics/logs/eval results, exclude model weights
 ablations/runs/**/*.pt
@@ -23,3 +23,12 @@ ablations/runs/**/*.pt
 _design/
 
 .DS_Store
+
+# offline data (rebuilt by scripts/data, see docs/DATA.md)
+data-src/
+public/data/
+art-src/
+public/art/dore/
+public/art/heroes/
+public/art/paintings/
+public/models/

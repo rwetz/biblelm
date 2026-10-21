@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  pull_request:
+    paths-ignore: ['**.md', 'docs/**']
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      # Public-domain texts + OpenBible data, so the full-KJV search tests run.
+      - uses: actions/cache@v4
+        with:
+          path: data-src
+          key: data-src-${{ hashFiles('scripts/data/build-bible.mjs') }}
+      - run: pnpm data:bible
+      - run: pnpm test
+        env:
+          BIBLELM_REQUIRE_DATA: '1'
+
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: python
+      # The full-KJV tests skip without data/kjv.txt locally; here they must run.
+      BIBLELM_REQUIRE_KJV: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      # The tests cover corpus/search, which are stdlib-only: no torch needed.
+      - run: python -m pip install pytest
+      - uses: actions/cache@v4
+        id: kjv
+        with:
+          path: data
+          key: kjv-pg10-${{ hashFiles('python/biblelm/corpus.py') }}
+      - if: steps.kjv.outputs.cache-hit != 'true'
+        run: python -m biblelm.corpus download --version kjv --data-dir data
+      - run: python -m pytest python
+
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      # generate_context! embeds ../dist, so it must exist; contents don't matter for a check.
+      - run: mkdir -p dist && echo '<!doctype html>' > dist/index.html
+      - run: cargo check --locked
+        working-directory: src-tauri
+      # Notes persistence (atomic writes, backup rotation, dates).
+      - run: cargo test --locked --lib
+        working-directory: src-tauri

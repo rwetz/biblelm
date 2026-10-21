@@ -3,7 +3,7 @@
 Run by the Rust backend:
 
     python -m biblelm.generate --run-dir <runs>/<id> --prompt "In the beginning" \
-        --temperature 0.8 --max-tokens 256 --top-k 40
+        --temperature 0.4 --max-tokens 256 --top-k 10
 
 Emits one {"type":"token","token":"<char>"} per sampled character, then a
 {"type":"done"}. The checkpoint carries its own GPTConfig, so no architecture
@@ -44,9 +44,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--checkpoint", type=Path, default=None)
     ap.add_argument("--tokenizer", type=Path, default=None)
     ap.add_argument("--prompt", default="")
-    ap.add_argument("--temperature", type=float, default=0.8)
+    ap.add_argument("--temperature", type=float, default=0.4)  # tuned: docs/evals/tuning.md
     ap.add_argument("--max-tokens", type=int, default=256)
-    ap.add_argument("--top-k", type=int, default=40)
+    ap.add_argument("--top-k", type=int, default=10)
     ap.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda", "gpu"])
     ap.add_argument("--protocol", action="store_true")
     args = ap.parse_args(argv)

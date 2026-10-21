@@ -72,9 +72,9 @@ export interface InferenceConfig {
 }
 
 const DEFAULT_TRAIN_CONFIG: TrainConfig = {
-  dModel: 256,
-  nLayers: 4,
-  nHeads: 4,
+  dModel: 384,
+  nLayers: 6,
+  nHeads: 6,
   contextLen: 256,
   batchSize: 32,
   learningRate: 0.0003,
@@ -96,10 +96,12 @@ function loadActiveCorpus(): string {
   }
 }
 
+// Tuned with Jev's judge (docs/evals/tuning.md): the coolest temperature that
+// does not start repeating itself, where both scores peak; top-k barely matters.
 const DEFAULT_INFERENCE_CONFIG: InferenceConfig = {
-  temperature: 0.8,
+  temperature: 0.4,
   maxTokens: 256,
-  topK: 40,
+  topK: 10,
 };
 
 interface AppState {

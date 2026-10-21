@@ -8,16 +8,11 @@
     <script>
       (function () {
         try {
-          var t = localStorage.getItem("biblelm-ui-theme");
-          var resolved =
-            t === "light" || t === "dark"
-              ? t
-              : window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light";
-          document.documentElement.classList.add(resolved);
-          document.documentElement.style.backgroundColor =
-            resolved === "dark" ? "#0d0d0f" : "#ffffff";
+          // No-flash bootstrap: the key is the ThemeProvider's storageKey + ":mode".
+          var m = localStorage.getItem("biblelm:mode") || "system";
+          var dark = m === "dark" || (m === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.add(dark ? "dark" : "light");
+          document.documentElement.style.backgroundColor = dark ? "#14110d" : "#f5efe1";
         } catch (e) {}
       })();
     </script>
