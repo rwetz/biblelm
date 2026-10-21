@@ -156,9 +156,12 @@ export function compose(
       const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
       // Presence: the outer part of a fading edge thins to nothing.
       const present = smooth(0, 0.95, k) > rank1(cx, cy) - 0.5 / 64;
-      // Dots: wherever the picture is thinning, then fewer inward; through
-      // the dark ground; and a little grain everywhere.
-      const toDots = Math.min(1, (1 - smooth(0.55, 1, k)) * 1.2 + grain + shadow * (1 - smooth(0.04, 0.3, lum)));
+      // Dots: wherever the picture is thinning at its edges, and inside it
+      // only on the near-black ground. A painted figure, even in shadow, is
+      // never dotted: in a colour painting grain and shadow dots stop well
+      // before skin or cloth (a print, all ink and paper, keeps its grain).
+      const ground = colour ? 1 - smooth(0.03, 0.1, lum) : 1;
+      const toDots = Math.min(1, (1 - smooth(0.55, 1, k)) * 1.2 + (grain + shadow) * ground);
       const dotted = toDots > rank2(cx, cy);
       // Light first: the brightest cells arrive first, ordered dots break the ties.
       rank[ci] = colour ? 0.6 * (1 - lum) + 0.4 * rank1(cx, cy) : rank1(cx, cy) * 0.7 + (cy / rows) * 0.3;
