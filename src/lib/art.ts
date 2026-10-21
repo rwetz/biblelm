@@ -29,13 +29,19 @@ export interface Hero {
   plate: string;
   title: string;
   file: string;
+  /** Grayscale source, dithered live at the drawn size (src/art/dither.ts). */
+  tone?: string;
+  algo?: "atkinson" | "bayer" | "blue";
   width: number;
   height: number;
+  /** The Lab's literary plates: the poem it illustrates and where its weight sits. */
+  work?: string;
+  focusY?: number;
 }
 
 const BASE = `${import.meta.env.BASE_URL}art`;
 export const plateUrl = (img: PlateImage) => `${BASE}/dore/${img.file}`;
-export const heroUrl = (h: Hero) => `${BASE}/heroes/${h.file}`;
+export const heroUrl = (h: Hero) => `${BASE}/heroes/${h.tone ?? h.file}`;
 
 let plates: Promise<Plate[]> | null = null;
 let heroes: Promise<Hero[]> | null = null;
@@ -52,6 +58,21 @@ export function loadHeroes(): Promise<Hero[]> {
     .then((r) => (r.ok ? (r.json() as Promise<Hero[]>) : []))
     .catch(() => []);
   return heroes;
+}
+
+let literary: Promise<Hero[]> | null = null;
+
+/** The Lab's heroes (scripts/art/literary.mjs): Doré's Milton and Coleridge. */
+export function loadLiterary(): Promise<Hero[]> {
+  literary ??= fetch(`${BASE}/heroes/literary.json`)
+    .then((r) => (r.ok ? (r.json() as Promise<Hero[]>) : []))
+    .catch(() => []);
+  return literary;
+}
+
+/** Which of a rotating set shows now: the same for every view, turning every `ms`. */
+export function rotation(n: number, ms: number, now = Date.now()): number {
+  return n ? Math.floor(now / ms) % n : 0;
 }
 
 export function platesInChapter(all: Plate[], book: string, chapter: number): Plate[] {
@@ -81,7 +102,16 @@ export const PAGE_PLATES: Record<string, number> = {
   error: 124, // The Destruction of Leviathan
 };
 
-export const plateNumber = (all: Plate[], n: number) => all.find((p) => p.n === n);
+/** The sidebar vignette on pages that already carry a corner plate, so the two never repeat. */
+export const SIDEBAR_PLATES: Record<string, number> = {
+  search: 205, // The Return of the Prodigal Son: "was lost, and is found"
+  topics: 225, // The Apostles Preaching the Gospel
+  notebooks: 157, // Baruch
+  lab: 128, // Ezekiel Prophesying: wheels within wheels, the machine
+  settings: 112, // The Rebuilding of the Temple
+};
+
+export const plateNumber =(all: Plate[], n: number) => all.find((p) => p.n === n);
 
 /** Tier 1: which hero to show on Home, following the church year. */
 export function seasonalHero(heroesList: Hero[], date = new Date()): Hero | undefined {

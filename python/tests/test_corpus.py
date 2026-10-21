@@ -34,3 +34,8 @@ def test_clean_strips_boilerplate_and_crlf():
     assert "\r" not in text
     assert "junk" not in text
     assert "1:1 In the beginning" in text
+
+
+def test_alphabet_counts_every_symbol_commonest_first(tmp_path):
+    corpus.corpus_path(tmp_path, "t").write_text("aab\nb a", encoding="utf-8")
+    assert corpus.alphabet(tmp_path, "t") == [["a", 3], ["b", 2], ["\n", 1], [" ", 1]]

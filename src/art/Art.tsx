@@ -1,13 +1,14 @@
 // The three tiers of art (docs/ART.md): heroes (dithered, big, faded into
-// the page), plates (Doré engravings at a passage or in a page's corner) and
-// ornament. Every image is drawn as a mask over a token colour, so it follows
-// the theme and never brings its own paper.
+// the page), plates (Doré engravings beside a passage) and ornament. Anything
+// small and decorative (corner plates, the sidebar vignette, empty-state spots)
+// is dithered live in the theme's ink, so it never brings its own paper.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn, useReducedMotion, useTheme } from "@nexis/design";
 import { formatRef } from "@/lib/canon";
-import { heroUrl, loadHeroes, loadPlates, plateUrl, type Hero, type Plate } from "@/lib/art";
+import { heroUrl, loadHeroes, loadLiterary, loadPlates, plateUrl, rotation, type Hero, type Plate } from "@/lib/art";
 import { useStudy } from "@/store/study";
+import { BAYER8, paintScattered, scatterSeeds, dither, fadeEdges, inkColor, loadImage, paint, toneGrid, type DitherAlgo, type Edges } from "./dither";
 
 export function usePlates(): Plate[] {
   const [plates, setPlates] = useState<Plate[]>([]);
@@ -31,6 +32,26 @@ export function useHeroes(): Hero[] {
     };
   }, []);
   return h;
+}
+
+/** The Lab's literary heroes, one at a time, turning every `ms` (the same one in every view). */
+export function useRotatingHero(ms = 30_000): Hero | undefined {
+  const [list, setList] = useState<Hero[]>([]);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    let live = true;
+    loadLiterary().then((x) => live && setList(x));
+    return () => {
+      live = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!list.length) return;
+    // Wake at the next turn, not on a fixed interval, so every view agrees.
+    const timer = window.setTimeout(() => setNow(Date.now()), ms - (Date.now() % ms) + 20);
+    return () => clearTimeout(timer);
+  }, [list, now, ms]);
+  return list[rotation(list.length, ms, now)];
 }
 
 /** A Doré engraving, blended into the page (see .engraving in styles.css). */
@@ -68,9 +89,10 @@ export function Engraving({
 export function PlateFigure({ plate, onOpenRef, className }: { plate: Plate; onOpenRef?: () => void; className?: string }) {
   return (
     <figure className={cn("my-6 break-inside-avoid", className)}>
-      <Engraving plate={plate} className="mx-auto w-full max-w-[34rem]" />
+      {/* Never wider than the scan itself: stretching a small plate is what blurs it. */}
+      <Engraving plate={plate} className="mx-auto w-full" style={{ maxWidth: `min(34rem, ${plate.full.width}px)` }} />
       <figcaption className="mt-2 text-center text-xs text-muted-foreground">
-        <span className="font-gothic text-sm text-foreground">{plate.title}</span>
+        <span className="font-garamond text-sm italic text-foreground">{plate.title}</span>
         {plate.ref && (
           <>
             {" · "}
@@ -85,37 +107,284 @@ export function PlateFigure({ plate, onOpenRef, className }: { plate: Plate; onO
   );
 }
 
-/** Tier 2: a quiet plate in a page's corner. Never under text that must be read. */
-export function CornerPlate({ plate, corner = "br", className }: { plate?: Plate; corner?: "br" | "tr" | "bl"; className?: string }) {
-  const mode = useStudy((s) => s.illustrations);
-  if (!plate || mode === "off") return null;
-  const pos = { br: "bottom-0 right-0", tr: "top-0 right-0", bl: "bottom-0 left-0" }[corner];
-  const fade = {
-    br: "radial-gradient(120% 120% at 100% 100%, #000 35%, transparent 75%)",
-    tr: "radial-gradient(120% 120% at 100% 0%, #000 35%, transparent 75%)",
-    bl: "radial-gradient(120% 120% at 0% 100%, #000 35%, transparent 75%)",
-  }[corner];
+/**
+ * Live one-bit dots from a grayscale engraving, at exactly the drawn size.
+ * Fills its box like `object-fit: cover`; re-dithers when the box resizes and
+ * resolves dot by dot the first time each picture appears.
+ */
+export function Dither({
+  src,
+  algo = "atkinson",
+  dot = 2,
+  focusX = 50,
+  focusY = 40,
+  reveal = true,
+  level = 1,
+  edges,
+  label,
+  className,
+  style,
+  scatter,
+}: {
+  src: string;
+  algo?: DitherAlgo;
+  /** CSS pixels per dot (rounded to whole device pixels so dots stay square). */
+  dot?: number;
+  focusX?: number;
+  focusY?: number;
+  reveal?: boolean;
+  /**
+   * How much of the picture is resolved, 0 to 1. A change animates from the
+   * level shown to the new one, evenly across the picture: a decision's
+   * confidence can be drawn as how clearly the scene appears.
+   */
+  level?: number;
+  /** Sides that thin out into the page, as dots rather than a blur. */
+  edges?: Edges;
+  label?: string;
+  className?: string;
+  style?: React.CSSProperties;
+  /** A scrolling element: when it scrolls, the dots blow loose with it and gather again. */
+  scatter?: HTMLElement | null;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const reduced = useReducedMotion();
+  const { paletteEpoch, resolvedMode } = useTheme();
+  // Light: draw the ink dots. Dark: draw the lit dots instead, so light stays
+  // light and a night scene is not a negative.
+  const dark = resolvedMode === "dark";
+  const [size, setSize] = useState<[number, number] | null>(null);
+  const revealed = useRef<string | null>(null);
+  // The drawn state, so a new level can repaint without dithering again.
+  const drawn = useRef<{ ctx: CanvasRenderingContext2D; out: ImageData; bits: Uint8Array; w: number; h: number; rgb: [number, number, number]; shown: number } | null>(null);
+  const levelRef = useRef(level);
+  levelRef.current = level;
+  const edgeKey = JSON.stringify(edges ?? null);
+
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    let timer = 0;
+    const measure = () => setSize([el.clientWidth, el.clientHeight]);
+    const ro = new ResizeObserver(() => {
+      clearTimeout(timer);
+      timer = window.setTimeout(measure, revealed.current ? 120 : 0);
+    });
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      clearTimeout(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    const cv = canvas.current;
+    if (!size || !cv || size[0] < 2 || size[1] < 2) return;
+    let cancelled = false;
+    let raf = 0;
+    loadImage(src)
+      .then((img) => {
+        if (cancelled) return;
+        const dpr = window.devicePixelRatio || 1;
+        const cssDot = Math.max(1, Math.round(dot * dpr)) / dpr;
+        const w = Math.ceil(size[0] / cssDot), h = Math.ceil(size[1] / cssDot);
+        cv.width = w;
+        cv.height = h;
+        cv.style.width = `${w * cssDot}px`;
+        cv.style.height = `${h * cssDot}px`;
+        const tone = toneGrid(img, w, h, focusX, focusY);
+        if (edges) fadeEdges(tone, w, h, edges, dark ? 0 : 255);
+        const bits = dither(tone, w, h, algo);
+        const ctx = cv.getContext("2d")!;
+        const out = ctx.createImageData(w, h);
+        const rgb = inkColor(cv);
+        const animate = reveal && !reduced && revealed.current !== src;
+        revealed.current = src;
+        const target = levelRef.current;
+        drawn.current = { ctx, out, bits, w, h, rgb, shown: target };
+        if (!animate) return paint(ctx, out, bits, w, h, rgb, dark, target, target < 1 ? 0 : 0.35);
+        const t0 = performance.now();
+        const step = (now: number) => {
+          const t = Math.min(1, (now - t0) / 1100);
+          paint(ctx, out, bits, w, h, rgb, dark, t * target, target < 1 ? 0 : 0.35);
+          if (t < 1 && !cancelled) raf = requestAnimationFrame(step);
+        };
+        raf = requestAnimationFrame(step);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [size, src, algo, dot, focusX, focusY, reveal, edgeKey, reduced, paletteEpoch, dark]);
+
+  // A new level: thin or thicken the dots evenly, over a quarter second.
+  useEffect(() => {
+    const d = drawn.current;
+    if (!d || d.shown === level) return;
+    const from = d.shown;
+    if (reduced) {
+      d.shown = level;
+      return paint(d.ctx, d.out, d.bits, d.w, d.h, d.rgb, dark, level, 0);
+    }
+    let raf = 0;
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const k = Math.min(1, (now - t0) / 260);
+      d.shown = from + (level - from) * k;
+      paint(d.ctx, d.out, d.bits, d.w, d.h, d.rgb, dark, d.shown, 0);
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [level, reduced, dark]);
+
+  // Scroll stirs the dots: each scroll adds to how far they are carried, and
+  // they settle back home on their own, a little slower than they left.
+  useEffect(() => {
+    if (!scatter || reduced) return;
+    let amp = 0, last = scatter.scrollTop, raf = 0;
+    let seeds: [Float32Array, Float32Array] | null = null;
+    const frame = () => {
+      const d = drawn.current;
+      raf = 0;
+      if (!d) return;
+      amp *= 0.9;
+      if (Math.abs(amp) < 0.004) {
+        amp = 0;
+        return paint(d.ctx, d.out, d.bits, d.w, d.h, d.rgb, dark, d.shown, 0);
+      }
+      if (!seeds || seeds[0].length !== d.w * d.h) seeds = scatterSeeds(d.w * d.h);
+      paintScattered(d.ctx, d.out, d.bits, d.w, d.h, d.rgb, dark, amp, seeds);
+      raf = requestAnimationFrame(frame);
+    };
+    const onScroll = () => {
+      const top = scatter.scrollTop;
+      amp = Math.max(-1, Math.min(1, amp + (top - last) / 500));
+      last = top;
+      if (!raf) raf = requestAnimationFrame(frame);
+    };
+    scatter.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      scatter.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [scatter, reduced, dark]);
+
   return (
-    <div
-      aria-hidden
-      className={cn("pointer-events-none absolute w-[min(30%,22rem)] select-none opacity-[0.16] dark:opacity-[0.2]", pos, className)}
-      style={{ maskImage: fade, WebkitMaskImage: fade }}
-    >
-      <Engraving plate={plate} size="thumb" ghost className="w-full" />
+    <div ref={box} className={cn("relative overflow-hidden", className)} style={style}>
+      <canvas
+        ref={canvas}
+        role={label ? "img" : undefined}
+        aria-label={label}
+        aria-hidden={label ? undefined : true}
+        className="absolute left-0 top-0"
+        style={{ imageRendering: "pixelated" }}
+      />
     </div>
   );
 }
 
 /**
- * Tier 1: a dithered hero, faded into the page. On first paint it resolves dot
- * by dot (each ink pixel appears when a sweeping threshold passes its rank in
- * an 8x8 Bayer matrix), then rests. Reduced motion shows it at once.
+ * Tier 2: a quiet plate in a page's corner, in dots. It sits behind the page
+ * (the host needs `isolate`), so text and cards always cover it.
+ */
+export function CornerPlate({
+  plate,
+  corner = "br",
+  className,
+  scatter,
+}: {
+  plate?: Plate;
+  corner?: "br" | "tr" | "bl";
+  className?: string;
+  scatter?: HTMLElement | null;
+}) {
+  const mode = useStudy((s) => s.illustrations);
+  if (!plate || mode === "off") return null;
+  const pos = { br: "bottom-0 right-0", tr: "top-0 right-0", bl: "bottom-0 left-0" }[corner];
+  return (
+    <Dither
+      src={plateUrl(plate.full)}
+      algo="floyd"
+      dot={1}
+      focusY={30}
+      edges={{ br: { top: 0.3, left: 0.3 }, tr: { bottom: 0.3, left: 0.3 }, bl: { top: 0.3, right: 0.3 } }[corner]}
+      className={cn("pointer-events-none absolute -z-10 aspect-[4/5] w-[min(28%,20rem)] select-none text-muted-foreground opacity-80", pos, className)}
+      scatter={scatter}
+    />
+  );
+}
+
+/**
+ * A scrolling page with a corner plate pinned to the window, not the text: as
+ * the page scrolls the plate's dots blow loose and gather again in the corner.
+ */
+export function PlatePage({
+  plate,
+  corner = "br",
+  hidePlate = false,
+  className,
+  children,
+}: {
+  plate?: Plate;
+  corner?: "br" | "tr" | "bl";
+  hidePlate?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
+  return (
+    <div className="relative isolate flex min-h-0 flex-1 flex-col">
+      {!hidePlate && <CornerPlate plate={plate} corner={corner} scatter={scroller} />}
+      <div ref={setScroller} className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto", className)}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A spot illustration for an empty state: a small dithered plate faded into
+ * the page, with the words underneath.
+ */
+export function ArtSpot({ plate, title, children, className }: { plate?: Plate; title: React.ReactNode; children?: React.ReactNode; className?: string }) {
+  const mode = useStudy((s) => s.illustrations);
+  const art = plate && mode !== "off";
+  return (
+    <div className={cn("mx-auto flex max-w-sm flex-col items-center text-center", className)}>
+      {art && (
+        <Dither
+          src={plateUrl(plate.full)}
+          algo="floyd"
+          dot={1}
+          focusY={35}
+          label={`${plate.title}, after Gustave Doré`}
+          edges={{ top: 0.08, right: 0.08, bottom: 0.08, left: 0.08 }}
+          className="mb-4 aspect-[4/5] w-48 text-foreground/85"
+        />
+      )}
+      <p className="font-garamond text-xl text-foreground">{title}</p>
+      {children && <div className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{children}</div>}
+      {art && <p className="mt-3 font-garamond text-xs italic text-muted-foreground/70">{plate.title}, after Doré</p>}
+    </div>
+  );
+}
+
+/**
+ * Tier 1: a dithered hero, faded into the page. `width` frames the picture in
+ * a centred window (its sides fade) so more of a portrait plate shows on a
+ * wide screen; `clearLeft` keeps the left of the band paper for a title.
  */
 export function DitherHero({
   hero,
   className,
   height = "58vh",
   focusY = 38,
+  width,
+  clearLeft = false,
+  fadeFrom = 55,
   caption = true,
   children,
 }: {
@@ -124,88 +393,101 @@ export function DitherHero({
   height?: string;
   /** Vertical focus of the crop, in percent: Doré's plates are portrait. */
   focusY?: number;
+  /** Max width of the picture window, e.g. "72rem". Full-bleed when unset. */
+  width?: string;
+  clearLeft?: boolean;
+  /** Where the fade into the page begins, in percent of the height. */
+  fadeFrom?: number;
   caption?: boolean;
   children?: React.ReactNode;
 }) {
   const mode = useStudy((s) => s.illustrations);
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const reduced = useReducedMotion();
-  const { paletteEpoch, resolvedMode } = useTheme();
-  // Light: draw the ink dots. Dark: draw the lit dots instead, so light stays
-  // light and the scene is not a negative.
-  const dark = resolvedMode === "dark";
   const show = hero && mode === "full";
-
-  useEffect(() => {
-    if (!show || !hero || !canvas.current) return;
-    const cv = canvas.current;
-    const ctx = cv.getContext("2d");
-    if (!ctx) return;
-    let raf = 0;
-    let cancelled = false;
-    const img = new Image();
-    img.src = heroUrl(hero);
-    img.onload = () => {
-      if (cancelled) return;
-      const w = img.naturalWidth, h = img.naturalHeight;
-      cv.width = w;
-      cv.height = h;
-      const tmp = document.createElement("canvas");
-      tmp.width = w;
-      tmp.height = h;
-      const tctx = tmp.getContext("2d")!;
-      tctx.drawImage(img, 0, 0);
-      const ink = tctx.getImageData(0, 0, w, h).data;
-      const color = getComputedStyle(cv).color; // currentColor = the ink token
-      const [r, g, b] = (color.match(/\d+(\.\d+)?/g) ?? ["0", "0", "0"]).map(Number);
-      const out = ctx.createImageData(w, h);
-      const B = [0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36, 14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22, 3, 35, 11, 43, 1, 33, 9, 41, 51, 19, 59, 27, 49, 17, 57, 25, 15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21];
-      const draw = (t: number) => {
-        const d = out.data;
-        for (let y = 0, i = 0; y < h; y++)
-          for (let x = 0; x < w; x++, i++) {
-            const on = ink[i * 4 + 3] > 127 !== dark && B[(y & 7) * 8 + (x & 7)] / 64 + (y / h) * 0.35 <= t * 1.35;
-            d[i * 4] = r;
-            d[i * 4 + 1] = g;
-            d[i * 4 + 2] = b;
-            d[i * 4 + 3] = on ? 255 : 0;
-          }
-        ctx.putImageData(out, 0, 0);
-      };
-      if (reduced) return draw(1);
-      const t0 = performance.now();
-      const step = (now: number) => {
-        const t = Math.min(1, (now - t0) / 1100);
-        draw(t);
-        if (t < 1 && !cancelled) raf = requestAnimationFrame(step);
-      };
-      raf = requestAnimationFrame(step);
-    };
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf);
-    };
-  }, [show, hero, reduced, paletteEpoch, dark]);
-
-  const fade = "linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%)";
+  // Every edge breaks up into dots (fadeEdges), never a blur.
+  const side = width ? 0.1 : 0;
+  const edges: Edges = { bottom: 1 - fadeFrom / 100, right: side, left: clearLeft ? 0.85 : side };
   return (
-    <div className={cn("relative w-full overflow-hidden", className)} style={{ height }}>
+    <div className={cn("relative w-full shrink-0 overflow-hidden", className)} style={{ height }}>
       {show && (
-        <canvas
-          ref={canvas}
-          aria-label={`${hero!.title}, after Gustave Doré`}
-          role="img"
-          className="absolute inset-0 h-full w-full object-cover text-foreground opacity-[0.55] dark:opacity-[0.5]"
-          style={{ imageRendering: "pixelated", objectPosition: `center ${focusY}%`, maskImage: fade, WebkitMaskImage: fade }}
+        <Dither
+          src={heroUrl(hero!)}
+          algo={hero!.algo === "bayer" ? "bayer" : "atkinson"}
+          focusY={focusY}
+          label={`${hero!.title}, after Gustave Doré`}
+          edges={edges}
+          key={hero!.id}
+          className="absolute inset-y-0 left-1/2 w-full -translate-x-1/2 text-foreground opacity-90 dark:opacity-80"
+          style={{ maxWidth: width }}
         />
       )}
       {show && caption && (
-        <span className="pointer-events-none absolute right-4 top-3 z-20 rounded-md bg-background/70 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground backdrop-blur-sm">
-          {hero!.title} · after Gustave Doré
+        <span className="pointer-events-none absolute bottom-2 right-6 z-20 font-garamond text-xs italic text-muted-foreground">
+          {hero!.title}, {hero!.work ? `from ${hero!.work}, ` : ""}after Gustave Doré
         </span>
       )}
       {children && <div className="relative z-10 flex h-full flex-col">{children}</div>}
     </div>
+  );
+}
+
+/**
+ * A loader for long work: a cross gathering out of dots and dissolving again,
+ * light running down it. Reduced motion shows the cross at rest.
+ */
+export function CrossLoader({ size = 48, className, label = "Working" }: { size?: number; className?: string; label?: string }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const reduced = useReducedMotion();
+  const { paletteEpoch } = useTheme();
+  useEffect(() => {
+    const cv = canvas.current;
+    if (!cv) return;
+    const n = Math.max(12, Math.round(size / 2));
+    cv.width = n;
+    cv.height = n;
+    const ctx = cv.getContext("2d")!;
+    const out = ctx.createImageData(n, n);
+    const rgb = inkColor(cv);
+    // Brightness: a Latin cross (the beam a third of the way down) in a soft glow.
+    const glow = new Float32Array(n * n);
+    const arm = n * 0.08, cx = (n - 1) / 2, beam = n * 0.32;
+    for (let y = 0; y < n; y++)
+      for (let x = 0; x < n; x++) {
+        const dv = Math.max(Math.abs(x - cx) - arm, n * 0.06 - y, y - n * 0.94, 0);
+        const dh = Math.max(Math.abs(y - beam) - arm, Math.abs(x - cx) - n * 0.3, 0);
+        const d = Math.min(dv, dh);
+        glow[y * n + x] = d <= 0 ? 1 : Math.max(0, 0.5 - d / (n * 0.2));
+      }
+    const frame = (time: number) => {
+      const d = out.data;
+      for (let y = 0, i = 0; y < n; y++)
+        for (let x = 0; x < n; x++, i++) {
+          const wave = reduced ? 1 : 0.5 - 0.5 * Math.cos(time / 420 - (y / n) * 2.6);
+          const rank = BAYER8[(y & 7) * 8 + (x & 7)] / 64;
+          const on = glow[i] >= 1 ? rank < 0.3 + 0.7 * wave : rank < glow[i] * wave;
+          d[i * 4] = rgb[0];
+          d[i * 4 + 1] = rgb[1];
+          d[i * 4 + 2] = rgb[2];
+          d[i * 4 + 3] = on ? 255 : 0;
+        }
+      ctx.putImageData(out, 0, 0);
+    };
+    if (reduced) return frame(0);
+    let raf = 0;
+    const step = (now: number) => {
+      frame(now);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [size, reduced, paletteEpoch]);
+  return (
+    <canvas
+      ref={canvas}
+      role="progressbar"
+      aria-label={label}
+      className={cn("shrink-0 text-brand", className)}
+      style={{ width: size, height: size, imageRendering: "pixelated" }}
+    />
   );
 }
 

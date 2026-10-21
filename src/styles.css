@@ -34,9 +34,15 @@
   color: var(--brand);
   font-variant-numeric: tabular-nums;
 }
-/* Red letter: rubricated, as in printed red-letter Bibles. Slightly deeper
-   than the accent so it reads as text, not as a control. */
+/* Red letter: rubricated, as in printed red-letter Bibles. On Vellum the
+   accent is close to the ink in lightness, so the words of Christ take a
+   brighter, more saturated vermilion that reads apart from black at a glance.
+   On Nocturne the accent is gilt and already stands apart. */
 .red-letter .wj {
+  color: oklch(from var(--brand) 0.54 calc(c + 0.05) calc(h + 4));
+}
+.dark .red-letter .wj,
+.dark.red-letter .wj {
   color: color-mix(in oklab, var(--brand) 82%, var(--foreground));
 }
 .scripture .supplied {
@@ -63,9 +69,10 @@
 .dropcap {
   float: left;
   font-family: var(--font-blackletter);
-  font-size: 4.2em;
-  line-height: 0.82;
-  padding: 0.04em 0.12em 0 0;
+  font-size: 6.2em;
+  line-height: 0.8;
+  padding: 0.02em 0.1em 0 0;
+  margin-bottom: -0.08em;
   color: var(--brand);
 }
 
@@ -80,14 +87,14 @@
   mix-blend-mode: multiply;
   filter: sepia(0.35) contrast(1.05);
   /* Feather the edges so an off-white scan never shows as a rectangle. */
-  mask-image: linear-gradient(to right, transparent, #000 2.5%, #000 97.5%, transparent),
-    linear-gradient(to bottom, transparent, #000 2.5%, #000 97.5%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 0.8%, #000 99.2%, transparent),
+    linear-gradient(to bottom, transparent, #000 0.8%, #000 99.2%, transparent);
   mask-composite: intersect;
   -webkit-mask-composite: source-in;
 }
 .dark .engraving {
   mix-blend-mode: normal;
-  filter: sepia(0.45) brightness(0.78) contrast(1.05);
+  filter: sepia(0.4) brightness(0.86) contrast(1.08);
   border-radius: 2px;
 }
 /* Faint corner plates in the dark read best as a ghostly inverted print. */

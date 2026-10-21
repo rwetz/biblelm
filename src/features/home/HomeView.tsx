@@ -2,11 +2,13 @@ import { useMemo, useState } from "react";
 import { Button, Icon, Input } from "@nexis/design";
 import { DitherHero, Engraving, Fleuron, useHeroes, usePlates } from "@/art/Art";
 import { seasonalHero } from "@/lib/art";
+import { wholeSentence } from "@/lib/bible";
 import { formatRef, parseOsis, type Ref } from "@/lib/canon";
 import { useCatalog, useTranslation } from "@/lib/hooks";
 import { useNotebooks } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
 import { VerseText } from "@/features/read/ReadView";
+import { QueryReading } from "@/features/search/JevReading";
 
 // A year of well-loved verses, one a day (the list is references only; the
 // words come from whichever translation you read).
@@ -20,27 +22,30 @@ const DAILY = [
   "Deut.31.6", "Josh.1.9", "Ps.27.1", "Ps.34.18", "Ps.51.10", "Ps.90.12", "Ps.121.1", "Eccl.3.1", "Isa.9.6", "Zeph.3.17",
 ];
 
-function verseOfTheDay(date = new Date()): Ref {
+export function verseOfTheDay(date = new Date()): Ref {
   const day = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86_400_000);
   return parseOsis(DAILY[day % DAILY.length])!;
 }
 
 export function HomeView() {
   const heroes = useHeroes();
-  const hero = useMemo(() => seasonalHero(heroes), [heroes]);
+  const devHero = useStudy((s) => (s.devMode ? s.devHero : null));
+  const hero = useMemo(() => heroes.find((h) => h.id === devHero) ?? seasonalHero(heroes), [heroes, devHero]);
   const { translation, history, read, searchFor, go } = useStudy();
   const [t] = useTranslation(translation);
   const [catalog] = useCatalog();
   const [q, setQ] = useState("");
-  const daily = verseOfTheDay();
-  const verse = t?.verse(daily);
+  const passage = t ? wholeSentence((r) => t.verse(r), verseOfTheDay()) : undefined;
   const { notebooks, setActive } = useNotebooks();
   const plates = usePlates();
   const abbr = catalog?.find((c) => c.id === translation)?.abbr;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <DitherHero hero={hero} height="62vh">
+      {/* The first screen is the picture, the search box and the verse of the
+          day, filling the window exactly; your reading and notebooks wait below. */}
+      <div className="flex min-h-full shrink-0 flex-col">
+      <DitherHero hero={hero} height="auto" width="84rem" fadeFrom={64} focusY={30} className="min-h-[22rem] flex-1">
         <div className="mt-auto flex flex-col items-center px-6 pb-10">
           <form
             className="w-full max-w-2xl"
@@ -49,7 +54,7 @@ export function HomeView() {
               if (q.trim()) searchFor(q.trim());
             }}
           >
-            <div className="rounded-2xl bg-card/80 p-2 shadow-sm ring-1 ring-foreground/8 backdrop-blur-md">
+            <div className="rounded-2xl bg-card/90 p-2 shadow-sm ring-1 ring-foreground/8 backdrop-blur-[2px]">
               <div className="relative">
                 <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -59,6 +64,7 @@ export function HomeView() {
                   className="h-12 border-none bg-transparent pl-9 text-base shadow-none focus-visible:ring-0"
                 />
               </div>
+              <QueryReading query={q} className="px-2" />
               <div className="flex items-center gap-2 px-2 pb-1 pt-1 text-xs text-muted-foreground">
                 <button type="button" onClick={() => go("settings")} className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 hover:bg-muted">
                   <Icon name="document" size="xs" /> {abbr ?? "…"}
@@ -78,30 +84,35 @@ export function HomeView() {
         </div>
       </DitherHero>
 
-      <div className="mx-auto w-full max-w-3xl px-8 pb-20">
-        <section className="text-center">
-          <p className="font-gothic text-sm uppercase tracking-[0.25em] text-muted-foreground">Verse of the day</p>
-          {verse ? (
+        <section className="mx-auto w-full max-w-3xl shrink-0 px-8 pb-8 text-center">
+          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
+          {passage?.verses.length ? (
             <blockquote className="mt-4">
-              <p className="font-blackletter text-3xl leading-snug text-foreground md:text-4xl">
-                <VerseText raw={verse.raw} />
+              <p className="font-garamond text-[2rem] leading-snug text-foreground md:text-[2.4rem]">
+                {passage.verses.map((v, i) => (
+                  <span key={v.n}>
+                    {i > 0 && <sup className="mr-1 font-sans text-[0.4em] font-semibold text-brand">{v.n}</sup>}
+                    <VerseText raw={v.raw} />{" "}
+                  </span>
+                ))}
               </p>
               <footer className="mt-4">
-                <button type="button" onClick={() => read(daily, { select: true })} className="font-gothic text-lg text-brand hover:underline">
-                  {formatRef(daily)}
+                <button type="button" onClick={() => read(passage.ref, { select: true })} className="font-garamond text-lg text-brand hover:underline">
+                  {formatRef(passage.ref)}
                 </button>
               </footer>
             </blockquote>
           ) : (
             <p className="mt-4 text-sm text-muted-foreground">Loading…</p>
           )}
+          <Fleuron />
         </section>
+      </div>
 
-        <Fleuron />
-
+      <div className="mx-auto w-full max-w-3xl px-8 pb-20 pt-10">
         <div className="grid gap-6 md:grid-cols-2">
           <section>
-            <h2 className="font-gothic text-xl">Continue reading</h2>
+            <h2 className="font-garamond text-2xl">Continue reading</h2>
             <div className="mt-3 space-y-1">
               {history.length === 0 && (
                 <Button variant="ghost" className="-ml-3" onClick={() => read({ book: "Gen", chapter: 1, verse: 0 })}>
@@ -117,7 +128,7 @@ export function HomeView() {
             </div>
           </section>
           <section>
-            <h2 className="font-gothic text-xl">Notebooks</h2>
+            <h2 className="font-garamond text-2xl">Notebooks</h2>
             <div className="mt-3 space-y-1">
               {notebooks.length === 0 && (
                 <Button variant="ghost" className="-ml-3" onClick={() => go("notebooks")}>

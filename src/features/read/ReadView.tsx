@@ -9,13 +9,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Icon,
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
   Spinner,
   Toolbar,
   ToolbarSpacer,
@@ -25,12 +18,14 @@ import {
   cn,
 } from "@nexis/design";
 import { Fleuron, PlateFigure, usePlates } from "@/art/Art";
-import { platesInBook, platesInChapter } from "@/lib/art";
+import { platesInChapter } from "@/lib/art";
 import { loadTranslation, runs, type Run, type Translation, type Verse } from "@/lib/bible";
 import { BOOKS, book as bookOf, bookName, SHELVES, type Ref } from "@/lib/canon";
 import { useCatalog, useTranslations } from "@/lib/hooks";
 import { noteCovers, useNotebooks } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
+import { BookPicker } from "./BookPicker";
+import { TranslationPicker } from "./TranslationPicker";
 import { VersePanel } from "./VersePanel";
 
 const FACES = { garamond: "var(--font-garamond)", fell: "var(--font-fell)", gothic: "var(--font-gothic)" };
@@ -51,6 +46,18 @@ export async function chapterStep(delta: 1 | -1) {
   s.read({ book: nb, chapter: delta > 0 ? nc[0] : nc[nc.length - 1], verse: 0 });
 }
 
+/** The verse the panel last showed, so it can come back after it is closed. */
+let lastSelected: Ref | null = null;
+
+/** Show or hide the verse panel (`p`): back on the last verse, else this chapter's first. */
+export function toggleVersePanel() {
+  const s = useStudy.getState();
+  if (s.selected) return s.select(null);
+  const l = s.location;
+  const last = lastSelected && lastSelected.book === l.book && lastSelected.chapter === l.chapter ? lastSelected : null;
+  s.select(last ?? { book: l.book, chapter: l.chapter, verse: l.verse || 1 });
+}
+
 export function ReadView() {
   const { translation, parallel, location, shelves, face, textSize, columns, selected, read, select, set } = useStudy();
   const ids = useMemo(() => [translation, ...parallel.filter((p) => p !== translation)], [translation, parallel]);
@@ -58,6 +65,7 @@ export function ReadView() {
   const main = ts?.[0];
   const plates = usePlates();
   const scroller = useRef<HTMLDivElement>(null);
+  if (selected) lastSelected = selected;
 
   // Keyboard: [ and ] turn chapters (unless typing).
   useEffect(() => {
@@ -67,6 +75,7 @@ export function ReadView() {
       if (e.key === "]") chapterStep(1);
       if (e.key === "[") chapterStep(-1);
       if (e.key === "Escape") select(null);
+      if (e.key === "p" && !e.ctrlKey && !e.metaKey && !e.altKey) toggleVersePanel();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -88,7 +97,6 @@ export function ReadView() {
   const bookId = main.hasBook(location.book) ? location.book : main.books()[0];
   const verses = main.chapter(bookId, location.chapter);
   const chapterPlates = platesInChapter(plates, bookId, location.chapter);
-  const tail = chapterPlates.length ? undefined : nearestPlate(plates, bookId, location.chapter);
   const b = bookOf(bookId);
 
   return (
@@ -105,7 +113,7 @@ export function ReadView() {
                 <Badge variant="outline" className="mb-3">{SHELVES.find((s) => s.id === b.shelf)?.label}</Badge>
               )}
               <h1 className="font-blackletter text-5xl leading-tight text-foreground">{bookName(bookId)}</h1>
-              <p className="mt-2 font-gothic text-lg tracking-wide text-muted-foreground">
+              <p className="mt-2 font-garamond text-lg italic text-muted-foreground">
                 {bookId === "Ps" ? `Psalm ${location.chapter}` : `Chapter ${location.chapter}`}
               </p>
             </header>
@@ -123,11 +131,6 @@ export function ReadView() {
               />
             )}
 
-            {tail && (
-              <div className="mx-auto mt-10 max-w-xs opacity-80">
-                <PlateFigure plate={tail} onOpenRef={() => tail.ref && read(tail.ref, { select: true })} />
-              </div>
-            )}
             <Fleuron />
             <nav className="flex items-center justify-between text-sm">
               <Button variant="ghost" size="sm" onClick={() => chapterStep(-1)}>
@@ -144,12 +147,6 @@ export function ReadView() {
       {selected && <VersePanel refSel={selected} translations={ts!} onClose={() => select(null)} shelves={shelves} onNavigate={(r) => read(r, { select: true })} onSetParallel={(p) => set({ parallel: p })} />}
     </div>
   );
-}
-
-function nearestPlate(plates: ReturnType<typeof usePlates>, book: string, chapter: number) {
-  const inBook = platesInBook(plates, book);
-  if (!inBook.length) return undefined;
-  return inBook.reduce((a, b) => (Math.abs(b.ref!.chapter - chapter) < Math.abs(a.ref!.chapter - chapter) ? b : a));
 }
 
 function Chapter({
@@ -291,44 +288,13 @@ function Parallel({ ts, bookId, chapter }: { ts: Translation[]; bookId: string; 
 }
 
 function ReaderToolbar({ t, bookId }: { t: Translation; bookId: string }) {
-  const { location, shelves, translation, parallel, columns, read, set } = useStudy();
+  const { location, shelves, translation, parallel, columns, selected, read, set } = useStudy();
   const [catalog] = useCatalog();
   const books = t.books().filter((b) => shelves.includes(bookOf(b)?.shelf ?? "protestant"));
-  const chapters = t.chapters(bookId);
-  const groups: { label: string; ids: string[] }[] = [
-    { label: "Old Testament", ids: books.filter((b) => bookOf(b)?.testament === "OT" && bookOf(b)?.shelf === "protestant") },
-    { label: "Deuterocanon", ids: books.filter((b) => bookOf(b)?.shelf === "deuterocanon") },
-    { label: "Apocrypha", ids: books.filter((b) => bookOf(b)?.shelf === "apocrypha") },
-    { label: "New Testament", ids: books.filter((b) => bookOf(b)?.testament === "NT") },
-  ].filter((g) => g.ids.length);
 
   return (
     <Toolbar className="border-b border-border/60 px-3">
-      <Select value={bookId} onValueChange={(b) => read({ book: b, chapter: t.chapters(b)[0] ?? 1, verse: 0 })}>
-        <SelectTrigger size="sm" className="w-44" aria-label="Book">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="max-h-[70vh]">
-          {groups.map((g) => (
-            <SelectGroup key={g.label}>
-              <SelectLabel>{g.label}</SelectLabel>
-              {g.ids.map((b) => (
-                <SelectItem key={b} value={b}>{bookName(b)}</SelectItem>
-              ))}
-            </SelectGroup>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select value={String(location.chapter)} onValueChange={(c) => read({ book: bookId, chapter: +c, verse: 0 })}>
-        <SelectTrigger size="sm" className="w-20" aria-label="Chapter">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="max-h-[60vh]">
-          {chapters.map((c) => (
-            <SelectItem key={c} value={String(c)}>{c}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <BookPicker t={t} books={books} bookId={bookId} chapter={location.chapter} onGo={(b, c) => read({ book: b, chapter: c, verse: 0 })} />
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="ghost" size="icon-sm" aria-label="Previous chapter" onClick={() => chapterStep(-1)}><Icon name="chevron-left" /></Button>
@@ -342,16 +308,7 @@ function ReaderToolbar({ t, bookId }: { t: Translation; bookId: string }) {
         <TooltipContent>Next chapter ( ] )</TooltipContent>
       </Tooltip>
       <ToolbarSpacer />
-      <Select value={translation} onValueChange={(id) => set({ translation: id })}>
-        <SelectTrigger size="sm" className="w-56" aria-label="Translation">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {(catalog ?? []).map((m) => (
-            <SelectItem key={m.id} value={m.id}>{m.abbr} · {m.name}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <TranslationPicker catalog={catalog ?? []} value={translation} onChange={(id) => set({ translation: id })} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant={parallel.length ? "secondary" : "ghost"} size="sm">
@@ -372,6 +329,14 @@ function ReaderToolbar({ t, bookId }: { t: Translation; bookId: string }) {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant={selected ? "secondary" : "ghost"} size="icon-sm" aria-label="Verse panel" onClick={toggleVersePanel}>
+            <Icon name="info" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Verse panel: notes, cross references, words ( p )</TooltipContent>
+      </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant={columns ? "secondary" : "ghost"} size="icon-sm" aria-label="Two columns" onClick={() => set({ columns: !columns })}>

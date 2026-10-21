@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, Icon, Input, ResultArrival, SectionLabel, Spinner, Stat, cn } from "@nexis/design";
-import { CornerPlate, usePagePlate } from "@/art/Art";
+import { PlatePage, usePagePlate } from "@/art/Art";
 import { PAGE_PLATES } from "@/lib/art";
 import type { Translation, Verse, VerseIndex } from "@/lib/bible";
 import { bookName, formatRef, type Ref } from "@/lib/canon";
@@ -8,10 +8,13 @@ import { useIndex, useTopics, useTranslation } from "@/lib/hooks";
 import { search, type SearchResult } from "@/lib/search";
 import { semanticSearch, type Hit } from "@/lib/semantic";
 import { findTopics } from "@/lib/topics";
-import { jevAvailable, rerank, routeQuery } from "@/lib/jev";
+import { jevAvailable, rerank } from "@/lib/jev";
 import { useStudy, shelfSet } from "@/store/study";
 import { DataMissing, VerseText } from "@/features/read/ReadView";
 import { StrongsEntry } from "@/features/read/WordStudy";
+import { QueryReading, useQueryReading } from "./JevReading";
+import { LiveSearch } from "./LiveSearch";
+import { Answer } from "./Answer";
 import { parseCode } from "@/lib/strongs";
 import { loadTranslation, type Translation as T2 } from "@/lib/bible";
 
@@ -36,6 +39,7 @@ export function SearchView() {
   const [submitted, setSubmitted] = useState(query);
   const input = useRef<HTMLInputElement>(null);
   const plate = usePagePlate(PAGE_PLATES.search);
+  const jev = useQueryReading(q);
 
   useEffect(() => {
     const focus = () => input.current?.focus();
@@ -52,6 +56,7 @@ export function SearchView() {
   const exact = useMemo<SearchResult | null>(() => (t && submitted ? search(t, submitted, shelfs) : null), [t, submitted, shelfs]);
   const topicHits = useMemo(() => (topics && submitted ? findTopics(topics, submitted.replace(/^(verses?|find|search)\s+(about|on|for)?\s*/i, ""), 8) : []), [topics, submitted]);
   const wantsMeaning = exact?.kind === "search" || exact?.kind === "no_results";
+  const typing = q.trim().length > 0 && q.trim() !== submitted.trim() && !parseCode(q.trim());
 
   if (error) return <DataMissing message={error} />;
 
@@ -62,8 +67,7 @@ export function SearchView() {
   };
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <CornerPlate plate={plate} corner="br" />
+    <PlatePage plate={plate} corner="br" hidePlate={typing}>
       <div className="relative mx-auto w-full max-w-3xl px-8 pb-24 pt-12">
         <h1 className="font-blackletter text-4xl">Search the Scriptures</h1>
         <p className="mt-1 text-sm text-muted-foreground">A reference, a word, a question, or what you are looking for in your own words.</p>
@@ -82,7 +86,23 @@ export function SearchView() {
             Search
           </Button>
         </form>
-        {!submitted && (
+        <QueryReading state={jev} className="mt-2" />
+        {/* While typing something new: live lanes, ordered by Jev. Enter commits to full results. */}
+        {typing && t && index && (
+          <LiveSearch
+            query={q}
+            jev={jev}
+            t={t}
+            index={index}
+            topics={topics ?? null}
+            shelves={shelfs}
+            onOpen={(r) => read(r, { select: true })}
+            onTopic={(name) => useStudy.getState().openTopic(name)}
+            onSubmit={() => submit(q.trim())}
+          />
+        )}
+
+        {!submitted && !typing && (
           <div className="mt-4 flex flex-wrap gap-2">
             {EXAMPLES.map((ex) => (
               <button key={ex} type="button" onClick={() => submit(ex)} className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
@@ -92,10 +112,11 @@ export function SearchView() {
           </div>
         )}
 
-        {t && index && parseCode(submitted) && <StrongsSearch code={parseCode(submitted)!} t={t} onOpen={(r) => read(r, { select: true })} />}
+        {!typing && t && index && parseCode(submitted) && <StrongsSearch code={parseCode(submitted)!} t={t} onOpen={(r) => read(r, { select: true })} />}
 
-        {t && exact && index && !parseCode(submitted) && (
+        {!typing && t && exact && index && !parseCode(submitted) && (
           <ResultArrival replayKey={submitted} className="mt-8 space-y-8">
+            {wantsMeaning && <Answer query={submitted} t={t} index={index} shelves={shelfs} onOpen={(r) => read(r, { select: true })} />}
             <Exact r={exact} t={t} onOpen={(r) => read(r, { select: true })} />
             {topicHits.length > 0 && (
               <section>
@@ -113,7 +134,7 @@ export function SearchView() {
           </ResultArrival>
         )}
       </div>
-    </div>
+    </PlatePage>
   );
 }
 
@@ -131,7 +152,7 @@ function Exact({ r, t, onOpen }: { r: SearchResult; t: Translation; onOpen: (r: 
     case "passage":
       return (
         <section className="rounded-xl bg-card p-6 ring-1 ring-foreground/6">
-          <h2 className="font-gothic text-2xl">{formatRef(r.ref)}</h2>
+          <h2 className="font-garamond text-2xl">{formatRef(r.ref)}</h2>
           <div className="scripture mt-3">
             {r.verses.map((v) => (
               <span key={v.verse}>
@@ -217,7 +238,6 @@ function Meaning({ query, t, index, onOpen }: { query: string; t: Translation; i
   const shelves = useStudy((s) => s.shelves);
   const [hits, setHits] = useState<Hit[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [route, setRoute] = useState<string | null>(null);
   const [jev, setJev] = useState(false);
   const [levels, setLevels] = useState<Map<number, number | null> | null>(null);
   const [ranking, setRanking] = useState(false);
@@ -230,7 +250,6 @@ function Meaning({ query, t, index, onOpen }: { query: string; t: Translation; i
     setError(null);
     setLevels(null);
     semanticSearch(query, new Set(shelves), 24).then((h) => live && setHits(h), (e) => live && setError(String(e.message ?? e)));
-    routeQuery(query).then((r) => live && setRoute(r));
     return () => {
       live = false;
     };
@@ -238,7 +257,7 @@ function Meaning({ query, t, index, onOpen }: { query: string; t: Translation; i
   return (
     <section>
       <div className="flex items-center gap-2">
-        <SectionLabel className="flex-1">By meaning{route ? ` · ${route}` : ""}</SectionLabel>
+        <SectionLabel className="flex-1">By meaning</SectionLabel>
         {jev && hits && !levels && (
           <Button
             variant="ghost"
@@ -256,7 +275,7 @@ function Meaning({ query, t, index, onOpen }: { query: string; t: Translation; i
               setHits([...r.map((x) => x.item), ...hits.slice(20)]);
             }}
           >
-            {ranking ? <Spinner /> : <Icon name="filter" />} Rank with Jev
+            {ranking ? <Spinner /> : <Icon name="filter" />} Closest first
           </Button>
         )}
       </div>
@@ -273,7 +292,13 @@ function Meaning({ query, t, index, onOpen }: { query: string; t: Translation; i
           const level = levels?.get(h.verse);
           return v ? (
             <div key={h.verse} className="flex items-start gap-1">
-              {levels && <span className="mt-2.5 w-6 shrink-0 text-center font-mono text-[10px] text-muted-foreground" title="Jev relevance, 0 to 3">{level ?? "?"}</span>}
+              {levels && (
+                <span className="mt-3 flex w-6 shrink-0 justify-center gap-0.5" title={level == null ? "Unsure" : `Relevance ${level} of 3`}>
+                  {[1, 2, 3].map((k) => (
+                    <span key={k} className={cn("size-1 rounded-full", level != null && level >= k ? "bg-foreground/70" : "bg-foreground/15")} />
+                  ))}
+                </span>
+              )}
               <VerseRow v={v} onOpen={onOpen} />
             </div>
           ) : null;

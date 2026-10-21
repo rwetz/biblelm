@@ -59,3 +59,59 @@ Reading view details:
 - Two-column layout above 1100 px, like a printed Bible, with the plate in the
   gutter.
 - Hanging punctuation, `text-wrap: pretty`, 62 to 72 characters per line.
+
+## The BibleLM language (draft)
+
+Nexis gives the components; this is what makes them BibleLM. One idea runs
+through it: **an illustrated Bible printed in one ink, where the machine's
+work shows only as how clearly things come into focus.**
+
+### Materials
+
+- **Paper and ink.** Vellum is paper with black-brown ink; Nocturne is the same
+  page by lamplight. Pictures are one-bit dots in the ink colour, dithered live
+  at their drawn size (`src/art/dither.ts`). Nothing is blurred, tinted or
+  photographic; an edge breaks up into scattered dots (`fadeEdges`).
+- **Rubric.** One accent, used as a scribe used red: references, the words of
+  Christ, the one action that matters on a screen. Never on art.
+- **Type.** Blackletter for big titles, book names and drop caps; Garamond for
+  Scripture, figures a person reads (`91 hours`, `1,494 pages`) and captions;
+  the sans for controls. Numbers worth feeling are set large in Garamond with a
+  small italic unit, never in a stat tile.
+
+### Confidence is clarity
+
+The machine never speaks in numbers, timings or its own name. What it is sure
+of is drawn as how far a picture has formed:
+
+- **Sigils** (`src/art/Sigil.tsx`): small emblems drawn as vectors, shaded,
+  then dithered like the plates. A reading's probability is how many of the
+  sigil's dots are placed, filled in Bayer order so a half-formed sigil is
+  evenly faint, not half drawn. The set: book (exact words), lamp (a theme),
+  crook (a story or person), key (a question), scroll, dove, laurel, sword.
+- **Lens plates**: on Search the plate beside the results resolves as far as the
+  reading is sure (`level` on `<Dither>`).
+- **Order, not scores.** Ranked lists move into the machine's order (FLIP,
+  `src/lib/flip.ts`); a quiet row of dots is the most a score may show.
+
+### Motion
+
+Things arrive dot by dot (the Bayer reveal) and rearrange by sliding. Pictures
+that rotate (the Lab's literary plates, every 30 s) resolve in rather than
+cross-fade. Reduced motion shows the end state.
+
+### Pictures by place
+
+Home follows the church year with Doré's Bible; the Lab, the study of the
+machine, takes its pictures from beside the Bible (Doré's Milton and
+Coleridge, `scripts/art/literary.mjs`); each page has a corner plate and the
+sidebar a vignette; empty states get an `ArtSpot`. A plate beside its own
+passage is the one place art appears as a positive engraving, undithered.
+
+### Still to decide
+
+- A sigil for each verse kind (narrative, law, praise, lament, prophecy,
+  teaching, prayer, list), so the verse panel's reading can be an emblem too.
+- Whether ornaments (laurel borders, rules, fleurons) should come from scanned
+  public-domain printers' ornaments rather than drawn vectors.
+- A display face to pair with the blackletter for mid-size headings.

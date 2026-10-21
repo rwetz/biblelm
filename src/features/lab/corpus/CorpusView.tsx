@@ -4,7 +4,9 @@ import { toast } from "sonner";
 import { InfoTip } from "@/features/lab/InfoTip";
 import { useAppStore, type CorpusInfo } from "@/store/appStore";
 import { cn } from "@/lib/utils";
-import { Badge, Button, Icon, Input, Progress, ScrollArea } from "@nexis/design";
+import { Button, Icon, Input, Panel, Progress } from "@nexis/design";
+import { LabSection } from "@/features/lab/LabSection";
+import { Reading, ScaleField, TypeCase } from "./Figures";
 
 interface Translation {
   id: string;
@@ -145,48 +147,37 @@ export function CorpusView() {
   const languages = Object.keys(byLang).sort();
 
   return (
-    <div className="flex h-full flex-col">
-      <ViewHeader
-        title="Corpus"
-        description="Pick a Bible translation to train on, or add your own"
-      />
-
-      <ScrollArea className="flex-1">
-        <div className="mx-auto max-w-3xl space-y-6 p-6">
-          {/* Translations */}
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
-            <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
-              <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Translations
-                <InfoTip>
-                  Each translation is its own training corpus. Download one, select
-                  it (the dot), then train on it. The model's vocabulary and style
-                  come entirely from whichever text you pick.
-                </InfoTip>
-              </span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowAdd((v) => !v)}
-                className="h-7 gap-1.5 rounded-md text-muted-foreground"
-              >
-                <Icon name={showAdd ? "close" : "add"} size="sm" />
-                {showAdd ? "Cancel" : "Add translation"}
-              </Button>
-            </div>
-
+    <LabSection
+      title="The text it learns from"
+      lede="The model knows nothing but the one translation you give it: its words, its spelling, its rhythm. Pick one to train on, or add your own."
+      actions={
+        <Button size="sm" variant="ghost" onClick={() => setShowAdd((v) => !v)} className="gap-1.5 text-muted-foreground">
+          <Icon name={showAdd ? "close" : "add"} size="sm" />
+          {showAdd ? "Cancel" : "Add a translation"}
+        </Button>
+      }
+    >
+      {active?.downloaded && <Reading t={active} />}
+      <div className={cn("grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]", active?.downloaded && "mt-6")}>
+        <div className="space-y-6">
+          <Panel
+            title="Translations"
+            meta={translations.length ? `${translations.filter((t) => t.downloaded).length} of ${translations.length} downloaded` : undefined}
+            actions={
+              <InfoTip>
+                Each translation is its own training corpus. Download one, select it (the dot), then train on it. The model's vocabulary and style
+                come entirely from whichever text you pick.
+              </InfoTip>
+            }
+            flush
+          >
             {showAdd && <AddForm onAdd={handleAdd} />}
-
             {languages.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-                Loading translations…
-              </p>
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">Loading translations…</p>
             ) : (
               languages.map((lang) => (
                 <div key={lang}>
-                  <p className="bg-muted/40 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                    {lang}
-                  </p>
+                  {languages.length > 1 && <p className="px-4 pt-3 pb-1 text-xs text-muted-foreground">{lang}</p>}
                   <div className="divide-y divide-border/50">
                     {byLang[lang].map((t) => (
                       <TranslationRow
@@ -205,66 +196,41 @@ export function CorpusView() {
                 </div>
               ))
             )}
-          </div>
+          </Panel>
 
-          {/* Active corpus stats */}
-          {active?.downloaded && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <StatCard label="Characters" value={(active.charCount ?? 0).toLocaleString()} />
-              <StatCard label="Words" value={(active.wordCount ?? 0).toLocaleString()} />
-              <StatCard label="Tokens" value={(active.tokenCount ?? 0).toLocaleString()} unit="(char-level)" />
-              <StatCard label="Vocab size" value={(active.vocabSize ?? 0).toLocaleString()} />
-            </div>
-          )}
-
-          {/* Scale check vs GPT-3 */}
-          <ScaleCompare
-            dataMb={active?.downloaded ? (active.sizeBytes ?? 0) / 1_048_576 : 4.4}
-            vocabSize={active?.downloaded ? active.vocabSize : undefined}
-          />
-
-          {/* Sample preview, the opening of the selected translation itself */}
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
-            <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
-              <span className="truncate text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Sample{active ? ` · ${active.name}` : ""}
-              </span>
-              <Badge variant="outline" className="shrink-0 text-xs">
-                Preview
-              </Badge>
-            </div>
-            <div className="p-4">
-              {sample ? (
-                <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground/80">
-                  {sample}
-                </pre>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  {active?.downloaded
-                    ? "Loading preview…"
-                    : "Download a translation to see how its text looks."}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Tokenizer info */}
-          <div className="space-y-3 rounded-xl border border-border bg-card p-5">
-            <h3 className="text-sm font-semibold text-foreground">Tokenizer</h3>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              BibleLM uses{" "}
-              <span className="font-medium text-foreground">character-level tokenization</span>{" "}
-              : each distinct character becomes a token. This keeps the vocabulary
-              tiny{active?.vocabSize ? ` (${active.vocabSize} symbols in ${active.name})` : " (~75 symbols for English)"}{" "}
-              and works for any language, including non-Latin scripts. The
-              vocabulary is rebuilt from whichever translation you train on.
+          {/* The opening of the selected translation, exactly as the model reads it. */}
+          <Panel title="As the model sees it" meta={active?.name}>
+            {sample ? (
+              <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground/80">{sample}</pre>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {active?.downloaded ? "Loading the opening lines…" : "Download a translation to see how its text looks."}
+              </p>
+            )}
+            <p className="mt-4 border-t border-border/60 pt-3 text-xs leading-relaxed text-muted-foreground">
+              Every distinct character is one token, so the vocabulary stays tiny
+              {active?.vocabSize ? ` (${active.vocabSize} symbols in the ${active.name})` : " (about 75 symbols for English)"} and any script
+              works. The vocabulary is rebuilt from whichever translation you train on.
             </p>
-          </div>
+          </Panel>
         </div>
-      </ScrollArea>
-    </div>
+
+        <div className="space-y-6">
+
+
+          {active?.downloaded && <TypeCase t={active} />}
+        </div>
+      </div>
+      <div className="mt-6">
+        <ScaleField
+          dataMb={active?.downloaded ? (active.sizeBytes ?? 0) / 1_048_576 : 4.4}
+          vocabSize={active?.downloaded ? active.vocabSize : undefined}
+        />
+      </div>
+    </LabSection>
   );
 }
+
 
 function TranslationRow({
   t,
@@ -287,7 +253,7 @@ function TranslationRow({
   onRemove?: () => void;
 }) {
   return (
-    <div className={cn("px-4 py-3 transition-colors", active && "bg-brand/[0.06]")}>
+    <div className="px-4 py-3">
       <div className="flex items-center gap-3">
         {/* Select-for-training radio */}
         <button
@@ -310,11 +276,7 @@ function TranslationRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate text-sm font-medium text-foreground">{t.name}</p>
-            {!t.verified && (
-              <Badge variant="outline" className="text-[10px]">
-                custom
-              </Badge>
-            )}
+            {!t.verified && <span className="text-xs text-muted-foreground">added by you</span>}
           </div>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {t.downloaded
@@ -326,10 +288,9 @@ function TranslationRow({
         {/* Status / action */}
         <div className="flex shrink-0 items-center gap-1.5">
           {t.downloaded ? (
-            <Badge variant={active ? "brand" : "success"} className="gap-1">
-              <Icon name="success" size="xs" />
-              {active ? "Training set" : "Ready"}
-            </Badge>
+            <span className={cn("text-xs", active ? "font-medium text-brand" : "text-muted-foreground")}>
+              {active ? "Training on this" : "Downloaded"}
+            </span>
           ) : downloading ? (
             <span className="text-xs text-muted-foreground">Downloading…</span>
           ) : (
@@ -483,86 +444,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
       {children}
     </label>
-  );
-}
-
-function ScaleCompare({
-  dataMb,
-  vocabSize,
-}: {
-  dataMb: number;
-  vocabSize?: number;
-}) {
-  // BibleLM numbers reflect the default config; GPT-3 is the 175B model.
-  // Vocabulary is the exception — it comes from the corpus, not the config, so
-  // it tracks whichever translation is selected.
-  const rows: Array<[string, string, string]> = [
-    ["Parameters", "3.2M", "175B"],
-    ["Transformer layers", "4", "96"],
-    ["Embedding dim (d_model)", "256", "12,288"],
-    ["Context window", "256", "2,048"],
-    ["Vocabulary", vocabSize ? vocabSize.toLocaleString() : "–", "50,257"],
-    ["Training text", `${dataMb.toFixed(1)} MB`, "~570 GB"],
-  ];
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="flex items-center gap-1.5 border-b border-border/60 px-4 py-2.5">
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Scale check: BibleLM vs GPT-3
-        </span>
-        <InfoTip>
-          GPT-3 is OpenAI's 2020 model, the one that made "large language model" a
-          household phrase. This shows just how tiny (and trainable-at-home) BibleLM
-          is by comparison.
-        </InfoTip>
-      </div>
-      <div className="grid grid-cols-[1fr_auto_auto] gap-x-8 px-4 py-2 text-xs">
-        <span />
-        <span className="py-1.5 text-right text-[11px] font-semibold uppercase tracking-wider text-brand">
-          BibleLM
-        </span>
-        <span className="py-1.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-          GPT-3
-        </span>
-        {rows.map(([label, a, b]) => (
-          <div className="contents" key={label}>
-            <span className="border-t border-border/40 py-1.5 text-muted-foreground">{label}</span>
-            <span className="border-t border-border/40 py-1.5 text-right font-mono tabular-nums text-foreground">
-              {a}
-            </span>
-            <span className="border-t border-border/40 py-1.5 text-right font-mono tabular-nums text-muted-foreground">
-              {b}
-            </span>
-          </div>
-        ))}
-      </div>
-      <p className="border-t border-border/60 px-4 py-2.5 text-xs leading-relaxed text-muted-foreground">
-        GPT-3 has roughly <span className="font-medium text-foreground">55,000×</span>{" "}
-        more parameters and trained on about{" "}
-        <span className="font-medium text-foreground">130,000×</span> more text. BibleLM
-        is teaching-scale, small enough to train in minutes and actually watch it learn.
-      </p>
-    </div>
-  );
-}
-
-function StatCard({ label, value, unit }: { label: string; value: string; unit?: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-foreground">{value}</p>
-      {unit && <p className="mt-0.5 text-xs text-muted-foreground/60">{unit}</p>}
-    </div>
-  );
-}
-
-function ViewHeader({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex items-center gap-3 border-b border-border/60 px-6 py-4">
-      <div>
-        <h1 className="text-base font-semibold text-foreground">{title}</h1>
-        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-      </div>
-    </div>
   );
 }

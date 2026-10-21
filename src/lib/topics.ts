@@ -52,3 +52,50 @@ export async function topicsForVerse(verse: number, limit = 12): Promise<{ topic
   }
   return hits.sort((a, b) => b.score - a.score).slice(0, limit);
 }
+
+/** What kind of subject each topic is, tagged offline by Jev (scripts/data/topic-kinds.mjs). */
+export interface TopicKinds {
+  source: string;
+  kinds: string[];
+  /** name -> [kind, probability] */
+  tags: Record<string, [string, number]>;
+}
+
+let kinds: Promise<TopicKinds | null> | null = null;
+
+export function loadTopicKinds(): Promise<TopicKinds | null> {
+  kinds ??= getBinary("topic-kinds.json")
+    .then((b) => JSON.parse(new TextDecoder().decode(b)) as TopicKinds)
+    .catch(() => null);
+  return kinds;
+}
+
+const OT_GENRES = new Set(["Law", "History", "Wisdom and poetry", "Prophets"]);
+
+/** Where a topic's passages sit: its commonest genre, that genre's share, and the testament. */
+export interface TopicPlace {
+  genre: string;
+  share: number;
+  testament: "ot" | "nt" | "both";
+}
+
+/** Where every topic lives in Scripture, from its passages' books (counted by vote-weighted passage). */
+export function topicPlaces(all: Topic[], refs: readonly string[], genreOf: (book: string) => string): Map<string, TopicPlace> {
+  const out = new Map<string, TopicPlace>();
+  for (const t of all) {
+    const by = new Map<string, number>();
+    let ot = 0, n = 0;
+    for (let i = 0; i < t.p.length; i += 3) {
+      const book = refs[t.p[i]]?.split(".")[0];
+      if (!book) continue;
+      const g = genreOf(book);
+      by.set(g, (by.get(g) ?? 0) + 1);
+      if (OT_GENRES.has(g)) ot++;
+      n++;
+    }
+    let genre = "Other", top = 0;
+    for (const [g, c] of by) if (c > top) { top = c; genre = g; }
+    out.set(t.name, { genre, share: n ? top / n : 0, testament: !n ? "both" : ot / n >= 0.7 ? "ot" : ot / n <= 0.3 ? "nt" : "both" });
+  }
+  return out;
+}

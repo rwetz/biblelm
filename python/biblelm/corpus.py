@@ -20,6 +20,7 @@ CLI:
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import re
 import sys
@@ -256,6 +257,18 @@ def preview(data_dir: Path, version: str, chars: int = 600) -> str:
     return body[:chars]
 
 
+def alphabet(data_dir: Path, version: str) -> list[list]:
+    """Every character in a downloaded corpus with how often it occurs, commonest first.
+
+    This is the model's whole vocabulary, so the Corpus view can show it as a
+    printer's type case."""
+    path = corpus_path(data_dir, version)
+    if not path.exists():
+        raise ValueError(f"{version!r} isn't downloaded")
+    counts = Counter(path.read_text(encoding="utf-8"))
+    return [[ch, n] for ch, n in counts.most_common()]
+
+
 def download(version: str, data_dir: Path, chunk_size: int = 1 << 16) -> Path:
     """Stream, clean, write corpus + meta. Emits progress/status events."""
     src = load_sources(data_dir).get(version)
@@ -336,6 +349,10 @@ def main(argv: list[str] | None = None) -> int:
     pv.add_argument("--version", required=True)
     pv.add_argument("--chars", type=int, default=600)
 
+    ab = sub.add_parser("alphabet")
+    ab.add_argument("--data-dir", required=True, type=Path)
+    ab.add_argument("--version", required=True)
+
     dl = sub.add_parser("download")
     dl.add_argument("--version", default="kjv")
     dl.add_argument("--data-dir", required=True, type=Path)
@@ -362,6 +379,9 @@ def main(argv: list[str] | None = None) -> int:
                     "text": preview(args.data_dir, args.version, args.chars),
                 }
             )
+            return 0
+        if args.cmd == "alphabet":
+            protocol.emit({"type": "alphabet", "version": args.version, "symbols": alphabet(args.data_dir, args.version)})
             return 0
         download(args.version, args.data_dir)
         return 0

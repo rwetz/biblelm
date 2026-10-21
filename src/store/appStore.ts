@@ -96,10 +96,12 @@ function loadActiveCorpus(): string {
   }
 }
 
+// Tuned with Jev's judge (docs/evals/tuning.md): the coolest temperature that
+// does not start repeating itself, where both scores peak; top-k barely matters.
 const DEFAULT_INFERENCE_CONFIG: InferenceConfig = {
-  temperature: 0.8,
+  temperature: 0.4,
   maxTokens: 256,
-  topK: 40,
+  topK: 10,
 };
 
 interface AppState {

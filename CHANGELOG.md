@@ -4,6 +4,103 @@ All notable changes to BibleLM. Format based on
 [Keep a Changelog](https://keepachangelog.com/); this project follows
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Changed
+
+- **Sharper plates.** 42 Doré plates that came from small copies (as narrow as
+  330 px) are rebuilt from larger public-domain scans, cropped from page scans
+  where needed; the source of each is in docs/art-credits.md.
+- **Training sweep.** Four model shapes trained and scored by the same judge:
+  6 layers × 384 (10.8M parameters) scores best, 2.92 against 2.75 for the
+  current 4 × 256, and a longer context or dropout alone do not help
+  (docs/evals/tuning.md).
+- **Generate samples at temperature 0.4, top-k 10** by default (was 0.8 and 40).
+  Tuned against Jev's two scores over 576 samples: about 25% higher, without
+  the repetition cooler settings bring (docs/evals/tuning.md).
+- **Questions answered by choosing.** Ask Search a question and the passages
+  found by meaning are weighed against it: the ones that answer appear first
+  with the answering words marked. A question about the Bible as a book (“why is
+  LORD in capitals?”) gets one of ten short notes written for BibleLM
+  (`src/lib/notes.ts`), labelled as not Scripture. Nothing is generated.
+- **Number fields in Training** have their own minus and plus buttons instead of
+  the browser's spinner.
+- **The sidebar picture** shows the nearest earlier scene for a book with no
+  plate of its own, and says so when Developer mode has pinned one.
+- **Readings without the machinery.** Search shows how a query reads as four
+  dithered sigils (book, lamp, crook, key) that form as far as the reading is
+  sure; Jev's name, percentages and timings are gone from every screen. Cross
+  references offer "Closest first" or "Most voted".
+- **The map, close up.** Zoom in and every verse is labelled, then quoted;
+  hovering a verse threads its chapter through the map in reading order; dots
+  and labels are easy to click at any zoom (up to 120x).
+- **The Lab's front page.** Corpus opens on a Doré plate from Paradise Lost
+  or the Ancient Mariner, turning every 30 seconds. Its figures are now hours to read aloud, printed pages and letters,
+  the whole alphabet as a type case inked by use, and BibleLM as one dot in a
+  field of 54,688 that is GPT-3.
+- **Topics you can browse.** The 6,712 topics filter by kind (people, places,
+  God and Christ, virtues, sins, practices, everyday life, feelings, events,
+  things, today), by where in Scripture they mostly live, and by size; the
+  index runs A to Z. The kinds were tagged once, offline, by Jev
+  (`scripts/data/topic-kinds.mjs`, 13 seconds for all of them).
+- **Corner plates stay in the corner.** On Search and Settings the plate is
+  pinned to the window; scrolling blows its dots loose with the page and they
+  gather again when you stop.
+- **The Lab's front page shows the whole plate**, as tall as the window beside
+  the title, and switching tabs swaps it for the band instead of animating a
+  height (which re-dithered every frame).
+- **Home fits the window**: picture, search and verse of the day on the first
+  screen; your reading and notebooks below.
+
+### Fixed
+
+- **Export to ONNX** works with current PyTorch (it fell over without
+  `onnxscript`), says plainly when the `onnx` package is missing, and shows a
+  failure on the step that failed.
+
+- **Art, dithered live** at the drawn size: Home's hero is framed so more of
+  the plate shows, with a lighter fade; the Lab's title sits on clean paper;
+  corner plates are crisp dots behind the page instead of a faint photo over it.
+- **A sidebar vignette** that follows the book you are reading (or the verse
+  of the day, or your notebook's cover) and opens its passage on click.
+- **Empty states with art** (Training, Generate, Surprise, Notebooks) and a
+  dithered cross loader for long work.
+- **The Lab, reworked**: one centred column, section heads in Garamond,
+  corpus figures that say what they mean, no status pills, and a Surprise view
+  that explains loss as a chance per letter, folds repeated refrains and links
+  every verse to the reader.
+- **Reading**: brighter red letters on Vellum, a larger drop cap, quieter note
+  fields, and no plate from a later chapter at the foot of a chapter.
+- **Verse of the day** reads on to the end of its sentence (Galatians 5:22-23)
+  and is set in Garamond; blackletter stays on big titles only.
+- Pages keep a centred column on a maximised window; the Home hero no longer
+  shrinks in short windows.
+- Dithered art has no soft blur: edges break up into dots, and small art uses
+  1 px Floyd-Steinberg dots from the full scan, so the scene reads.
+- **Book picker**: books under their sections (Law, History, Prophets,
+  Gospels, Letters...), then a chapter grid, instead of a 66-row dropdown.
+- **Verse panel** comes back with `p`, a toolbar button or the palette.
+- **Scripture map** zooms (wheel, buttons, double-click), pans by dragging,
+  labels the densest places (books, then chapters close in) and finds a book.
+- **Developer mode** (Settings): pick any Home hero and browse all 241 plates,
+  engraved and dithered, to find art bugs.
+- Settings explains how to give Jev its key (there is deliberately no field) and
+  lists every place Jev is used. The desktop app also reads the key from the
+  saved Windows user environment.
+- **Jev, live**: Search and the Home box show how Jev reads your query as you
+  type (the odds and the round trip in ms); the verse panel shows what kind of
+  passage Jev takes each verse to be.
+- **Search as you type**: four lanes (verses with these words, topics, people
+  and stories with dithered plates, passages by meaning) answer every
+  keystroke; Jev's reading orders them, sliding the likeliest to the top, and a
+  plate beside them resolves as clearly as Jev is sure.
+- **Jev elsewhere**: cross references in the verse panel are ordered by how
+  closely each speaks to the verse (dots show Jev's reading; votes one click
+  away), and the Lab's Generate tab has Jev judge what the model wrote (sounds
+  like the KJV, makes sense). Jev calls share one kept-alive connection.
+- **Benchmarks**: `node scripts/bench/jev.ts` (latency and agreement for every
+  Jev question) and dither timings, in `docs/evals/benchmarks.md`.
+
 ## [2.0.0] (unreleased)
 
 BibleLM becomes an illustrated Bible study tool with the ML lab inside it.

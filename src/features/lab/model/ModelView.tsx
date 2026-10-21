@@ -1,9 +1,10 @@
-import { invoke } from "@/lib/backend";
+import { invoke, listen } from "@/lib/backend";
 import { useState } from "react";
 import { ModelCard } from "@/features/lab/model/ModelCard";
 import { useAppStore } from "@/store/appStore";
 import { cn } from "@/lib/utils";
-import { Badge, Button, Icon, ScrollArea, Spinner } from "@nexis/design";
+import { Button, Icon, Spinner } from "@nexis/design";
+import { LabSection } from "@/features/lab/LabSection";
 
 interface ExportResult {
   path: string;
@@ -55,12 +56,21 @@ export function ModelView() {
   const handleExport = async () => {
     setExportStatus("running");
     setSteps((prev) => prev.map((s) => ({ ...s, status: "pending", detail: undefined })));
-
-    // Step 1 — checkpoint
-    updateStep("checkpoint", { status: "running" });
+    // The exporter reports its phase (load, export, validate); a failure lands
+    // on whichever step was running.
+    const STEP: Record<string, string> = { load: "checkpoint", export: "convert", validate: "validate" };
+    let current = "checkpoint";
+    updateStep(current, { status: "running" });
+    const stop = await listen<{ phase?: string }>("export:status", (e) => {
+      const next = STEP[e.payload.phase ?? ""];
+      if (!next || next === current) return;
+      updateStep(current, { status: "done" });
+      current = next;
+      updateStep(current, { status: "running" });
+    });
     try {
       const result = await invoke<ExportResult>("export_onnx");
-      updateStep("checkpoint", { status: "done", detail: "checkpoint.pt found" });
+      updateStep("checkpoint", { status: "done", detail: "ckpt.pt found" });
       updateStep("convert", { status: "done", detail: "model.onnx written" });
       updateStep("validate", {
         status: "done",
@@ -69,11 +79,10 @@ export function ModelView() {
       setExportPath(result.path);
       setExportStatus("completed");
     } catch (err) {
-      updateStep("checkpoint", {
-        status: "error",
-        detail: String(err),
-      });
+      updateStep(current, { status: "error", detail: String(err) });
       setExportStatus("error");
+    } finally {
+      stop();
     }
   };
 
@@ -84,15 +93,11 @@ export function ModelView() {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
-        <div>
-          <h1 className="text-base font-semibold text-foreground">Model</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Bring a trained model in, or export this one to ONNX
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <LabSection
+      title="The weights"
+      lede="Everything the model learned is a few million numbers in one file. Bring a trained one in, or carry this one out as ONNX to run anywhere."
+      actions={
+        <>
           {exportStatus !== "idle" && (
             <Button
               size="sm"
@@ -123,20 +128,17 @@ export function ModelView() {
               </>
             )}
           </Button>
-        </div>
-      </div>
-
-      <ScrollArea className="flex-1">
-        <div className="p-6 space-y-4 max-w-2xl">
+        </>
+      }
+    >
+        <div className="max-w-3xl space-y-4">
           {/* What's loaded, plus the drop zone for bringing your own */}
           <ModelCard />
 
           {/* Pipeline steps */}
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/6 dark:ring-foreground/10">
             <div className="border-b border-border/60 px-4 py-2.5">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Export pipeline
-              </p>
+              <p className="font-heading text-[13px] font-medium">Export, step by step</p>
             </div>
             <div className="divide-y divide-border/50">
               {steps.map((step, i) => (
@@ -225,8 +227,7 @@ export function ModelView() {
             </p>
           </div>
         </div>
-      </ScrollArea>
-    </div>
+    </LabSection>
   );
 }
 
@@ -296,19 +297,9 @@ function ExportStep({ step, index }: { step: Step; index: number }) {
         )}
       </div>
 
-      <Badge
-        variant={
-          step.status === "done"
-            ? "success"
-            : step.status === "error"
-            ? "destructive"
-            : step.status === "running"
-            ? "brand"
-            : "outline"
-        }
-      >
-        {step.status}
-      </Badge>
+      <span className={cn("shrink-0 text-xs", textColor)}>
+        {{ done: "Done", error: "Failed", running: "Working", pending: "Waiting" }[step.status]}
+      </span>
     </div>
   );
 }

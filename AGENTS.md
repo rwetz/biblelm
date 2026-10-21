@@ -50,15 +50,21 @@ scripts/data|art/   offline builders (pnpm data); outputs are git-ignored
 
 - **UI** follows `@nexis/design` (its AGENTS.md ships in node_modules): tokens
   only, one accent (rubric red on Vellum, gilt on Nocturne), `<Icon name>` only,
-  no emoji, **no em dashes in any text a person reads**, every action in the
+  no emoji, **no em dashes in any text a person reads**, the machine is never
+  named on screen and shows no scores or timings (its confidence is drawn as
+  clarity: `Sigil`, `level` on `Dither`; see DESIGN.md), every action in the
   command palette (`useCommands` in App.tsx), `m` not `motion.*`.
 - **Every Tauri call goes through `src/lib/backend.ts`**, which has a browser
   fallback. Changing a Rust command's shape changes its type there in the same
   commit.
-- **Art**: plates are positive engravings (`.engraving`), never dithered;
-  heroes are 1-bit and drawn by `DitherHero`. Never under body text above 8%
-  opacity, never in the accent colour. Each page has art at its tier
-  (`PAGE_PLATES` in `src/lib/art.ts`).
+- **Art**: a plate beside its passage is a positive engraving (`.engraving`),
+  never dithered, and only in the chapter it depicts. Heroes, corner plates,
+  the sidebar vignette and empty-state spots are 1-bit, dithered live at their
+  drawn size by `Dither` (`src/art/dither.ts`). Never under body text above 8%
+  opacity, never in the accent colour (the `CrossLoader` is live progress, not
+  art). Each page has art at its tier (`PAGE_PLATES`, `SIDEBAR_PLATES` in
+  `src/lib/art.ts`). Blackletter is for big titles, book names and drop caps
+  only; anything smaller or longer is Garamond.
 - Never commit `data/`, `runs/`, `data-src/`, `art-src/`, `public/data`,
   `public/art/dore|heroes`, `public/models`, weights or keys.
   `TYPESAFE_API_KEY` stays in the user's environment and never reaches the

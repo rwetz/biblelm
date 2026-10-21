@@ -5,7 +5,8 @@ import { PAGE_PLATES } from "@/lib/art";
 import type { Translation, VerseIndex } from "@/lib/bible";
 import { formatRef, parseRef, type Ref } from "@/lib/canon";
 import { useGraph, useIndex, useTopics, useTranslation } from "@/lib/hooks";
-import { passages, type Topic } from "@/lib/topics";
+import { loadTopicKinds, passages, topicPlaces, type Topic, type TopicKinds, type TopicPlace } from "@/lib/topics";
+import { genreOf } from "@/lib/jev";
 import { connect, studyWalk } from "@/lib/xrefs";
 import { useStudy } from "@/store/study";
 import { DataMissing } from "@/features/read/ReadView";
@@ -27,9 +28,10 @@ export function TopicsView() {
 
   if (error) return <DataMissing message={error} />;
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col">
+    <div className="relative isolate flex min-h-0 flex-1 flex-col">
       {tab !== "map" && <CornerPlate plate={plate} corner="br" />}
-      <div className="flex items-end gap-4 border-b border-border/60 px-8 pb-3 pt-8">
+      <div className="border-b border-border/60">
+      <div className="mx-auto flex w-full max-w-6xl items-end gap-4 px-8 pb-3 pt-8">
         <div>
           <h1 className="font-blackletter text-4xl">Topics</h1>
           <p className="mt-1 text-sm text-muted-foreground">Themes across Scripture, the paths cross references draw, and the shape of a passage.</p>
@@ -46,6 +48,7 @@ export function TopicsView() {
             { id: "structure", label: "Structure", icon: "grid" },
           ]}
         />
+      </div>
       </div>
       {!t || !index ? (
         <div className="grid flex-1 place-items-center"><Spinner /></div>
@@ -77,31 +80,166 @@ function PassageRow({ t, index, start, end, extra }: { t: Translation; index: Ve
   );
 }
 
+const KIND_LABELS: Record<string, string> = {
+  person: "People",
+  place: "Places",
+  god: "God and Christ",
+  virtue: "Virtues",
+  sin: "Sins",
+  practice: "Practices",
+  life: "Everyday life",
+  feeling: "Feelings",
+  event: "Events",
+  thing: "Things",
+  modern: "Today",
+};
+const WHERE: [string, string][] = [
+  ["", "Anywhere"],
+  ["ot", "Old Testament"],
+  ["nt", "New Testament"],
+  ["Law", "Law"],
+  ["History", "History"],
+  ["Wisdom and poetry", "Wisdom and poetry"],
+  ["Prophets", "Prophets"],
+  ["Gospels", "Gospels"],
+  ["Epistles", "Epistles"],
+];
+type Size = "any" | "broad" | "focused";
+type Sort = "passages" | "az";
+
+function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      className={cn(
+        "rounded-full px-2.5 py-1 text-xs transition-colors",
+        on ? "bg-foreground text-background" : "bg-muted/70 text-muted-foreground hover:bg-foreground/10 hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
   const [topics] = useTopics();
   const selectedName = useStudy((s) => s.topic);
   const [filter, setFilter] = useState("");
+  const [kind, setKind] = useState<string | null>(null);
+  const [where, setWhere] = useState("");
+  const [size, setSize] = useState<Size>("any");
+  const [sort, setSort] = useState<Sort>("az");
+  const [more, setMore] = useState(false);
+  const [kinds, setKinds] = useState<TopicKinds | null>(null);
   const [sel, setSel] = useState<string | null>(selectedName);
   useEffect(() => setSel(selectedName), [selectedName]);
-  const list = useMemo(() => {
-    if (!topics) return [];
+  useEffect(() => {
+    loadTopicKinds().then(setKinds);
+  }, []);
+  const places = useMemo(() => (topics ? topicPlaces(topics, index.refs, genreOf) : null), [topics, index]);
+
+  // Each kind's count under the other filters, so a chip says what it holds.
+  const { list, perKind } = useMemo(() => {
+    const perKind = new Map<string, number>();
+    const list: Topic[] = [];
+    if (!topics || !places) return { list, perKind };
     const f = filter.trim().toLowerCase();
-    const l = f ? topics.filter((x) => x.name.includes(f)) : [...topics].sort((a, b) => b.p.length - a.p.length);
-    return l;
-  }, [topics, filter]);
+    for (const x of topics) {
+      if (f && !x.name.includes(f)) continue;
+      const n = x.p.length / 3;
+      if (size === "broad" && n < 40) continue;
+      if (size === "focused" && n > 12) continue;
+      if (where) {
+        const pl = places.get(x.name);
+        if (!pl) continue;
+        if (where === "ot" || where === "nt" ? pl.testament !== where : pl.genre !== where || pl.share < 0.4) continue;
+      }
+      const k = kinds?.tags[x.name]?.[0];
+      if (k) perKind.set(k, (perKind.get(k) ?? 0) + 1);
+      if (kind && k !== kind) continue;
+      list.push(x);
+    }
+    // Names that start with what was typed come first, then the chosen order.
+    const lead = (x: Topic) => (f && x.name.startsWith(f) ? 1 : 0);
+    list.sort((a, b) => lead(b) - lead(a) || (sort === "az" ? a.name.localeCompare(b.name) : b.p.length - a.p.length));
+    return { list, perKind };
+  }, [topics, places, kinds, filter, kind, where, size, sort]);
+
   const current = topics?.find((x) => x.name === sel) ?? null;
+  const extra = Number(!!where) + Number(size !== "any") + Number(sort !== "az");
+  const clear = () => {
+    setFilter("");
+    setKind(null);
+    setWhere("");
+    setSize("any");
+    setSort("az");
+  };
   if (!topics) return <div className="grid flex-1 place-items-center"><Spinner /></div>;
   return (
-    <div className="flex min-h-0 flex-1">
-      <div className="flex w-72 shrink-0 flex-col border-r border-border/60">
-        <div className="p-3">
-          <Input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={`Filter ${topics.length.toLocaleString()} topics`} />
+    <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1">
+      <div className="flex w-80 shrink-0 flex-col border-r border-border/60">
+        <div className="space-y-3 p-3">
+          <Input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={`Search ${topics.length.toLocaleString()} topics`} />
+          {kinds && (
+            <div className="flex flex-wrap gap-1.5">
+              {kinds.kinds.map((k) => (
+                <Chip key={k} on={kind === k} onClick={() => setKind(kind === k ? null : k)}>
+                  {KIND_LABELS[k] ?? k} <span className="opacity-60">{(perKind.get(k) ?? 0).toLocaleString()}</span>
+                </Chip>
+              ))}
+            </div>
+          )}
+          <button type="button" onClick={() => setMore(!more)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+            <Icon name={more ? "chevron-down" : "chevron-right"} size="xs" />
+            More filters{extra ? ` · ${extra} on` : ""}
+          </button>
+          {more && (
+            <div className="space-y-3 rounded-lg bg-muted/30 p-2.5">
+              <div>
+                <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">Mostly found in</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {WHERE.map(([id, label]) => (
+                    <Chip key={id} on={where === id} onClick={() => setWhere(id)}>
+                      {label}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">Size</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <Chip on={size === "any"} onClick={() => setSize("any")}>Any</Chip>
+                  <Chip on={size === "broad"} onClick={() => setSize("broad")}>Broad, 40+ passages</Chip>
+                  <Chip on={size === "focused"} onClick={() => setSize("focused")}>Focused, up to 12</Chip>
+                </div>
+              </div>
+              <div>
+                <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">Order</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <Chip on={sort === "az"} onClick={() => setSort("az")}>A to Z</Chip>
+                  <Chip on={sort === "passages"} onClick={() => setSort("passages")}>Most passages</Chip>
+                </div>
+              </div>
+            </div>
+          )}
+          <p className="flex items-center text-[11px] text-muted-foreground">
+            <span className="flex-1">
+              {list.length.toLocaleString()} {list.length === 1 ? "topic" : "topics"}
+            </span>
+            {(kind || extra > 0 || filter) && (
+              <button type="button" className="hover:text-foreground" onClick={clear}>
+                Clear
+              </button>
+            )}
+          </p>
         </div>
         <VirtualList
           label="Topics"
           count={list.length}
           rowHeight={30}
-          className="min-h-0 flex-1"
+          className="min-h-0 flex-1 border-t border-border/40"
           renderRow={(i) => {
             const x = list[i];
             return (
@@ -118,19 +256,28 @@ function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
         />
       </div>
       <div className="min-w-0 flex-1 overflow-y-auto px-8 py-6">
-        {current ? <TopicDetail topic={current} t={t} index={index} /> : <p className="text-sm text-muted-foreground">Choose a topic. The list is OpenBible.info's topical Bible (CC-BY), ranked by reader votes.</p>}
+        {current ? (
+          <TopicDetail topic={current} t={t} index={index} kind={kinds?.tags[current.name]?.[0]} place={places?.get(current.name)} />
+        ) : (
+          <p className="text-sm text-muted-foreground">Choose a topic. The list is OpenBible.info's topical Bible (CC-BY), with its passages ranked by reader votes.</p>
+        )}
       </div>
     </div>
   );
 }
 
-function TopicDetail({ topic, t, index }: { topic: Topic; t: Translation; index: VerseIndex }) {
+function TopicDetail({ topic, t, index, kind, place }: { topic: Topic; t: Translation; index: VerseIndex; kind?: string; place?: TopicPlace }) {
   const ps = useMemo(() => passages(topic), [topic]);
   const [n, setN] = useState(25);
   return (
     <div className="max-w-3xl">
-      <h2 className="font-gothic text-3xl capitalize">{topic.name}</h2>
-      <p className="mt-1 text-xs text-muted-foreground">{ps.length} passages, most endorsed first</p>
+      <h2 className="font-garamond text-3xl capitalize">{topic.name}</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {kind && <span className="text-foreground/80">{KIND_LABELS[kind] ?? kind}</span>}
+        {kind && " · "}
+        {ps.length} passages, most endorsed first
+        {place && place.share >= 0.4 && place.genre !== "Other" ? ` · mostly in ${place.genre === "Wisdom and poetry" ? "wisdom and poetry" : `the ${place.genre}`}` : ""}
+      </p>
       <div className="mt-4">
         {ps.slice(0, n).map((p) => (
           <PassageRow key={`${p.start}-${p.end}`} t={t} index={index} start={p.start} end={p.end} />
@@ -167,8 +314,8 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
   const results = useMemo(() => (g && walkFrom !== null ? studyWalk(g, [walkFrom]) : null), [g, walkFrom]);
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
-      <div className="grid max-w-5xl gap-10 lg:grid-cols-2">
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-8 py-6 lg:grid-cols-2">
         <section>
           <SectionLabel>Study walk</SectionLabel>
           <p className="mt-2 text-sm text-muted-foreground">

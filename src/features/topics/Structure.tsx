@@ -59,7 +59,8 @@ export function Structure({ t, index }: { t: Translation; index: VerseIndex }) {
 
   const v = (i: number) => verses[i];
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="mx-auto w-full max-w-6xl px-8 py-6">
       <form className="flex max-w-md gap-2" onSubmit={(e) => { e.preventDefault(); const r = parseRef(input); if (r) setRef(r.verse ? r : { ...r, verse: 0 }); }}>
         <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="A chapter or passage, e.g. Psalm 67" />
         <Button type="submit" variant="brand">Analyse</Button>
@@ -120,6 +121,7 @@ export function Structure({ t, index }: { t: Translation; index: VerseIndex }) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

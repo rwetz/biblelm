@@ -92,16 +92,95 @@ async function manifest() {
   return plates;
 }
 
+/**
+ * Larger scans for plates whose catalogue file is a small copy (under 1000 px
+ * on its long side). The OT ones are the "Doré's English Bible" series on
+ * Commons; the NT ones are scans of Warsaw editions printed from
+ * Doré's blocks, *Pismo Święte Starego i Nowego Testamentu* (1874, vol. 2) and
+ * *Nowy Testament* (1892), and one from *Pismo Święte w obrazach Gustawa
+ * Doré* (1930), from Polona, the National Library of Poland. A page scan
+ * carries a `crop`, the plate's box as fractions of the page
+ * [left, top, width, height], applied at download, so `.img` holds the plate
+ * alone. All are public domain on Commons. Changing an entry needs that
+ * plate's `.img` deleted to download again. No larger scan was found for
+ * dore-165 (The Dumb Man Possessed) or dore-227 (Death of Ananias): neither
+ * Warsaw edition prints them.
+ */
+const T2 = "Pismo_Swiete_Starego_i_Nowego_Testamentu._T._2_1874";
+const NT = "Nowy_Testament_Pana_naszego_Jezusa_Chrystusa_1892";
+const P30 = "Pismo_Swiete_w_obrazach_Gustawa_Dore_1930";
+const EDITION = { [T2]: "Warsaw, 1874", [NT]: "Warsaw, 1892", [P30]: "Warsaw, 1930" };
+const BETTER = {
+  "dore-001": { file: "001.The_Creation_of_Light.jpg" },
+  "dore-006": { file: "006.The_World_Is_Destroyed_by_Water.jpg" },
+  "dore-009": { file: "009.Noah_Curses_Ham_and_Canaan.jpg" },
+  "dore-010": { file: "010.The_Tower_of_Babel.jpg" },
+  "dore-014": { file: "014.Abraham_Sends_Hagar_and_Ishmael_Away.jpg" },
+  "dore-019": { file: "019.The_Meeting_of_Isaac_and_Rebekah.jpg" },
+  "dore-041": { file: "041A.Moses_Breaks_the_Tables_of_the_Law.jpg" },
+  "dore-042": { file: "041B.The_Spies_Return_from_the_Promised_Land.jpg" },
+  "dore-046": { file: "044._The_Israelites_Cross_the_Jordan_River.jpg" },
+  "dore-168": { file: `${T2}_(89476956).jpg`, crop: [0.1409, 0.2208, 0.5797, 0.5358] },
+  "dore-169": { file: "Jesus_healing_the_sick_(89476181).jpg", edition: "Warsaw, 1874" },
+  "dore-171": { file: `${NT}_(94131175).jpg`, crop: [0.0779, 0.15, 0.7138, 0.6535] },
+  "dore-174": { file: `${T2}_(89478813).jpg`, crop: [0.1409, 0.2029, 0.5891, 0.5138] },
+  "dore-175": { file: `${T2}_(89483694).jpg`, crop: [0.1419, 0.2111, 0.5729, 0.5218] },
+  "dore-177": { file: `${NT}_(94131731).jpg`, crop: [0.1633, 0.1154, 0.6456, 0.7032] },
+  "dore-180": { file: `${NT}_(94131797).jpg`, crop: [0.1013, 0.1559, 0.7169, 0.6532] },
+  "dore-183": { file: `${T2}_(89475438).jpg`, crop: [0.1451, 0.2078, 0.5898, 0.5289] },
+  "dore-184": { file: `${NT}_(94130910).jpg`, crop: [0.0862, 0.1597, 0.7135, 0.6489] },
+  "dore-186": { file: `${T2}_(89479109).jpg`, crop: [0.1372, 0.2086, 0.6151, 0.5356] },
+  "dore-187": { file: `${T2}_(89479213).jpg`, crop: [0.1331, 0.2059, 0.5932, 0.5324] },
+  "dore-192": { file: `${NT}_(94131337).jpg`, crop: [0.1005, 0.1637, 0.7063, 0.6502] },
+  "dore-193": { file: `${NT}_(94131349).jpg`, crop: [0.1042, 0.1574, 0.7047, 0.6471] },
+  "dore-198": { file: `${NT}_(94131400).jpg`, crop: [0.0857, 0.1444, 0.712, 0.656] },
+  "dore-199": { file: `${NT}_(94131409).jpg`, crop: [0.1107, 0.1685, 0.7073, 0.6527] },
+  "dore-203": { file: `${NT}_(94131460).jpg`, crop: [0.0911, 0.1541, 0.7083, 0.6513] },
+  "dore-205": { file: `${T2}_(89482051).jpg`, crop: [0.2362, 0.1469, 0.5203, 0.5812] },
+  "dore-206": { file: `${T2}_(89482272).jpg`, crop: [0.143, 0.2193, 0.5792, 0.5185] },
+  "dore-209": { file: `${NT}_(94131570).jpg`, crop: [0.0909, 0.1718, 0.7089, 0.6552] },
+  "dore-210": { file: `${NT}_(94131268).jpg`, crop: [0.0948, 0.1455, 0.7112, 0.6476] },
+  "dore-211": { file: `${T2}_(89483040).jpg`, crop: [0.1456, 0.2086, 0.5721, 0.5185] },
+  "dore-217": { file: `${NT}_(94131665).jpg`, crop: [0.1096, 0.1518, 0.7036, 0.6507] },
+  "dore-219": { file: `${NT}_(94131239).jpg`, crop: [0.0841, 0.1557, 0.7216, 0.6535] },
+  "dore-221": { file: `${T2}_(89483941).jpg`, crop: [0.1549, 0.2141, 0.5716, 0.5173] },
+  "dore-222": { file: `${T2}_(89484137).jpg`, crop: [0.156, 0.2114, 0.5693, 0.5099] },
+  "dore-228": { file: "The_Death_of_Stephen_(89485178).jpg", edition: "Warsaw, 1874" },
+  "dore-230": { file: `${NT}_(94131941).jpg`, crop: [0.1023, 0.1664, 0.7148, 0.6606] },
+  "dore-231": { file: `${NT}_(94131963).jpg`, crop: [0.0992, 0.159, 0.718, 0.6637] },
+  "dore-233": { file: "Paul_Addresses_the_Crowd_After_His_Arrest_(89485728).jpg", edition: "Warsaw, 1874" },
+  "dore-235": { file: `${P30}_(92785010).jpg`, crop: [0.0917, 0.1538, 0.7138, 0.6423] },
+  "dore-238": { file: `${NT}_(94132167).jpg`, crop: [0.1151, 0.1409, 0.7089, 0.6604] },
+  "dore-240": { file: `${NT}_(94132185).jpg`, crop: [0.1164, 0.1646, 0.7117, 0.6595] },
+  "dore-241": { file: `${T2}_(89486509).jpg`, crop: [0.1539, 0.2074, 0.5841, 0.5172] },
+};
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function download(p) {
   const dest = join(SRC, `${p.id}.img`);
   if (existsSync(dest)) return dest;
-  const url = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(p.file)}?width=1800`;
+  // A page scan is fetched larger, since the plate is only part of the page.
+  const url = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(p.file)}?width=${p.crop ? 2600 : 1800}`;
   for (let attempt = 1; ; attempt++) {
-    const res = await fetch(url, { headers: UA, redirect: "follow" });
+    // A stalled connection would otherwise hang the build: time out and retry.
+    let res, buf;
+    try {
+      res = await fetch(url, { headers: UA, redirect: "follow", signal: AbortSignal.timeout(90_000) });
+      if (res.ok) buf = Buffer.from(await res.arrayBuffer());
+    } catch (e) {
+      if (attempt >= 4) throw new Error(`${p.file}: ${e.message}`);
+      await sleep(2000 * attempt);
+      continue;
+    }
     if (res.ok) {
-      writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
+      if (!p.crop) writeFileSync(dest, buf);
+      else {
+        const { width, height } = await sharp(buf).metadata();
+        const [l, t, w, h] = p.crop;
+        const box = { left: Math.round(l * width), top: Math.round(t * height), width: Math.round(w * width), height: Math.round(h * height) };
+        await sharp(buf).extract(box).grayscale().png().toFile(dest);
+      }
       return dest;
     }
     if (attempt >= 4 || (res.status !== 429 && res.status < 500)) throw new Error(`${p.file}: HTTP ${res.status}`);
@@ -143,7 +222,13 @@ async function main() {
   mkdirSync(OUT, { recursive: true });
   const cachedManifest = join(SRC, "manifest.json");
   const onlyProcess = process.argv.includes("--process");
-  const plates = onlyProcess && existsSync(cachedManifest) ? JSON.parse(readFileSync(cachedManifest, "utf8")) : await manifest();
+  const listed = onlyProcess && existsSync(cachedManifest) ? JSON.parse(readFileSync(cachedManifest, "utf8")) : await manifest();
+  const plates = listed.map((p) => {
+    const b = BETTER[p.id];
+    if (!b) return p;
+    const edition = b.edition ?? EDITION[b.file.replace(/_\(\d+\)\.jpg$/, "")];
+    return { ...p, file: b.file, source: `https://commons.wikimedia.org/wiki/File:${b.file}`, ...(b.crop ? { crop: b.crop } : {}), ...(edition ? { edition } : {}) };
+  });
   writeFileSync(cachedManifest, JSON.stringify(plates, null, 1));
 
   const done = [];
@@ -173,12 +258,19 @@ function writeCredits(plates) {
   let md = "# Art credits\n\nGustave Doré (1832-1883), illustrations for *La Grande Bible de Tours* (Mame, 1866), wood engravings. Public domain.\n" +
     "Scans from Wikimedia Commons (each file's page records its source and public-domain tag). Catalogue after Wikipedia's\n" +
     "[list of the plates](https://en.wikipedia.org/wiki/Gustave_Dor%C3%A9%27s_illustrations_for_La_Grande_Bible_de_Tours).\n" +
+    "Where a source names an edition, the scan is of that Warsaw printing from Doré's blocks (Polona, National Library of\n" +
+    "Poland), cropped to the plate.\n" +
     "Generated by `scripts/art/dore.mjs`; do not edit by hand.\n";
   for (const s of ["ot", "deutero", "nt"]) {
     md += `\n## ${head[s]}\n\n| # | Plate | Passage | Source |\n|---|---|---|---|\n`;
-    for (const p of plates.filter((x) => x.section === s)) md += `| ${p.n} | ${p.title} | ${fmt(p.ref)} | [Commons](${p.source}) |\n`;
+    for (const p of plates.filter((x) => x.section === s))
+      md += `| ${p.n} | ${p.title} | ${fmt(p.ref)} | [Commons](${p.source})${p.edition ? `, ${p.edition}` : ""} |\n`;
   }
-  writeFileSync(join(ROOT, "docs", "art-credits.md"), md);
+  // Keep the hand-written sections that follow the plates (the Lab's art).
+  const path = join(ROOT, "docs", "art-credits.md");
+  const old = existsSync(path) ? readFileSync(path, "utf8").replace(/\r\n/g, "\n") : "";
+  const tail = old.search(/^## (?!Old Testament|Deuterocanon|New Testament)/m);
+  writeFileSync(path, tail < 0 ? md : `${md}\n${old.slice(tail)}`);
 }
 
 await main();

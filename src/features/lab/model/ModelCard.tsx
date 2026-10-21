@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { InfoTip } from "@/features/lab/InfoTip";
 import { useAppStore, type ModelInfo } from "@/store/appStore";
 import { cn } from "@/lib/utils";
-import { Badge, Button, Icon, Input, Spinner } from "@nexis/design";
+import { Button, Icon, Input, Spinner } from "@nexis/design";
 
 /** Extensions `biblelm.model_io` knows how to validate and install. */
 const ACCEPTED = [".pt", ".pth", ".ckpt", ".onnx", ".json"];
@@ -137,12 +137,7 @@ export function ModelCard() {
           </InfoTip>
         </span>
         {modelInfo && (
-          <Badge variant={ready ? "success" : "outline"} className="gap-1">
-            {ready && (
-              <Icon name="success" size="xs" />
-            )}
-            {ready ? "Loaded" : "No model"}
-          </Badge>
+          <span className={cn("text-xs", ready ? "text-success" : "text-muted-foreground")}>{ready ? "Loaded" : "No model yet"}</span>
         )}
       </div>
 
@@ -262,9 +257,7 @@ export function ModelCard() {
                   {describeImport(f)}
                 </p>
               </div>
-              <Badge variant="outline" className="shrink-0 text-[10px]">
-                {f.kind}
-              </Badge>
+              <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{f.kind}</span>
             </div>
           ))}
         </div>

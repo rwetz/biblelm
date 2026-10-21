@@ -16,6 +16,34 @@ illustrated study Bibles.
 > canvas-drawn and, in dark mode, lights the paper dots instead of the ink).
 > Plates are 1000 px single-channel JPEG (hatching defeats AVIF and WebP), 40 MB
 > for all 241. Provenance: [art-credits.md](art-credits.md).
+>
+> **As built (2.0, second pass):** dithering now happens live, in the webview,
+> at exactly the size the art is drawn (`src/art/dither.ts`, `<Dither>`), so dots
+> stay square on any window and display scale. Heroes ship a grayscale "tone"
+> JPEG (`scripts/art/heroes.mjs`, 1200 px) beside the 1-bit PNG; Home frames
+> its hero in a centred window up to 84rem wide so more of the plate shows.
+> Small art is dithered too: corner plates (behind the page, never over it),
+> a sidebar vignette that follows what you are reading (`src/art/SidebarArt.tsx`)
+> and empty-state spots (`<ArtSpot>`). Plates beside the text are still
+> engravings, and only in the chapter they depict (no borrowing the nearest
+> plate from another chapter). Long work shows `<CrossLoader>`, a cross that
+> gathers out of Bayer dots.
+>
+> **As built (third pass):** the Lab takes its heroes from beside the Bible,
+> Doré's Paradise Lost and Ancient Mariner (`scripts/art/literary.mjs`, credits
+> in art-credits.md), turning every 30 seconds; each plate's tones are bent to
+> one average so the dark night plates dither with the same weight. Sigils
+> (`src/art/Sigil.tsx`) are the first drawn art: small vector emblems,
+> shaded and dithered like the plates, that show a reading's confidence by
+> how far they have formed.
+>
+> **As built (sharper plates):** 44 of the Commons files in Wikipedia's list
+> were small copies (330 to 750 px), so their plates looked soft. 42 now come
+> from larger public-domain scans (`BETTER` in `scripts/art/dore.mjs`): the OT
+> ones from the "Doré's English Bible" series, the NT ones cropped from Polona's
+> page scans of Warsaw editions printed from Doré's blocks (1874, 1892, 1930).
+> *The Dumb Man Possessed* and *Death of Ananias* have no larger scan on
+> Commons and stay small.
 
 ## Rules
 

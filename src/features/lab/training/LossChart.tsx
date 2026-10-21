@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ArtSpot, usePagePlate } from "@/art/Art";
 import { cn } from "@/lib/utils";
 
 interface LossChartProps {
@@ -14,6 +15,7 @@ const PAD_B = 30;
 
 export function LossChart({ trainLoss, valLoss, className }: LossChartProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const bones = usePagePlate(129); // The Vision of the Valley of the Dry Bones: "can these bones live?"
   // Render the SVG at the container's real pixel size so it fills any aspect
   // ratio without letterboxing (1 viewBox unit = 1px).
   const [size, setSize] = useState({ w: 640, h: 260 });
@@ -32,9 +34,10 @@ export function LossChart({ trainLoss, valLoss, className }: LossChartProps) {
   return (
     <div ref={ref} className={cn("relative h-full w-full", className)}>
       {trainLoss.length === 0 ? (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
-          <HeptagramIcon className="size-8 opacity-30" />
-          <p className="text-sm">No training data yet</p>
+        <div className="flex h-full w-full items-center justify-center">
+          <ArtSpot plate={bones} title="Nothing learned yet">
+            Start a run and the loss, how wrong its guesses still are, is drawn here, falling as the model learns.
+          </ArtSpot>
         </div>
       ) : (
         <Plot trainLoss={trainLoss} valLoss={valLoss} w={size.w} h={size.h} />
@@ -247,22 +250,6 @@ function Plot({
           </text>
         </>
       )}
-    </svg>
-  );
-}
-
-function HeptagramIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 100 100" fill="none" className={className}>
-      <circle cx="50" cy="50" r="47" stroke="currentColor" strokeWidth="2.2" />
-      <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="1.4" />
-      <polygon
-        points="50,12 87.1,58.5 33.5,84.2 20.3,26.3 79.7,26.3 66.5,84.2 12.9,58.5"
-        stroke="currentColor"
-        strokeWidth="2.8"
-        fill="none"
-        strokeLinejoin="miter"
-      />
     </svg>
   );
 }

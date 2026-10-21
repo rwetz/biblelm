@@ -53,6 +53,32 @@ and the app says so once.
 - **Flag** whether a found passage is narrative, law, poetry, prophecy, epistle
   or apocalyptic, so results can be grouped by genre.
 
+> **As built (live readings):** routing runs as you type (120 ms after the last
+> keystroke, once per query, cached) on Search and the Home box; it changes no
+> results. On screen it is never named and shows no numbers: each reading is a
+> dithered sigil that forms as far as it is sure (docs/DESIGN.md). The verse panel asks
+> one per-verse choice (narrative, law, praise, lament, prophecy, teaching,
+> prayer, list): a book's genre stays a lookup, this is the verse's own kind.
+> Measured against the live API (jev-1.13.0): about 265 ms a call on a fresh
+> connection, 130 to 165 ms on a kept-alive one, of which about 16 ms is the
+> network. Rust keeps one shared client and opens the connection when it first
+> checks for the key. It allows five tasks: `route`, `rerank`, `verse`, `xref`
+> (cross references scored for closeness to the open verse, 12 in one call) and
+> `judge` (the Lab's generated text scored for KJV style and sense; it is the
+> machine judging the machine, never a judgment of Scripture). On Search the
+> reading also orders the live result lanes and sets how far the lens plate
+> resolves (`level` on `<Dither>`). The questions live in
+> `src/lib/jev-contracts.ts`, shared with `scripts/bench/jev.ts`; results in
+> [evals/benchmarks.md](evals/benchmarks.md).
+>
+> **As built (questions):** a sixth task, `answer`, answers a question by
+> selection rather than generation. The eight passages nearest in meaning are
+> cut into clauses in code; one call scores how well each answers (0 to 3),
+> picks the clause that does, and picks one of ten hand-written notes on the
+> text or `none`. Code keeps a note at probability 0.5 or more and passages
+> at level 1.8 or more, best three. About 0.5 s; 5 of 5 right on the bench.
+> Topic kinds are tagged the same way, offline (`scripts/data/topic-kinds.mjs`).
+
 ### 3. No hosted large model
 
 Decided 2026-10-20: BibleLM does not call Claude Opus 5.5 or any larger hosted

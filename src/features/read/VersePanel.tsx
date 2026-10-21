@@ -3,6 +3,8 @@ import { Badge, Button, Icon, ScrollArea, SectionLabel, Spinner, Textarea, toast
 import { listTranslations, loadTranslation, type Translation, type VerseIndex } from "@/lib/bible";
 import { formatRef, osisOf, type Ref, type Shelf } from "@/lib/canon";
 import { useGraph, useIndex } from "@/lib/hooks";
+import { useFlip } from "@/lib/flip";
+import { rankXrefs, XREF_LEVELS, type XrefRanking } from "@/lib/jev";
 import { moreLikeThis, type Hit } from "@/lib/semantic";
 import { topicsForVerse, type Topic } from "@/lib/topics";
 import { noteCovers, useNotebooks } from "@/store/notebooks";
@@ -10,6 +12,7 @@ import { useStudy } from "@/store/study";
 import { VerseText } from "./ReadView";
 import { wordDiff } from "./diff";
 import { StrongsEntry, VerseWords } from "./WordStudy";
+import { VerseReading } from "@/features/search/JevReading";
 
 /** Everything about one verse: other translations, cross references, topics, similar verses, your notes. */
 export function VersePanel({
@@ -40,7 +43,7 @@ export function VersePanel({
   return (
     <aside className="flex w-[25rem] shrink-0 flex-col border-l border-border/60 bg-card/60">
       <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border/60 px-4">
-        <h2 className="font-gothic text-lg">{formatRef(refSel)}</h2>
+        <h2 className="font-garamond text-xl">{formatRef(refSel)}</h2>
         <span className="flex-1" />
         <HighlightButton osis={osis} />
         <Tooltip>
@@ -75,6 +78,7 @@ export function VersePanel({
                 </div>
               );
             })}
+            {v && <VerseReading reference={formatRef(refSel)} text={v.text} translation={main.meta.id} />}
             <CompareAll refSel={refSel} base={main} />
           </section>
 
@@ -205,11 +209,11 @@ function Notes({ osis }: { osis: string }) {
     <section className="space-y-2">
       <SectionLabel>Notes in {nb.title}</SectionLabel>
       {mine.map((n) => (
-        <div key={n.id} className="group rounded-lg bg-muted/40 p-2">
+        <div key={n.id} className="group border-l-2 border-brand/40 bg-muted/30 py-1.5 pl-3 pr-2 transition-colors focus-within:border-brand focus-within:bg-muted/50">
           <Textarea
             value={n.body}
             onChange={(e) => updateNote(n.id, { body: e.target.value })}
-            className="min-h-16 resize-y border-none bg-transparent p-1 text-sm shadow-none"
+            className="min-h-16 resize-y rounded-none border-none bg-transparent p-1 font-garamond text-[15px] leading-relaxed shadow-none focus-visible:border-none focus-visible:ring-0"
           />
           <div className="flex items-center gap-2 px-1 text-[11px] text-muted-foreground">
             {n.translation && <Badge variant="outline">{n.translation.toUpperCase()} wording</Badge>}
@@ -224,7 +228,7 @@ function Notes({ osis }: { osis: string }) {
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         placeholder="Write a note on this verse. Markdown is fine."
-        className="min-h-20 text-sm"
+        className="min-h-20 font-garamond text-[15px] focus-visible:border-foreground/30 focus-visible:ring-0"
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && draft.trim()) {
             addNote({ notebook: nb.id, start: osis, body: draft.trim() });
@@ -252,22 +256,75 @@ function Notes({ osis }: { osis: string }) {
 function CrossRefs({ vi, index, main, onNavigate }: { vi: number; index: VerseIndex; main: Translation; onNavigate: (r: Ref) => void }) {
   const [g] = useGraph();
   const [all, setAll] = useState(false);
-  if (!g) return null;
-  const links = g.out(vi);
+  const [byJev, setByJev] = useState(true);
+  const [jev, setJev] = useState<XrefRanking<number> | null>(null);
+  const [asking, setAsking] = useState(false);
+  const links = useMemo(() => (g ? g.out(vi) : []), [g, vi]);
+  const top = links.slice(0, 12);
+  const item = (l: (typeof links)[number]) => {
+    const r = index.ref(l.to);
+    const end = l.toEnd !== l.to ? index.ref(l.toEnd) : null;
+    return { r, label: formatRef(end && end.chapter === r.chapter ? { ...r, verseEnd: end.verse } : r), text: main.verse(r)?.text ?? "" };
+  };
+
+  // Jev reads the top twelve against this verse as soon as the panel opens.
+  useEffect(() => {
+    setJev(null);
+    if (!top.length) return;
+    let live = true;
+    const src = index.ref(vi);
+    setAsking(true);
+    rankXrefs(`${main.meta.id}:${vi}`, { ref: formatRef(src), text: main.verse(src)?.text ?? "" }, top.map((l) => ({ ref: item(l).label, text: item(l).text }))).then((r) => {
+      if (!live) return;
+      setAsking(false);
+      setJev(r);
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vi, links, main]);
+
+  const ranked = jev && byJev;
+  const levels = new Map(jev?.ranked.map((x) => [x.item, x.level]) ?? []);
+  const order = ranked ? [...jev!.ranked.map((x) => top[x.item]), ...links.slice(12)] : links;
+  const shown = all ? order : order.slice(0, 8);
+  const flip = useFlip(shown.map((l) => `${l.to}-${l.toEnd}`).join());
   if (!links.length) return null;
-  const shown = all ? links : links.slice(0, 8);
   return (
     <section className="space-y-2">
-      <SectionLabel>Cross references · {links.length}</SectionLabel>
+      <div className="flex items-center gap-2">
+        <SectionLabel className="flex-1">Cross references · {links.length}</SectionLabel>
+        {(jev || asking) && (
+          <button
+            type="button"
+            disabled={!jev}
+            onClick={() => setByJev(!byJev)}
+            className="rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+            title={byJev ? "Order by reader votes instead" : "Order by closeness to this verse"}
+          >
+            {asking ? "Ordering…" : byJev ? "Closest first" : "Most voted"}
+          </button>
+        )}
+      </div>
       {shown.map((l) => {
-        const r = index.ref(l.to);
-        const end = l.toEnd !== l.to ? index.ref(l.toEnd) : null;
-        const label = formatRef(end && end.chapter === r.chapter ? { ...r, verseEnd: end.verse } : r);
-        const text = main.verse(r)?.text;
+        const { r, label, text } = item(l);
+        const i = top.indexOf(l);
+        const level = ranked && i >= 0 ? levels.get(i) : undefined;
         return (
-          <button key={`${l.to}-${l.toEnd}`} type="button" onClick={() => onNavigate(r)} className="block w-full rounded-md p-1.5 text-left hover:bg-muted">
-            <span className="text-xs font-semibold text-brand">{label}</span>
-            <span className="ml-2 font-mono text-[10px] text-muted-foreground">{l.votes}</span>
+          <button key={`${l.to}-${l.toEnd}`} ref={flip(`${l.to}-${l.toEnd}`)} type="button" onClick={() => onNavigate(r)} className="block w-full rounded-md p-1.5 text-left transition-colors hover:bg-foreground/5">
+            <span className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-brand">{label}</span>
+              {ranked && level !== undefined ? (
+                <span className="flex gap-0.5" title={level === null ? "Unsure" : XREF_LEVELS[Math.round(level)]}>
+                  {[1, 2, 3].map((k) => (
+                    <span key={k} className={cn("size-1.5 rounded-full", level !== null && level >= k - 0.5 ? "bg-foreground/70" : "bg-foreground/15")} />
+                  ))}
+                </span>
+              ) : (
+                <span className="font-mono text-[10px] text-muted-foreground">{l.votes}</span>
+              )}
+            </span>
             {text && <span className="mt-0.5 line-clamp-2 block font-garamond text-sm text-foreground/85">{text}</span>}
           </button>
         );
@@ -277,7 +334,9 @@ function CrossRefs({ vi, index, main, onNavigate }: { vi: number; index: VerseIn
           {all ? "Fewer" : `All ${links.length}`}
         </Button>
       )}
-      <p className="text-[10px] text-muted-foreground/70">Votes from OpenBible.info readers (CC-BY).</p>
+      <p className="text-[10px] text-muted-foreground/70">
+        References and votes from OpenBible.info readers (CC-BY).{ranked ? " The top twelve are ordered by how closely each speaks to this verse." : ""}
+      </p>
     </section>
   );
 }

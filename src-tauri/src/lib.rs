@@ -376,6 +376,22 @@ async fn corpus_preview(version: String, chars: Option<u32>) -> Result<String, S
     Ok(v["text"].as_str().unwrap_or_default().to_string())
 }
 
+/// Every character in a downloaded corpus with its count, commonest first:
+/// the model's whole vocabulary.
+#[tauri::command]
+async fn corpus_alphabet(version: String) -> Result<serde_json::Value, String> {
+    let root = project_root();
+    let args = vec![
+        "alphabet".into(),
+        "--data-dir".into(),
+        data_dir(&root).to_string_lossy().into_owned(),
+        "--version".into(),
+        version,
+    ];
+    let v = py_json(&root, "biblelm.corpus", &args, "alphabet").await?;
+    Ok(v["symbols"].clone())
+}
+
 #[tauri::command]
 async fn model_status() -> Result<serde_json::Value, String> {
     let root = project_root();
@@ -731,6 +747,7 @@ pub fn run() {
             corpus_download,
             corpus_remove,
             corpus_preview,
+            corpus_alphabet,
             train_start,
             train_stop,
             inference_generate,

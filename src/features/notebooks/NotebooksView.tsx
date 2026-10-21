@@ -25,7 +25,7 @@ import {
   IN_TAURI,
   cn,
 } from "@nexis/design";
-import { CornerPlate, Engraving, usePagePlate, usePlates } from "@/art/Art";
+import { ArtSpot, Engraving, usePagePlate, usePlates } from "@/art/Art";
 import { PAGE_PLATES, type Plate } from "@/lib/art";
 import { backend } from "@/lib/backend";
 import { formatRef, parseOsis, SHELVES, type Shelf } from "@/lib/canon";
@@ -68,8 +68,7 @@ export function NotebooksView() {
         </div>
       </aside>
       <div className="relative min-w-0 flex-1 overflow-y-auto">
-        {!nb && <CornerPlate plate={plate} corner="br" />}
-        {nb ? <NotebookDetail nb={nb} /> : <EmptyNotebooks onCreate={() => setCreating(true)} />}
+        {nb ? <NotebookDetail nb={nb} /> : <EmptyNotebooks plate={plate} onCreate={() => setCreating(true)} />}
       </div>
       <NotebookDialog open={creating} onOpenChange={setCreating} />
     </div>
@@ -93,19 +92,18 @@ function NotebookRow({ b, active, onClick }: { b: Notebook; active: boolean; onC
   );
 }
 
-function EmptyNotebooks({ onCreate }: { onCreate: () => void }) {
+function EmptyNotebooks({ plate, onCreate }: { plate?: Plate; onCreate: () => void }) {
   return (
     <div className="grid h-full place-items-center p-8">
-      <div className="max-w-md text-center">
-        <h2 className="font-gothic text-3xl">A study of your own</h2>
-        <p className="mt-3 text-sm text-muted-foreground">
+      <ArtSpot plate={plate} title={<span className="text-3xl">A study of your own</span>} className="max-w-md">
+        <p className="mt-1.5">
           A notebook is one study: Romans with Paul, the Psalms of lament, the Apocrypha as a curiosity. Each keeps the translations and canon you chose
           for it, and notes anchored to verses so they follow the text into every translation.
         </p>
         <Button variant="brand" className="mt-5" onClick={onCreate}>
           <Icon name="add" /> New notebook
         </Button>
-      </div>
+      </ArtSpot>
     </div>
   );
 }
@@ -226,7 +224,7 @@ function NoteCard({ n, onOpen, onChange, onTags, onDelete }: { n: Note; onOpen: 
   return (
     <article className="group rounded-xl bg-card p-4 ring-1 ring-foreground/6">
       <div className="flex items-center gap-2">
-        <button type="button" onClick={onOpen} className="font-gothic text-lg text-brand hover:underline">
+        <button type="button" onClick={onOpen} className="font-garamond text-lg text-brand hover:underline">
           {label(n.start)}{n.end ? `–${n.end.split(".")[2]}` : ""}
         </button>
         {n.translation && <Badge variant="outline">{n.translation.toUpperCase()} wording</Badge>}

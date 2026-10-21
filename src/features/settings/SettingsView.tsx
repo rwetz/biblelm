@@ -11,13 +11,14 @@ import {
   Switch,
   useTheme,
 } from "@nexis/design";
-import { CornerPlate, usePagePlate } from "@/art/Art";
+import { PlatePage, usePagePlate } from "@/art/Art";
 import { PAGE_PLATES } from "@/lib/art";
 import { backend } from "@/lib/backend";
 import { SHELVES } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
 import { jevAvailable, setJevBypass } from "@/lib/jev";
 import { useStudy } from "@/store/study";
+import { DeveloperPanel } from "./DeveloperPanel";
 
 export function SettingsView() {
   const study = useStudy();
@@ -33,8 +34,7 @@ export function SettingsView() {
   }, []);
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <CornerPlate plate={plate} corner="tr" />
+    <PlatePage plate={plate} corner="tr">
       <div className="relative mx-auto w-full max-w-3xl space-y-6 px-8 pb-24 pt-10">
         <h1 className="font-blackletter text-4xl">Settings</h1>
 
@@ -135,7 +135,7 @@ export function SettingsView() {
         <Panel title="Machine help" meta="small models only, always citing real verses">
           <div className="space-y-5">
             <Field label="Semantic search" hint="A small embedding model (bge-small, MIT) that runs on this computer. Finds verses by meaning." inline>
-              <Badge variant="success">On, offline</Badge>
+              <span className="text-xs text-success">On, offline</span>
             </Field>
             <Field
               label="Jev (TypeSafe)"
@@ -143,7 +143,9 @@ export function SettingsView() {
               inline
             >
               <div className="flex items-center gap-2">
-                <Badge variant={jev ? "success" : "outline"}>{jev === null ? "…" : jev ? "Available" : IN_TAURI ? "No key in environment" : "Desktop only"}</Badge>
+                <span className={jev ? "text-xs text-success" : "text-xs text-muted-foreground"}>
+                  {jev === null ? "Checking…" : jev ? "Key found" : IN_TAURI ? "No key found" : "Desktop only"}
+                </span>
                 {jev && (
                   <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Switch size="sm" checked={bypass} onCheckedChange={(b) => { setBypass(b); setJevBypass(b); }} /> Bypass
@@ -151,8 +153,12 @@ export function SettingsView() {
                 )}
               </div>
             </Field>
+            {jev === false && <JevSetup />}
+            {jev && <JevUses />}
           </div>
         </Panel>
+
+        <DeveloperPanel />
 
         <Panel title="About">
           <div className="space-y-2 text-sm">
@@ -176,6 +182,79 @@ export function SettingsView() {
           </div>
         </Panel>
       </div>
+    </PlatePage>
+  );
+}
+
+const SET_KEY = '[Environment]::SetEnvironmentVariable("TYPESAFE_API_KEY", "paste-your-key-here", "User")';
+
+/**
+ * There is deliberately no field for the key: it stays in your environment,
+ * Rust reads it, and the page never holds it (AGENTS.md). This says how.
+ */
+function JevSetup() {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="rounded-xl bg-muted/40 p-4 text-sm">
+      <p className="font-medium text-foreground">Turning Jev on</p>
+      <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-muted-foreground">
+        <li>
+          Get a key from TypeSafe (<span className="font-mono text-xs">typesafe.ai</span>).
+        </li>
+        <li>
+          In PowerShell, run this with your key in place of the placeholder. It saves the key for your Windows user only:
+          <div className="mt-1.5 flex items-start gap-2">
+            <code className="min-w-0 flex-1 break-all rounded-md bg-background px-2 py-1.5 font-mono text-xs text-foreground">{SET_KEY}</code>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigator.clipboard.writeText(SET_KEY).then(() => setCopied(true))}
+            >
+              <Icon name={copied ? "success" : "copy"} size="sm" /> {copied ? "Copied" : "Copy"}
+            </Button>
+          </div>
+        </li>
+        <li>Quit and reopen BibleLM (and any terminal that started it), so it reads the new variable.</li>
+      </ol>
+      <p className="mt-3 text-xs text-muted-foreground">
+        The key is never shown, stored or sent by the page. Only the request (your query, or verse references with their text) leaves this computer.
+      </p>
+    </div>
+  );
+}
+
+/** Where Jev is called, so nothing it does is a surprise. */
+function JevUses() {
+  return (
+    <div className="rounded-xl bg-muted/40 p-4 text-sm">
+      <p className="font-medium text-foreground">Where Jev is used</p>
+      <ul className="mt-2 space-y-2 text-muted-foreground">
+        <li>
+          <span className="text-foreground">Reading your query, as you type.</span> On Search and the Home search box, a moment after you stop typing Jev is
+          asked one question: are you after exact words, a theme, a story or person, or an answer? The odds and the round trip in milliseconds show under the
+          box. Each query is asked once; it changes no results.
+        </li>
+        <li>
+          <span className="text-foreground">The verse panel.</span> Opening a verse asks what kind of passage it is (narrative, law, praise, lament,
+          prophecy, teaching, prayer or a list), sending its reference and text. Shown as Jev's reading, never as part of the verse. The same moment,
+          its top twelve cross references are scored for how closely each speaks to it and reordered (reader votes are one click away).
+        </li>
+        <li>
+          <span className="text-foreground">Search lanes.</span> The reading of your query also orders the live result lanes and sets how clearly the
+          plate beside them resolves.
+        </li>
+        <li>
+          <span className="text-foreground">The Lab's Generate tab.</span> When the model finishes writing, Jev scores the generated text for sounding like
+          the King James Version and for making sense: the machine judging the machine.
+        </li>
+        <li>
+          <span className="text-foreground">Search, Rank with Jev.</span> Only when you press it: the top 20 meaning results are sent with your query, and Jev
+          rates how directly each verse speaks to it. The list is reordered; every result is still a real verse.
+        </li>
+      </ul>
+      <p className="mt-3 text-xs text-muted-foreground">
+        Nothing else calls it: not the reader's text, notes, topics, training or the Lab's other tabs. Bypass turns it off for this session.
+      </p>
     </div>
   );
 }

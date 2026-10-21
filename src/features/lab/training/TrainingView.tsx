@@ -11,7 +11,9 @@ import {
 } from "@/store/appStore";
 import { refreshGpuInfo } from "@/lib/gpu";
 import { cn } from "@/lib/utils";
-import { Badge, Button, Icon, Progress, ScrollArea, Spinner } from "@nexis/design";
+import { Button, Icon, Progress } from "@nexis/design";
+import { CrossLoader } from "@/art/Art";
+import { LabSection } from "@/features/lab/LabSection";
 
 export function TrainingView() {
   const config = useAppStore((s) => s.trainConfig);
@@ -103,19 +105,19 @@ export function TrainingView() {
   const valLoss = metrics.map((m) => m.valLoss);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
-        <div>
-          <h1 className="text-base font-semibold text-foreground">Training</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            GPT-mini, from scratch · corpus:{" "}
-            <span className="font-mono text-foreground/70">{activeCorpus}</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <LabSection
+      title="Teaching it to write"
+      lede={
+        <>
+          A small GPT, from nothing, on <span className="font-mono text-foreground">{activeCorpus}</span>. Each step it reads a few thousand letters,
+          guesses every next one, and nudges its weights toward the letter that really came. The curve is how wrong it still is.
+        </>
+      }
+      actions={
+        <>
           <StatusBadge status={status} />
           {status === "running" ? (
-            <Button size="sm" variant="destructive" onClick={handleStop} className="gap-1.5 rounded-md">
+            <Button size="sm" variant="destructive" onClick={handleStop} className="gap-1.5">
               <Icon name="stop" size="sm" />
               Stop
             </Button>
@@ -126,22 +128,20 @@ export function TrainingView() {
               onClick={willOOM ? undefined : handleStart}
               disabled={willOOM}
               title={willOOM ? "Estimated VRAM exceeds GPU capacity, reduce parameters in the config panel" : undefined}
-              className="gap-1.5 rounded-md"
+              className="gap-1.5"
             >
               <Icon name="play" size="sm" />
-              {willOOM ? "Over VRAM limit" : status === "completed" ? "Retrain" : "Start Training"}
+              {willOOM ? "Over VRAM limit" : status === "completed" ? "Train again" : "Start training"}
             </Button>
           )}
-        </div>
-      </div>
-
-      <div className="flex min-h-0 flex-1">
+        </>
+      }
+    >
+      <div className="grid items-start gap-5 lg:grid-cols-[17rem_minmax(0,1fr)]">
         {/* Config panel */}
-        <div className="flex w-64 shrink-0 flex-col border-r border-border/60 bg-sidebar">
-          <div className="flex items-center justify-between border-b border-border/60 px-4 py-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-              Config
-            </p>
+        <div className="flex flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/6 dark:ring-foreground/10">
+          <div className="flex h-10 items-center justify-between border-b border-border/60 px-4">
+            <p className="font-heading text-[13px] font-medium">Settings</p>
             <Button
               size="sm"
               variant="ghost"
@@ -154,7 +154,7 @@ export function TrainingView() {
               Defaults
             </Button>
           </div>
-          <ScrollArea className="flex-1">
+          <div>
             <div className="px-4 py-4 space-y-5">
               <ConfigSection title="Architecture">
                 <ConfigRow
@@ -234,17 +234,14 @@ export function TrainingView() {
                   hint="Learning rate"
                   help="How big a correction the model makes each time it's wrong. Too high and it overshoots and never settles; too low and it crawls. ~0.0003 is a safe default."
                 >
-                  <input
-                    type="number"
+                  <NumInput
                     value={config.learningRate}
                     step={0.0001}
-                    min={0.00001}
+                    min={0.0001}
                     max={0.01}
+                    width="w-16"
                     disabled={status === "running"}
-                    onChange={(e) =>
-                      updateConfig({ learningRate: parseFloat(e.target.value) })
-                    }
-                    className="h-7 w-24 rounded-md border border-border bg-input/40 px-2 text-right text-xs font-mono tabular-nums outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 disabled:opacity-50"
+                    onChange={(v) => updateConfig({ learningRate: v })}
                   />
                 </ConfigRow>
                 <ConfigRow
@@ -311,11 +308,7 @@ export function TrainingView() {
                           <span className="text-xs font-medium">
                             {t === "char" ? "Character-level" : "BPE"}
                           </span>
-                          {unavailable && (
-                            <Badge variant="outline" className="text-[10px]">
-                              Soon
-                            </Badge>
-                          )}
+                          {unavailable && <span className="text-[11px] text-muted-foreground">coming later</span>}
                         </label>
                         <InfoTip side="right">
                           {t === "char"
@@ -347,20 +340,18 @@ export function TrainingView() {
               {/* VRAM estimate */}
               <VramMeter estimatedMb={estimatedVramMb} gpuInfo={gpuInfo} gpuError={gpuError} />
             </div>
-          </ScrollArea>
+          </div>
         </div>
 
-        {/* Metrics panel */}
-        <div className="flex min-w-0 flex-1 flex-col p-5 gap-4">
-          {/* Loss chart, grows to fill the available height */}
-          <div className="relative flex min-h-[200px] flex-1 rounded-xl border border-border bg-card p-4">
+        {/* Metrics */}
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="relative flex h-[24rem] rounded-2xl bg-card p-4 ring-1 ring-foreground/6 dark:ring-foreground/10">
             <LossChart trainLoss={trainLoss} valLoss={valLoss} />
             {status === "running" && metrics.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-card/80 backdrop-blur-sm">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Spinner />
-                  Waiting for first metric…
-                </div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl bg-card">
+                <CrossLoader size={56} label="Starting the training run" />
+                <p className="font-garamond text-lg text-foreground">Waking the model</p>
+                <p className="text-sm text-muted-foreground">Starting Python and reading the first batch.</p>
               </div>
             )}
           </div>
@@ -412,7 +403,7 @@ export function TrainingView() {
           </div>
 
           {/* Progress bar + tokens/sec */}
-          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="space-y-3 rounded-2xl bg-card p-4 ring-1 ring-foreground/6 dark:ring-foreground/10">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">
                 {status === "running" && metrics.length === 0
@@ -438,7 +429,7 @@ export function TrainingView() {
           </div>
         </div>
       </div>
-    </div>
+    </LabSection>
   );
 }
 
@@ -579,14 +570,9 @@ function VramMeter({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, "outline" | "success" | "warning" | "destructive" | "brand"> = {
-    idle: "outline",
-    running: "brand",
-    paused: "warning",
-    completed: "success",
-    error: "destructive",
-  };
-  return <Badge variant={map[status] ?? "outline"}>{status}</Badge>;
+  const words: Record<string, string> = { idle: "Not started", running: "Training", paused: "Paused", completed: "Finished", error: "Failed" };
+  const tone: Record<string, string> = { running: "text-brand", completed: "text-success", error: "text-destructive", paused: "text-warning" };
+  return <span className={cn("text-xs", tone[status] ?? "text-muted-foreground")}>{words[status] ?? status}</span>;
 }
 
 function ConfigSection({
@@ -633,6 +619,10 @@ function ConfigRow({
   );
 }
 
+/**
+ * A number with a minus and a plus beside it, in place of the browser's
+ * spinner. Steps snap to `step` and stay within min and max; typing still works.
+ */
 function NumInput({
   value,
   min,
@@ -640,6 +630,7 @@ function NumInput({
   step,
   onChange,
   disabled,
+  width = "w-14",
 }: {
   value: number;
   min: number;
@@ -647,18 +638,31 @@ function NumInput({
   step: number;
   onChange: (v: number) => void;
   disabled?: boolean;
+  width?: string;
 }) {
+  const decimals = (String(step).split(".")[1] ?? "").length;
+  const nudge = (d: number) => onChange(Number(Math.min(max, Math.max(min, value + d * step)).toFixed(decimals)));
+  const button = "grid h-full w-6 place-items-center text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground disabled:pointer-events-none disabled:opacity-30";
   return (
-    <input
-      type="number"
-      value={value}
-      min={min}
-      max={max}
-      step={step}
-      disabled={disabled}
-      onChange={(e) => onChange(parseFloat(e.target.value))}
-      className="h-7 w-20 rounded-md border border-border bg-input/40 px-2 text-right text-xs font-mono tabular-nums outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 disabled:opacity-50"
-    />
+    <span className={cn("inline-flex h-7 items-stretch overflow-hidden rounded-md bg-input/40 ring-1 ring-border focus-within:ring-2 focus-within:ring-ring/30", disabled && "opacity-50")}>
+      <button type="button" tabIndex={-1} aria-label="Less" disabled={disabled || value <= min} onClick={() => nudge(-1)} className={button}>
+        <Icon name="minus" size="xs" />
+      </button>
+      <input
+        type="number"
+        inputMode="decimal"
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        disabled={disabled}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className={cn(width, "bg-transparent text-center font-mono text-xs tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none")}
+      />
+      <button type="button" tabIndex={-1} aria-label="More" disabled={disabled || value >= max} onClick={() => nudge(1)} className={button}>
+        <Icon name="add" size="xs" />
+      </button>
+    </span>
   );
 }
 
@@ -672,7 +676,7 @@ function MetricCard({
   highlight?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
+    <div className="rounded-2xl bg-card px-4 py-3 ring-1 ring-foreground/6 dark:ring-foreground/10">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p
         className={cn(

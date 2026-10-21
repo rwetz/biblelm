@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { InfoTip } from "@/features/lab/InfoTip";
 import { useAppStore } from "@/store/appStore";
 import { Blink, Button, Icon, Slider, Spinner, StatusDot, Textarea } from "@nexis/design";
+import { ArtSpot, usePagePlate } from "@/art/Art";
+import { LabSection } from "@/features/lab/LabSection";
+import { judgeGenerated, type Judgment } from "@/lib/jev";
 
 const PLACEHOLDER =
   "In the beginning was the Word, and";
@@ -26,6 +29,7 @@ export function InferenceView() {
   const setGenerating = useAppStore((s) => s.setIsGenerating);
 
   const outputRef = useRef<HTMLDivElement>(null);
+  const wall = usePagePlate(132); // Daniel Interpreting the Writing on the Wall
 
   useEffect(() => {
     const token = listen<{ token: string }>("inference:token", (e) =>
@@ -61,32 +65,25 @@ export function InferenceView() {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
-        <div>
-          <h1 className="text-base font-semibold text-foreground">Inference</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Prompt the trained model: it imitates the KJV
-          </p>
-        </div>
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col p-6 gap-4">
+    <LabSection
+      title="Let it write"
+      lede="Give the trained model a beginning and it continues, one letter at a time. It has learned how the King James Version sounds, not what it means: what it writes is imitation, never Scripture."
+    >
+      <div className="flex flex-col gap-4">
         {/* Prompt area */}
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/6 dark:ring-foreground/10">
           <div className="border-b border-border/60 px-4 py-2 flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Prompt
-            </span>
-            <div className="flex items-center gap-1">
+            <span className="font-heading text-[13px] font-medium">Beginning</span>
+            <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
+              <span className="shrink-0 pr-1 text-xs text-muted-foreground">Try</span>
               {EXAMPLE_PROMPTS.map((p) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => setPrompt(p)}
-                  className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors truncate max-w-40"
+                  className="shrink-0 rounded-md px-2 py-0.5 font-garamond text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
-                  {p.slice(0, 20)}…
+                  {p}
                 </button>
               ))}
             </div>
@@ -95,13 +92,13 @@ export function InferenceView() {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder={PLACEHOLDER}
-            className="rounded-none border-0 bg-transparent min-h-[80px] px-4 py-3 text-sm font-serif leading-relaxed focus-visible:ring-0 focus-visible:border-0 resize-none"
+            className="rounded-none border-0 bg-transparent min-h-[80px] px-4 py-3 font-garamond text-lg leading-relaxed focus-visible:ring-0 focus-visible:border-0 resize-none"
             disabled={isGenerating}
           />
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-6 rounded-xl border border-border bg-card px-5 py-3">
+        <div className="flex flex-wrap items-center gap-6 rounded-2xl bg-card px-5 py-3 ring-1 ring-foreground/6 dark:ring-foreground/10">
           <SliderControl
             label="Temperature"
             value={config.temperature}
@@ -111,7 +108,7 @@ export function InferenceView() {
             format={(v) => v.toFixed(2)}
             onChange={(v) => updateConfig({ temperature: v })}
             disabled={isGenerating}
-            help="How adventurous the model is. Low (~0.2) gives safe, repetitive text; high (~1.2) gives creative but riskier, sometimes nonsensical output. 0.8 is a good middle."
+            help="How adventurous the model is. Low (~0.2) gives safe, repetitive text; high (~1.2) gives creative but riskier, sometimes nonsensical output. 0.4 scored best for sounding like the KJV and making sense, before it starts to repeat itself."
           />
           <SliderControl
             label="Max tokens"
@@ -183,10 +180,11 @@ export function InferenceView() {
         </div>
 
         {/* Output */}
-        <div className="flex-1 rounded-xl border border-border bg-card overflow-hidden flex flex-col min-h-0">
+        <div className="flex h-[26rem] flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/6 dark:ring-foreground/10">
           <div className="border-b border-border/60 px-4 py-2 flex items-center justify-between shrink-0">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Completion
+            <span className="flex items-baseline gap-2">
+              <span className="font-heading text-[13px] font-medium">What it wrote</span>
+              <span className="text-xs text-muted-foreground">Generated by BibleLM's 3-million-parameter model. Not Scripture.</span>
             </span>
             {isGenerating && (
               <span className="flex items-center gap-1.5 text-xs text-brand">
@@ -194,13 +192,14 @@ export function InferenceView() {
                 Generating
               </span>
             )}
+            {!isGenerating && output && <JudgeLine text={output} />}
           </div>
           <div
             ref={outputRef}
             className="flex-1 overflow-auto px-5 py-4 nexis-scrollbar"
           >
             {output || isGenerating ? (
-              <p className="font-serif text-sm leading-8 text-foreground whitespace-pre-wrap">
+              <p className="font-garamond text-[17px] leading-8 text-foreground whitespace-pre-wrap">
                 <span className="text-muted-foreground">{prompt}</span>
                 {output}
                 {isGenerating && (
@@ -208,16 +207,16 @@ export function InferenceView() {
                 )}
               </p>
             ) : (
-              <div className="flex h-full items-center justify-center text-muted-foreground/40">
-                <p className="text-sm italic font-serif">
-                  And the LORD said, Ask what I shall give thee.
-                </p>
+              <div className="flex h-full items-center justify-center">
+                <ArtSpot plate={wall} title="Nothing written yet">
+                  Choose a beginning and press Generate. The words appear here as the model chooses them, letter by letter.
+                </ArtSpot>
               </div>
             )}
           </div>
         </div>
       </div>
-    </div>
+    </LabSection>
   );
 }
 
@@ -263,5 +262,37 @@ function SliderControl({
         className="w-24"
       />
     </div>
+  );
+}
+
+/** Jev's two scores for a finished generation: the machine judging the machine. */
+function JudgeLine({ text }: { text: string }) {
+  const [j, setJ] = useState<Judgment | null | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    setJ(undefined);
+    judgeGenerated(text).then((r) => live && setJ(r));
+    return () => {
+      live = false;
+    };
+  }, [text]);
+  if (j === null) return null;
+  const meter = (label: string, v: number) => (
+    <span className="flex items-center gap-1.5">
+      {label}
+      <span className="h-1 w-12 overflow-hidden rounded-full bg-muted">
+        <span className="block h-full rounded-full bg-foreground/50" style={{ width: `${(v / 3) * 100}%` }} />
+      </span>
+    </span>
+  );
+  return (
+    <span className="flex items-center gap-3 text-xs text-muted-foreground">
+      {j !== undefined && (
+        <>
+          {meter("Sounds like the KJV", j.style)}
+          {meter("Makes sense", j.sense)}
+        </>
+      )}
+    </span>
   );
 }

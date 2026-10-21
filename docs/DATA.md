@@ -22,6 +22,7 @@ node scripts/data/check-semantic.mjs "your query"   # spot-check the index
 | `data/refs.json` | build-bible | The verse index: the KJV with Apocrypha, 36,822 verses. Cross references, topics and embeddings key on it |
 | `data/xrefs.bin` | build-bible | 341,290 OpenBible cross references as Int32 quads `[from, toStart, toEnd, votes]`, sorted by source |
 | `data/topics.json` | build-bible | 6,712 OpenBible topics, passages as `[start, end, score]` triples |
+| `data/topic-kinds.json` | topic-kinds (needs `TYPESAFE_API_KEY`; optional) | Each topic's kind (person, place, virtue, sin...) as tagged by Jev from its name and top verse, with the probability; the Topics index filters by it and hides the chips when it is absent |
 | `data/embeddings.i8`, `.json` | embed | bge-small-en-v1.5 CLS vectors, int8 (scale 400), one per indexed verse (WEB text, KJV where the WEB lacks it) |
 | `data/map.u16` | embed | UMAP 2D position per verse, 0 to 65535 |
 | `art/dore/*.jpg`, `plates.json` | art/dore | Each plate at 1000 px and 400 px, single-channel JPEG, with its passage |

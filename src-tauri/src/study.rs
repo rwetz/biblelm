@@ -138,17 +138,50 @@ pub fn app_data_dir() -> Result<String, String> {
     Ok(data_dir()?.to_string_lossy().into_owned())
 }
 
-fn agent() -> ureq::Agent {
-    ureq::AgentBuilder::new().timeout(Duration::from_secs(120)).build()
+/// One shared client, so Jev calls reuse a kept-alive TLS connection: a fresh
+/// handshake per call measured about 265 ms a judgment, a reused one 145 ms.
+fn agent() -> &'static ureq::Agent {
+    static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
+    AGENT.get_or_init(|| ureq::AgentBuilder::new().timeout(Duration::from_secs(120)).build())
 }
 
 // ── Jev (TypeSafe System One) ─────────────────────────────────────────
 
 const JEV_ENDPOINT: &str = "https://api.typesafe.ai/v1/systemone";
+const JEV_MODELS: &str = "https://api.typesafe.ai/v1/models";
+
+/// The key from the process environment, or, on Windows, from the user's saved
+/// environment (HKCU\Environment). An app started from a terminal that was
+/// open before the key was set never inherits it; reading the saved value
+/// means a restart of the app is enough.
+fn api_key() -> Option<String> {
+    let found = std::env::var("TYPESAFE_API_KEY").ok().or_else(saved_user_key)?;
+    let key = found.trim().to_string();
+    (!key.is_empty()).then_some(key)
+}
+
+#[cfg(windows)]
+fn saved_user_key() -> Option<String> {
+    use winreg::{enums::HKEY_CURRENT_USER, RegKey};
+    RegKey::predef(HKEY_CURRENT_USER).open_subkey("Environment").ok()?.get_value("TYPESAFE_API_KEY").ok()
+}
+
+#[cfg(not(windows))]
+fn saved_user_key() -> Option<String> {
+    None
+}
 
 #[tauri::command]
 pub fn jev_available() -> bool {
-    std::env::var("TYPESAFE_API_KEY").is_ok_and(|k| !k.trim().is_empty())
+    let Some(key) = api_key() else { return false };
+    // Open the connection now, so the first judgment does not pay for it.
+    static WARMED: OnceLock<()> = OnceLock::new();
+    WARMED.get_or_init(|| {
+        std::thread::spawn(move || {
+            let _ = agent().get(JEV_MODELS).set("Authorization", &format!("Bearer {key}")).call();
+        });
+    });
+    true
 }
 
 /// One bounded judgment. The key comes from the user's environment and never
@@ -156,8 +189,8 @@ pub fn jev_available() -> bool {
 /// references with their text) leaves the machine.
 #[tauri::command]
 pub async fn jev(task: String, input: serde_json::Value) -> Result<serde_json::Value, String> {
-    let key = std::env::var("TYPESAFE_API_KEY").map_err(|_| "TYPESAFE_API_KEY is not set".to_string())?;
-    if !matches!(task.as_str(), "route" | "rerank") {
+    let key = api_key().ok_or_else(|| "TYPESAFE_API_KEY is not set".to_string())?;
+    if !matches!(task.as_str(), "route" | "rerank" | "verse" | "xref" | "judge" | "answer") {
         return Err(format!("unknown Jev task {task}"));
     }
     tauri::async_runtime::spawn_blocking(move || {

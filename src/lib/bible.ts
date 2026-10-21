@@ -148,6 +148,25 @@ export function runs(raw: string): Run[] {
   return out;
 }
 
+/** Plain text of a verse, markup removed. */
+export const plainText = (raw: string) => runs(raw).map((r) => r.text).join("").trim();
+
+/**
+ * A verse quoted on its own can stop mid-sentence (Galatians 5:22 ends
+ * "faith,"), so read on, at most three more verses, until the sentence ends.
+ */
+export function wholeSentence(verse: (r: Ref) => { raw: string } | undefined, start: Ref): { ref: Ref; verses: { n: number; raw: string }[] } {
+  const verses: { n: number; raw: string }[] = [];
+  for (let n = start.verse || 1; verses.length < 4; n++) {
+    const v = verse({ ...start, verse: n });
+    if (!v) break;
+    verses.push({ n, raw: v.raw });
+    if (/[.?!][)'"’”]*$/.test(plainText(v.raw))) break;
+  }
+  const last = verses[verses.length - 1]?.n;
+  return { ref: last && last !== start.verse ? { ...start, verseEnd: last } : start, verses };
+}
+
 // ── loading ───────────────────────────────────────────────────────────────
 
 const BASE = `${import.meta.env.BASE_URL}data`;

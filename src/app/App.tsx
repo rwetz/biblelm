@@ -20,11 +20,12 @@ import {
   type SidebarNavSection,
 } from "@nexis/design";
 import { Heptagram } from "@/art/Art";
+import { SidebarArt } from "@/art/SidebarArt";
 import { formatRef, SHELVES } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
 import { refreshGpuInfo } from "@/lib/gpu";
 import { HomeView } from "@/features/home/HomeView";
-import { ReadView, chapterStep } from "@/features/read/ReadView";
+import { ReadView, chapterStep, toggleVersePanel } from "@/features/read/ReadView";
 import { SearchView } from "@/features/search/SearchView";
 import { TopicsView } from "@/features/topics/TopicsView";
 import { NotebooksView } from "@/features/notebooks/NotebooksView";
@@ -92,7 +93,10 @@ export default function App() {
         actions={<ModeToggle />}
       />
       <div className="nexis-shell-body flex min-h-0 flex-1">
-        <SidebarNav sections={NAV} value={page} onChange={go} label="BibleLM" />
+        <div className="relative flex shrink-0">
+          <SidebarNav sections={NAV} value={page} onChange={go} label="BibleLM" />
+          <SidebarArt />
+        </div>
         <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <ViewEnter replayKey={page} className="flex min-h-0 flex-1 flex-col">
             {VIEWS[page]()}
@@ -159,6 +163,7 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
     const reading: PaletteCommand[] = [
       { id: "next-ch", label: "Next chapter", group: "Read", icon: "chevron-right", shortcut: "]", run: () => chapterStep(1) },
       { id: "prev-ch", label: "Previous chapter", group: "Read", icon: "chevron-left", shortcut: "[", run: () => chapterStep(-1) },
+      { id: "verse-panel", label: study.selected ? "Hide the verse panel" : "Show the verse panel", group: "Read", icon: "info", shortcut: "P", keywords: ["notes", "cross references", "sidebar"], run: () => { if (study.page !== "read") study.go("read"); toggleVersePanel(); } },
       { id: "columns", label: study.columns ? "Read in one column" : "Read in two columns", group: "Read", icon: "split-vertical", run: () => study.set({ columns: !study.columns }) },
       { id: "red-letter", label: study.redLetter ? "Words of Christ in black" : "Words of Christ in red", group: "Read", icon: "quote", keywords: ["red letter", "jesus"], run: () => study.set({ redLetter: !study.redLetter }) },
       { id: "bigger", label: "Larger text", group: "Read", icon: "zoom-in", run: () => study.set({ textSize: Math.min(28, study.textSize + 1) }) },
@@ -198,6 +203,7 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
     }));
     const appearance: PaletteCommand[] = [
       ...art,
+      { id: "dev", label: study.devMode ? "Turn developer mode off" : "Turn developer mode on", group: "Appearance", icon: "code", keywords: ["debug", "art", "hero", "plates"], run: () => { study.set({ devMode: !study.devMode }); if (!study.devMode) study.go("settings"); } },
       { id: "mode", label: "Toggle light and dark", group: "Appearance", icon: "contrast", keywords: ["theme", "vellum", "nocturne"], run: () => theme.setMode(theme.resolvedMode === "dark" ? "light" : "dark") },
     ];
     const nbs: PaletteCommand[] = [

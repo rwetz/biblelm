@@ -22,6 +22,12 @@ interface StudyState {
   /** Words of Christ in red, where the translation marks them. */
   redLetter: boolean;
   location: Ref;
+  /** Developer mode: preview any hero or plate to hunt for art bugs (Settings). */
+  devMode: boolean;
+  /** Developer override for the Home hero (a hero id), else the church year picks. */
+  devHero: string | null;
+  /** Developer override for the sidebar vignette (a plate number). */
+  devPlate: number | null;
   /** The verse the verse panel is open on. */
   selected: Ref | null;
   history: Ref[];
@@ -36,7 +42,7 @@ interface StudyState {
   openTopic: (name: string) => void;
   openWalk: (ref: Ref) => void;
   searchFor: (q: string) => void;
-  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter">>) => void;
+  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "devMode" | "devHero" | "devPlate">>) => void;
 }
 
 const KEY = "biblelm:study";
@@ -52,6 +58,9 @@ const DEFAULTS = {
   redLetter: true,
   location: { book: "John", chapter: 1, verse: 0 } as Ref,
   history: [] as Ref[],
+  devMode: false,
+  devHero: null as string | null,
+  devPlate: null as number | null,
 };
 
 function load(): typeof DEFAULTS {
@@ -65,8 +74,8 @@ function load(): typeof DEFAULTS {
 
 function save(s: StudyState) {
   try {
-    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, location, history } = s;
-    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, location, history }));
+    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, location, history, devMode, devHero, devPlate } = s;
+    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, location, history, devMode, devHero, devPlate }));
   } catch {
     // Storage blocked: preferences just won't persist.
   }
