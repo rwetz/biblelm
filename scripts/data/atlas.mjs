@@ -109,7 +109,8 @@ async function people() {
       name: unified.split("@")[0].trim(),
       sex: /female/i.test(head[8] ?? "") ? "f" : /male/i.test(head[8] ?? "") ? "m" : "",
       era,
-      tribe: (head[6] ?? "").trim(),
+      // The column holds ">" (a spreadsheet marker) when there is no tribe.
+      tribe: /[a-z]/i.test(head[6] ?? "") ? head[6].trim() : "",
       brief,
       parents: names(head[2]),
       siblings: names(head[3]),

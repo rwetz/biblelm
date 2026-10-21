@@ -31,6 +31,7 @@ import { AtlasView } from "@/features/atlas/AtlasView";
 import { GalleryView } from "@/features/gallery/GalleryView";
 import { DailyView } from "@/features/daily/DailyView";
 import { Look } from "@/features/look/Look";
+import { ViewBoundary } from "./ViewBoundary";
 import { NotebooksView } from "@/features/notebooks/NotebooksView";
 import { LabView } from "@/features/lab/LabView";
 import { SettingsView } from "@/features/settings/SettingsView";
@@ -115,7 +116,7 @@ export default function App() {
         </div>
         <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <ViewEnter replayKey={page} className="flex min-h-0 flex-1 flex-col">
-            {VIEWS[page]()}
+            <ViewBoundary resetKey={page}>{VIEWS[page]()}</ViewBoundary>
           </ViewEnter>
         </main>
       </div>

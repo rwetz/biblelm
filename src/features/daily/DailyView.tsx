@@ -133,7 +133,8 @@ function TodaysPainting({ id }: { id: string }) {
 }
 
 function Plans({ t }: { t: Translation | null }) {
-  const { plans, startPlan, stopPlan, markPlanDay } = useNotebooks();
+  const { startPlan, stopPlan, markPlanDay } = useNotebooks();
+  const plans = useNotebooks((s) => s.plans) ?? [];
   const read = useStudy((s) => s.read);
   if (!t) return null;
   const active = new Set(plans.map((p) => p.plan));
@@ -188,7 +189,7 @@ function Plans({ t }: { t: Translation | null }) {
 const initials = (text: string) => text.replace(/([A-Za-z])[A-Za-z']*/g, "$1");
 
 function ByHeart({ t }: { t: Translation | null }) {
-  const memory = useNotebooks((s) => s.memory);
+  const memory = useNotebooks((s) => s.memory) ?? [];
   const reviewCard = useNotebooks((s) => s.reviewCard);
   const toggleMemory = useNotebooks((s) => s.toggleMemory);
   const [shown, setShown] = useState(false);

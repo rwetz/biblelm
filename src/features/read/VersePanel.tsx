@@ -150,7 +150,9 @@ function SeenInArt({ refSel }: { refSel: Ref }) {
 
 /** Learn this verse by heart (Daily, By heart); again stops. */
 function MemoryButton({ osis }: { osis: string }) {
-  const { memory, toggleMemory } = useNotebooks();
+  // `?? []`: a store loaded before notes version 2 (a dev window left open) has none.
+  const memory = useNotebooks((s) => s.memory) ?? [];
+  const toggleMemory = useNotebooks((s) => s.toggleMemory);
   const on = memory.some((c) => c.ref === osis && !c.end);
   return (
     <Tooltip>
