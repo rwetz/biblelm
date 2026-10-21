@@ -315,7 +315,10 @@ function CrossRefs({ vi, index, main, onNavigate }: { vi: number; index: VerseIn
   const [g] = useGraph();
   const [all, setAll] = useState(false);
   const [byJev, setByJev] = useState(true);
-  const [jev, setJev] = useState<XrefRanking<number> | null>(null);
+  // Keyed by verse: for one render after moving to a new verse the old
+  // verse's ordering is still in state, and its indices do not fit this list.
+  const [jevFor, setJev] = useState<{ vi: number; r: XrefRanking<number> } | null>(null);
+  const jev = jevFor?.vi === vi ? jevFor.r : null;
   const [asking, setAsking] = useState(false);
   const links = useMemo(() => (g ? g.out(vi) : []), [g, vi]);
   const top = links.slice(0, 12);
@@ -335,7 +338,7 @@ function CrossRefs({ vi, index, main, onNavigate }: { vi: number; index: VerseIn
     rankXrefs(`${main.meta.id}:${vi}`, { ref: formatRef(src), text: main.verse(src)?.text ?? "" }, top.map((l) => ({ ref: item(l).label, text: item(l).text }))).then((r) => {
       if (!live) return;
       setAsking(false);
-      setJev(r);
+      setJev(r ? { vi, r } : null);
     });
     return () => {
       live = false;
@@ -345,7 +348,7 @@ function CrossRefs({ vi, index, main, onNavigate }: { vi: number; index: VerseIn
 
   const ranked = jev && byJev;
   const levels = new Map(jev?.ranked.map((x) => [x.item, x.level]) ?? []);
-  const order = ranked ? [...jev!.ranked.map((x) => top[x.item]), ...links.slice(12)] : links;
+  const order = ranked ? [...jev!.ranked.map((x) => top[x.item]).filter((l): l is (typeof links)[number] => !!l), ...links.slice(12)] : links;
   const shown = all ? order : order.slice(0, 8);
   const flip = useFlip(shown.map((l) => `${l.to}-${l.toEnd}`).join());
   if (!links.length) return null;

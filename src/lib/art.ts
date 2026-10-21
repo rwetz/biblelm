@@ -167,6 +167,8 @@ export interface Painting {
   colour: boolean;
   /** Mean brightness 0..255: Caravaggio's are dark. */
   key: number;
+  /** Share of the canvas that is near black, 0..1: how tenebrist it is. */
+  dark?: number;
   /** Where its light falls, percent: the focus of every crop. */
   focusX: number;
   focusY: number;

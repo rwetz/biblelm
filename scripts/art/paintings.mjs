@@ -136,10 +136,12 @@ async function measure(buf, medium) {
         c++;
       }
   const mean = lum.reduce((a, b) => a + b, 0) / n;
+  const dark = lum.reduce((k, v) => k + (v < 40 ? 1 : 0), 0) / n;
   return {
     colour: colour && medium !== "etching",
     chroma: Math.round(chroma / n),
     key: Math.round(mean),
+    dark: Math.round(dark * 100) / 100,
     lightX: Math.round((sx / c / info.width) * 100),
     lightY: Math.round((sy / c / info.height) * 100),
   };
@@ -188,6 +190,7 @@ async function main() {
       place: p.place,
       colour: m.colour,
       key: m.key,
+      dark: m.dark,
       focusX: m.lightX,
       focusY: m.lightY,
       source: src.page,

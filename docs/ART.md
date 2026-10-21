@@ -85,6 +85,14 @@ illustrated study Bibles.
 > bands. Tissot's watercolours were left out: the Brooklyn Museum's rights for
 > its scans could not be confirmed.
 
+> **As built (heroes, revisited):** Doré heroes went back to being dithered
+> whole (`Dither`, Atkinson unless the hero names Bayer or blue noise), at a
+> finer 1.5 px dot: the full one-bit look reads better on the engravings than
+> partial dithering did. Partial dithering stays for the paintings, and how
+> much of a painting's dark ground turns to dots now follows how much of the
+> canvas is near black (`dark` in paintings.json, `paintingShadow`): up to 0.45
+> for Caravaggio's black grounds, none for the bright Rembrandts.
+
 ## Rules
 
 1. **Public domain only, provenance recorded.** Every image has a row in

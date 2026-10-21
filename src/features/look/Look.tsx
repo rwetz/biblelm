@@ -5,7 +5,7 @@
 
 import { useEffect, useMemo } from "react";
 import { Button, Icon, Tooltip, TooltipContent, TooltipTrigger } from "@nexis/design";
-import { Engraving, Painting, usePaintings, usePlates } from "@/art/Art";
+import { Engraving, Painting, paintingShadow, usePaintings, usePlates } from "@/art/Art";
 import { byBibleOrder, paintingCredit, paintingUrl, type Painting as PaintingData, type Plate } from "@/lib/art";
 import { formatRef, type Ref } from "@/lib/canon";
 import { useTranslation } from "@/lib/hooks";
@@ -74,7 +74,7 @@ export function Look() {
               focusY: painting.focusY,
               edges: { top: 0.1, right: 0.1, bottom: 0.14, left: 0.1 },
               grain: 0,
-              shadow: painting.key < 70 ? 0.2 : 0,
+              shadow: paintingShadow(painting) * 0.5,
               fit: "contain",
             }}
             className="absolute inset-6"

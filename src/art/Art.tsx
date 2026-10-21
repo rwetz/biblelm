@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn, useReducedMotion, useTheme } from "@nexis/design";
 import { formatRef } from "@/lib/canon";
-import { heroSrcUrl, loadHeroes, loadLiterary, loadPaintings, loadPlates, paintingCredit, paintingUrl, plateUrl, rotation, type Hero, type Painting as PaintingData, type Plate } from "@/lib/art";
+import { heroSrcUrl, heroUrl, loadHeroes, loadLiterary, loadPaintings, loadPlates, paintingCredit, paintingUrl, plateUrl, rotation, type Hero, type Painting as PaintingData, type Plate } from "@/lib/art";
 import { useStudy } from "@/store/study";
 import { compose, cssColor, revealCells, type Composed, type PaintingLook } from "./painting";
 import { BAYER8, paintScattered, scatterSeeds, dither, fadeEdges, inkColor, loadImage, paint, toneGrid, type DitherAlgo, type Edges } from "./dither";
@@ -497,6 +497,9 @@ export function Painting({
   );
 }
 
+/** How much of a painting's dark ground becomes dots, from how much of it is near black. */
+export const paintingShadow = (p: PaintingData) => Math.min(0.45, Math.max(0, ((p.dark ?? (p.key < 70 ? 0.6 : 0.2)) - 0.3) * 0.8));
+
 /** What a hero band can show: a Doré hero (an engraving) or a painting. */
 export type HeroArt = Hero | PaintingData;
 export const isPainting = (a: HeroArt): a is PaintingData => "artist" in a;
@@ -510,8 +513,9 @@ export function heroArt(a: HeroArt) {
       colour: a.colour,
       focusX: a.focusX,
       focusY: a.focusY,
-      // Tenebrism: the darker the painting, the more of its ground turns to dots.
-      shadow: a.key < 70 ? 0.6 : 0.25,
+      // Tenebrism: the more of the canvas is near black, the more of that ground
+      // turns to dots. A bright painting keeps its paint (DATA.md, paintings).
+      shadow: paintingShadow(a),
       label: `${a.title}, ${paintingCredit(a)}`,
       credit: `${a.title}, ${paintingCredit(a)}`,
     };
@@ -528,10 +532,11 @@ export function heroArt(a: HeroArt) {
 }
 
 /**
- * Tier 1: a hero, faded into the page in dots. The picture itself is kept
- * whole in the middle (src/art/painting.ts); only its edges, and a
- * painting's dark ground, become dots. `width` frames it in a centred window
- * (its sides dissolve too); `clearLeft` keeps the left of the band for a title.
+ * Tier 1: a hero, faded into the page in dots. A Doré hero is dithered whole,
+ * one bit per dot (finer than the corner plates); a painting is kept as
+ * painted and dotted only where it dissolves (src/art/painting.ts). `width`
+ * frames it in a centred window (its sides dissolve too); `clearLeft` keeps
+ * the left of the band for a title.
  */
 export function DitherHero({
   hero,
@@ -542,7 +547,7 @@ export function DitherHero({
   clearLeft = false,
   fadeFrom = 55,
   caption = true,
-  dot = 2,
+  dot,
   children,
 }: {
   hero?: HeroArt;
@@ -562,15 +567,30 @@ export function DitherHero({
   const mode = useStudy((s) => s.illustrations);
   const show = hero && mode === "full";
   const art = hero ? heroArt(hero) : null;
-  const side = width ? 0.24 : 0;
+  const painted = !!hero && isPainting(hero);
+  const side = width ? (painted ? 0.24 : 0.1) : 0;
   const edges: Edges = { bottom: 1 - fadeFrom / 100, right: side, left: clearLeft ? 0.85 : side };
   return (
     <div className={cn("relative w-full shrink-0 overflow-hidden", className)} style={{ height }}>
-      {show && art && (
+      {show && art && !painted && (
+        // Every edge breaks up into dots (fadeEdges), never a blur.
+        <Dither
+          key={art.key}
+          src={heroUrl(hero as Hero)}
+          algo={(hero as Hero).algo === "bayer" ? "bayer" : (hero as Hero).algo === "blue" ? "blue" : "atkinson"}
+          dot={dot ?? 1.5}
+          focusY={focusY ?? art.focusY}
+          label={art.label}
+          edges={edges}
+          className="absolute inset-y-0 left-1/2 w-full -translate-x-1/2 text-foreground opacity-90 dark:opacity-80"
+          style={{ maxWidth: width }}
+        />
+      )}
+      {show && art && painted && (
         <Painting
           key={art.key}
           src={art.src}
-          dot={dot}
+          dot={dot ?? 2}
           look={{ colour: art.colour, focusX: art.focusX, focusY: focusY ?? art.focusY, edges, shadow: art.shadow, grain: 0.06 }}
           label={art.label}
           className="absolute inset-y-0 left-1/2 w-full -translate-x-1/2"

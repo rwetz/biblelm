@@ -28,7 +28,7 @@ import {
   IN_TAURI,
   cn,
 } from "@nexis/design";
-import { ArtSpot, Engraving, Painting, usePagePlate, usePaintings, usePlates } from "@/art/Art";
+import { ArtSpot, Engraving, Painting, paintingShadow, usePagePlate, usePaintings, usePlates } from "@/art/Art";
 import { PAGE_PAINTINGS, PAGE_PLATES, paintingCredit, paintingUrl, type Plate } from "@/lib/art";
 import { backend } from "@/lib/backend";
 import { formatRef, parseOsis, SHELVES, type Shelf } from "@/lib/canon";
@@ -149,7 +149,7 @@ function EmptyNotebooks({ plate, onCreate }: { plate?: Plate; onCreate: () => vo
             src={paintingUrl(jerome.full)}
             dot={2}
             label={`${jerome.title}, ${paintingCredit(jerome)}`}
-            look={{ colour: jerome.colour, focusX: jerome.focusX, focusY: jerome.focusY, edges: { top: 0.2, right: 0.22, bottom: 0.25, left: 0.22 }, grain: 0.04, shadow: 0.5 }}
+            look={{ colour: jerome.colour, focusX: jerome.focusX, focusY: jerome.focusY, edges: { top: 0.2, right: 0.22, bottom: 0.25, left: 0.22 }, grain: 0.04, shadow: paintingShadow(jerome) }}
             className="mb-4 aspect-[7/5] w-[30rem] max-w-full"
           />
           <p className="font-garamond text-3xl">A study of your own</p>
