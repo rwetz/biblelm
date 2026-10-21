@@ -6,7 +6,46 @@ All notable changes to BibleLM. Format based on
 
 ## Unreleased
 
+## [2.0.0] — 2026-10-21
+
+BibleLM becomes an illustrated Bible study tool with the ML lab inside it.
+
 ### Added
+
+- **A reader**: every chapter of six public-domain translations (KJV with the
+  1611 Apocrypha, WEB, ASV, Douay-Rheims, Brenton Septuagint, Vulgate), with
+  blackletter titles and drop caps, Garamond or Fell English text, the KJV's
+  supplied words in italics, two-column and parallel reading, `[` and `]` to
+  turn chapters.
+- **All 241 Doré plates** from the 1866 *Grande Bible de Tours*, each set beside
+  the verse it depicts; dithered Doré heroes on Home (changing with the church
+  year) and the Lab; a plate in the corner of every other page.
+- **A verse panel**: the verse in your translations, a word-level comparison
+  across all six, cross references (341k, OpenBible.info), topics, verses like
+  it by meaning, highlights and notes.
+- **Search** by reference, word, question (the old Ask grammar, now in-app and on
+  every translation), and by meaning with a local embedding model; hidden
+  shelves are listed apart, never mixed in.
+- **Topics**: OpenBible's 6,712-topic index, study walks (personalised
+  PageRank over cross references), the strongest chain between two passages,
+  a map of every verse placed by meaning, and a chiasm finder.
+- **Notebooks**: one per study, each with its own translations, canon and cover
+  plate; verse-anchored notes with tags; Markdown export; daily backups.
+- **Word study**: Strong's numbers for every tagged word of the KJV and WEB,
+  with the Hebrew or Greek lemma, Strong's definition, how the translation
+  renders it, and every verse that uses it; type a number like G26 into Search.
+- **Red letter**: the words of Christ in red in the KJV and WEB (Settings or
+  the command palette).
+- **Canon shelves**: Protestant, Deuterocanon, Apocrypha.
+- **Lab, Inside the model**: attention heads, the logit lens, and the most and
+  least surprising verses to the model.
+- **Optional machine help**: Jev query routing and reranking, with the user's
+  own TypeSafe key. No large hosted model is used.
+- The Scriptorium theme (Vellum and Nocturne) on `@nexis/design`, with a command
+  palette for every action.
+- Planning docs, tests (TypeScript, Python, Rust), and CI.
+- **Installers for Windows and macOS**, built by CI when a version is tagged
+  (`.github/workflows/release.yml`).
 
 - **Paintings.** All thirteen Caravaggios from the research list (The Calling
   of Saint Matthew, Supper at Emmaus, The Taking of Christ, The Incredulity of
@@ -42,6 +81,11 @@ All notable changes to BibleLM. Format based on
   Notes on a translation's wording record the exact edition.
 
 ### Changed
+
+- The five ML tabs moved under **Lab**. Ask is now part of Search and no longer
+  needs Python.
+- Release builds find their files properly: the Lab's scripts are bundled and
+  its data lives in the app data folder, not the folder the app was built in.
 
 - **Notes file version 2** adds memory verses, reading plans and tombstones;
   version 1 files migrate without losing anything.
@@ -139,52 +183,6 @@ All notable changes to BibleLM. Format based on
   like the KJV, makes sense). Jev calls share one kept-alive connection.
 - **Benchmarks**: `node scripts/bench/jev.ts` (latency and agreement for every
   Jev question) and dither timings, in `docs/evals/benchmarks.md`.
-
-## [2.0.0] (unreleased)
-
-BibleLM becomes an illustrated Bible study tool with the ML lab inside it.
-
-### Added
-
-- **A reader**: every chapter of six public-domain translations (KJV with the
-  1611 Apocrypha, WEB, ASV, Douay-Rheims, Brenton Septuagint, Vulgate), with
-  blackletter titles and drop caps, Garamond or Fell English text, the KJV's
-  supplied words in italics, two-column and parallel reading, `[` and `]` to
-  turn chapters.
-- **All 241 Doré plates** from the 1866 *Grande Bible de Tours*, each set beside
-  the verse it depicts; dithered Doré heroes on Home (changing with the church
-  year) and the Lab; a plate in the corner of every other page.
-- **A verse panel**: the verse in your translations, a word-level comparison
-  across all six, cross references (341k, OpenBible.info), topics, verses like
-  it by meaning, highlights and notes.
-- **Search** by reference, word, question (the old Ask grammar, now in-app and on
-  every translation), and by meaning with a local embedding model; hidden
-  shelves are listed apart, never mixed in.
-- **Topics**: OpenBible's 6,712-topic index, study walks (personalised
-  PageRank over cross references), the strongest chain between two passages,
-  a map of every verse placed by meaning, and a chiasm finder.
-- **Notebooks**: one per study, each with its own translations, canon and cover
-  plate; verse-anchored notes with tags; Markdown export; daily backups.
-- **Word study**: Strong's numbers for every tagged word of the KJV and WEB,
-  with the Hebrew or Greek lemma, Strong's definition, how the translation
-  renders it, and every verse that uses it; type a number like G26 into Search.
-- **Red letter**: the words of Christ in red in the KJV and WEB (Settings or
-  the command palette).
-- **Canon shelves**: Protestant, Deuterocanon, Apocrypha.
-- **Lab, Inside the model**: attention heads, the logit lens, and the most and
-  least surprising verses to the model.
-- **Optional machine help**: Jev query routing and reranking, with the user's
-  own TypeSafe key. No large hosted model is used.
-- The Scriptorium theme (Vellum and Nocturne) on `@nexis/design`, with a command
-  palette for every action.
-- Planning docs, tests (TypeScript, Python, Rust), and CI.
-
-### Changed
-
-- The five ML tabs moved under **Lab**. Ask is now part of Search and no longer
-  needs Python.
-- Release builds find their files properly: the Lab's scripts are bundled and
-  its data lives in the app data folder, not the folder the app was built in.
 
 ### Removed
 
@@ -290,5 +288,6 @@ training dashboard.
 - **Architecture** — Rust backend spawns the Python scripts and bridges their NDJSON
   stdout to Tauri events; the frontend never touches PyTorch.
 
+[2.0.0]: https://github.com/rwetz/biblelm/releases/tag/v2.0.0
 [1.2.0]: https://github.com/rwetz/biblelm/releases/tag/v1.2.0
 [1.0.0]: https://github.com/rwetz/biblelm/releases/tag/v1.0.0

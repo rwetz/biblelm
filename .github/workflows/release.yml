@@ -1,0 +1,93 @@
+name: Release
+
+# Pushing a v* tag builds the Windows and macOS installers and attaches them to
+# a draft GitHub release. Release builds never run locally (see AGENTS.md).
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # The texts, art and embedding model are git-ignored and rebuilt by pnpm data
+  # (docs/DATA.md). Build them once and hand the same files to every platform.
+  data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/cache@v4
+        with:
+          path: |
+            data-src
+            art-src
+          key: release-src-${{ hashFiles('scripts/data/*.mjs', 'scripts/art/*.mjs') }}
+          restore-keys: release-src-
+      - run: pnpm data
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-data
+          path: |
+            public/data
+            public/art/dore
+            public/art/heroes
+            public/art/paintings
+            public/models
+          retention-days: 3
+
+  build:
+    needs: data
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: '--bundles nsis'
+            rust-targets: ''
+          - platform: macos-latest
+            args: '--target universal-apple-darwin --bundles dmg'
+            rust-targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: public-data
+          path: public
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: BibleLM ${{ github.ref_name }}
+          releaseBody: See CHANGELOG.md. The macOS app is not notarized; open it with right-click, Open the first time.
+          releaseDraft: true
+          args: ${{ matrix.args }}

@@ -157,7 +157,7 @@ M0 ─┬─ M1 ─┬─ M3 ─┬─ M5
 - [x] M10 Map and structure
 - [~] M11 Lab 2.0 (inspection tools done; Axon's transformer is built on its text-gpt branch; the Lab is not wired to it yet)
 - [-] M12 Grounded commentary (dropped: no large hosted model, see ML.md)
-- [~] M13 Release 2.0 (release paths, bundled scripts and version done; installer not built or tagged)
+- [x] M13 Release 2.0 (tagged v2.0.0; Windows and macOS installers built by CI, `.github/workflows/release.yml`)
 - [x] M14 Paintings and partial dithering (Caravaggio and his followers, the Tenebrae scheme, Look and the Gallery; ART.md)
 - [x] M15 Atlas, Daily and the interlinear (places, people, timeline, the Daily Office, plans, FSRS; STUDY.md)
 - [x] M16 The rest of IDEAS.md (words, links, echoes, lessons, suffix array, notes merge; IDEAS.md, As built)
