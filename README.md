@@ -37,7 +37,7 @@ Apocrypha are a switch away, always marked, never mixed into your results.
 
 ## Lab
 
-Train a 3.2M-parameter character-level GPT on any Bible translation and watch
+Train a 10.8M-parameter character-level GPT on any Bible translation and watch
 the loss fall live; generate KJV-sounding text (clearly labelled); export to
 ONNX; and look inside: every attention head, the logit lens (the model's guess
 after each layer), and which real verses surprise it most. The Lab needs Python

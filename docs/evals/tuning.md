@@ -72,5 +72,6 @@ node scripts/bench/tune-sampling.ts data/tune/run-deep.jsonl
   samples are fluent KJV phrasing with drifting meaning (genealogies that
   wander, "the children of Israel the children of Israel").
 
-Suggested Training defaults: 6 layers, d_model 384, 6 heads, dropout 0.1.
-`runs/current` is unchanged; promoting `runs/sweep/deep` is a copy.
+**Promoted:** `runs/sweep/deep` is now `runs/current` (the old run is kept in
+`runs/base-4x256`), and Training defaults to 6 layers, d_model 384, 6 heads,
+dropout 0.1 (`DEFAULT_TRAIN_CONFIG`, and the trainer's own defaults).

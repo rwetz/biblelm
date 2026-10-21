@@ -111,7 +111,7 @@ export function TypeCase({ t }: { t: Corpus }) {
   );
 }
 
-const BIBLELM_PARAMS = 3.2e6;
+const BIBLELM_PARAMS = 10.8e6;
 const GPT3_PARAMS = 175e9;
 
 /** BibleLM as one dot; GPT-3 as the square of all of them. */
@@ -153,9 +153,9 @@ export function ScaleField({ dataMb, vocabSize }: { dataMb: number; vocabSize?: 
   }, [width, ratio, paletteEpoch, resolvedMode]);
 
   const rows: [string, string, string][] = [
-    ["Parameters", "3.2M", "175B"],
-    ["Layers", "4", "96"],
-    ["Embedding width", "256", "12,288"],
+    ["Parameters", "10.8M", "175B"],
+    ["Layers", "6", "96"],
+    ["Embedding width", "384", "12,288"],
     ["Context window", "256", "2,048"],
     ["Vocabulary", vocabSize ? vocabSize.toLocaleString() : "–", "50,257"],
     ["Training text", `${dataMb.toFixed(1)} MB`, "~570 GB"],

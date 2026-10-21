@@ -3,7 +3,7 @@
 Run by the Rust backend as a child process:
 
     python -m biblelm.train --corpus <data>/kjv.txt --run-dir <runs>/<id> \
-        --d-model 256 --n-layers 4 --n-heads 4 --context-len 256 \
+        --d-model 384 --n-layers 6 --n-heads 6 --context-len 256 \
         --batch-size 32 --lr 3e-4 --epochs 10 --eval-interval 200
 
 Every line on stdout is a JSON event (protocol.py). Metrics are emitted
@@ -101,15 +101,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--corpus", required=True, type=Path)
     ap.add_argument("--run-dir", required=True, type=Path)
     ap.add_argument("--tokenizer", default="char", choices=["char", "bpe"])
-    ap.add_argument("--d-model", type=int, default=256)
-    ap.add_argument("--n-layers", type=int, default=4)
-    ap.add_argument("--n-heads", type=int, default=4)
+    ap.add_argument("--d-model", type=int, default=384)
+    ap.add_argument("--n-layers", type=int, default=6)
+    ap.add_argument("--n-heads", type=int, default=6)
     ap.add_argument("--context-len", type=int, default=256)
     ap.add_argument("--batch-size", type=int, default=32)
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--epochs", type=int, default=10)
     ap.add_argument("--eval-interval", type=int, default=200)
-    ap.add_argument("--dropout", type=float, default=0.0)
+    ap.add_argument("--dropout", type=float, default=0.1)
     ap.add_argument("--val-split", type=float, default=0.1)
     ap.add_argument("--seed", type=int, default=1337)
     ap.add_argument(

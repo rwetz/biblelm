@@ -14,7 +14,7 @@ All notable changes to BibleLM. Format based on
 - **Training sweep.** Four model shapes trained and scored by the same judge:
   6 layers × 384 (10.8M parameters) scores best, 2.92 against 2.75 for the
   current 4 × 256, and a longer context or dropout alone do not help
-  (docs/evals/tuning.md).
+  (docs/evals/tuning.md). Training now defaults to that shape with dropout 0.1.
 - **Generate samples at temperature 0.4, top-k 10** by default (was 0.8 and 40).
   Tuned against Jev's two scores over 576 samples: about 25% higher, without
   the repetition cooler settings bring (docs/evals/tuning.md).

@@ -328,7 +328,7 @@ export function TrainingView() {
                   <InfoTip side="right">
                     The total count of adjustable values (weights) the model
                     learns. More parameters means more learning capacity, and
-                    more to train. 3.2M is tiny by modern standards (GPT-3 has
+                    more to train. 10.8M is tiny by modern standards (GPT-3 has
                     175 billion).
                   </InfoTip>
                 </div>

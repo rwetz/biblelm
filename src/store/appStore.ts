@@ -72,9 +72,9 @@ export interface InferenceConfig {
 }
 
 const DEFAULT_TRAIN_CONFIG: TrainConfig = {
-  dModel: 256,
-  nLayers: 4,
-  nHeads: 4,
+  dModel: 384,
+  nLayers: 6,
+  nHeads: 6,
   contextLen: 256,
   batchSize: 32,
   learningRate: 0.0003,
