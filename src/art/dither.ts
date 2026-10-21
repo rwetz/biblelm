@@ -6,9 +6,10 @@
 /**
  * atkinson: blows highlights out to paper, bold (heroes). floyd: Floyd and
  * Steinberg, serpentine, keeps mid-tones, so small pictures stay legible.
- * bayer: the ordered, printed grid.
+ * bayer: the ordered, printed grid. blue: a void-and-cluster blue-noise
+ * threshold (Ulichney 1993), no pattern at all, the most organic (faces).
  */
-export type DitherAlgo = "atkinson" | "floyd" | "bayer";
+export type DitherAlgo = "atkinson" | "floyd" | "bayer" | "blue";
 
 /** 8x8 Bayer ranks, 0..63. Also orders the dot-by-dot reveal. */
 export const BAYER8 = [
@@ -108,9 +109,78 @@ function sharpen(g: Float32Array, w: number, h: number, amount = 0.6): Float32Ar
   return out;
 }
 
+let blueMask: Float32Array | null = null;
+const BLUE = 32;
+
+/**
+ * A 32x32 void-and-cluster mask, made once. Each pixel's rank is the order in
+ * which it would be switched on so the "on" pixels stay as evenly spread as
+ * possible; energy is a Gaussian of nearby on pixels (wrapping at the edges),
+ * updated only within a small window so it takes a few milliseconds.
+ */
+export function blueNoise(): Float32Array {
+  if (blueMask) return blueMask;
+  const n = BLUE, N = n * n, R = 5, sigma = 1.5;
+  const energy = new Float64Array(N);
+  const on = new Uint8Array(N);
+  const kern: number[] = [];
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) kern.push(Math.exp(-(dx * dx + dy * dy) / (2 * sigma * sigma)));
+  const toggle = (i: number, v: 0 | 1) => {
+    on[i] = v;
+    const x = i % n, y = (i / n) | 0;
+    let k = 0;
+    for (let dy = -R; dy <= R; dy++)
+      for (let dx = -R; dx <= R; dx++, k++) energy[((y + dy + n) % n) * n + ((x + dx + n) % n)] += (v ? 1 : -1) * kern[k];
+  };
+  const pick = (want: 0 | 1, best: (a: number, b: number) => boolean) => {
+    let b = -1;
+    for (let i = 0; i < N; i++) if (on[i] === want && (b < 0 || best(energy[i], energy[b]))) b = i;
+    return b;
+  };
+  // Seed a tenth at fixed pseudo-random places, then relax into an even spread.
+  let s = 7;
+  for (let k = 0; k < N / 10; k++) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    if (!on[s % N]) toggle(s % N, 1);
+  }
+  for (let it = 0; it < N; it++) {
+    const c = pick(1, (a, b) => a > b);
+    toggle(c, 0);
+    const v = pick(0, (a, b) => a < b);
+    if (v === c) {
+      toggle(c, 1);
+      break;
+    }
+    toggle(v, 1);
+  }
+  const rank = new Float32Array(N);
+  const ones = on.reduce((a, b) => a + b, 0);
+  const saved = Uint8Array.from(on), savedE = Float64Array.from(energy);
+  for (let r = ones - 1; r >= 0; r--) {
+    const c = pick(1, (a, b) => a > b);
+    toggle(c, 0);
+    rank[c] = r;
+  }
+  on.set(saved);
+  energy.set(savedE);
+  for (let r = ones; r < N; r++) {
+    const v = pick(0, (a, b) => a < b);
+    toggle(v, 1);
+    rank[v] = r;
+  }
+  for (let i = 0; i < N; i++) rank[i] = (rank[i] + 0.5) / N;
+  return (blueMask = rank);
+}
+
 /** One bit per pixel, 1 = ink. */
 export function dither(g: Float32Array, w: number, h: number, algo: DitherAlgo = "atkinson"): Uint8Array {
   const out = new Uint8Array(w * h);
+  if (algo === "blue") {
+    const m = blueNoise();
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) out[y * w + x] = g[y * w + x] < m[(y % BLUE) * BLUE + (x % BLUE)] * 255 ? 1 : 0;
+    return out;
+  }
   if (algo === "bayer") {
     for (let y = 0; y < h; y++)
       for (let x = 0; x < w; x++) out[y * w + x] = g[y * w + x] < ((BAYER8[(y & 7) * 8 + (x & 7)] + 0.5) / 64) * 255 ? 1 : 0;

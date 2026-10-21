@@ -27,7 +27,7 @@ function mount() {
   );
 }
 
-const PAGES = ["Home", "Read", "Search", "Topics", "Notebooks", "Lab", "Settings"];
+const PAGES = ["Home", "Read", "Search", "Topics", "Atlas", "Gallery", "Daily", "Notebooks", "Lab", "Settings"];
 
 describe("App", () => {
   it("renders the shell", async () => {

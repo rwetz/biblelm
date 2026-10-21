@@ -158,6 +158,9 @@ M0 ─┬─ M1 ─┬─ M3 ─┬─ M5
 - [~] M11 Lab 2.0 (inspection tools done; Axon's transformer is built on its text-gpt branch; the Lab is not wired to it yet)
 - [-] M12 Grounded commentary (dropped: no large hosted model, see ML.md)
 - [~] M13 Release 2.0 (release paths, bundled scripts and version done; installer not built or tagged)
+- [x] M14 Paintings and partial dithering (Caravaggio and his followers, the Tenebrae scheme, Look and the Gallery; ART.md)
+- [x] M15 Atlas, Daily and the interlinear (places, people, timeline, the Daily Office, plans, FSRS; STUDY.md)
+- [x] M16 The rest of IDEAS.md (words, links, echoes, lessons, suffix array, notes merge; IDEAS.md, As built)
 
 ## What changed from the plan
 
@@ -167,4 +170,7 @@ topics instead of Nave's (M7), a parallel grid instead of dockview (M5),
 transformers.js instead of `ort` (M7), engraved rather than dithered plates
 (M4), genre as a lookup rather than a Jev question (M9), no hosted large model
 (M12). Added after: Strong's word study and red-letter text, from eBible's USFM.
-Not built yet: the Lab running on Axon (Axon's text model exists, unreleased).
+Added after 2.0's plan: paintings with partial dithering and a third scheme,
+Tenebrae (M14); the Atlas, the Daily page and the interlinear (M15); every
+remaining idea in IDEAS.md (M16). Not built yet: the Lab running on Axon
+(Axon's text model exists, unreleased).

@@ -9,6 +9,7 @@
 //   eBible.org verse-per-line files, OpenBible.info cross references + topics.
 
 import { unzipSync, strFromU8 } from "fflate";
+import { createHash } from "node:crypto";
 import { BOOKS, BY_CODE, BY_OSIS, cached, kb, writeBin, writeJson } from "./lib.mjs";
 import { parseBook } from "./usfm.mjs";
 
@@ -89,7 +90,10 @@ async function buildTranslation(t) {
   const p = writeJson(`bible/${t.id}.json`, { ...meta, books: out });
   console.log(`  ${t.abbr.padEnd(4)} ${String(out.length).padStart(3)} books ${String(verses).padStart(6)} verses ${kb(p)}${skipped ? ` (${skipped} lines skipped)` : ""}`);
   const { usfm, ...base } = t;
-  return { meta: { ...base, strongs: !!strongs, redLetter: !!usfm, books: out.map((b) => b.osis), verses, source: `https://ebible.org/details.php?id=${t.ebible}`, licence: "Public domain" }, data: out };
+  // Content address: the text itself names the edition, so a note can record
+  // exactly which wording it was written against (docs/IDEAS.md).
+  const hash = createHash("sha256").update(JSON.stringify(out)).digest("hex").slice(0, 16);
+  return { meta: { ...base, hash, strongs: !!strongs, redLetter: !!usfm, books: out.map((b) => b.osis), verses, source: `https://ebible.org/details.php?id=${t.ebible}`, licence: "Public domain" }, data: out };
 }
 
 /** Verse index over the KJV (with Apocrypha): position i <-> "Gen.1.1". */
@@ -191,6 +195,11 @@ async function main() {
       { name: "Cross references", source: "https://www.openbible.info/labs/cross-references/", licence: "CC-BY" },
       { name: "Topical Bible", source: "https://www.openbible.info/topics/", licence: "CC-BY" },
       { name: "Strong's dictionaries (JSON)", source: "https://github.com/openscriptures/strongs", licence: "CC-BY-SA (Open Scriptures); Strong's 1890 text public domain" },
+      { name: "Bible Geocoding Data (places)", source: "https://github.com/openbibleinfo/Bible-Geocoding-Data", licence: "CC BY 4.0" },
+      { name: "TIPNR, TAHOT, TAGNT (people, Hebrew and Greek)", source: "https://github.com/STEPBible/STEPBible-Data", licence: "CC BY 4.0, Tyndale House / STEPBible.org" },
+      { name: "Natural Earth (land, rivers, lakes)", source: "https://www.naturalearthdata.com/", licence: "Public domain" },
+      { name: "Daily Office Lectionary, BCP 1979 (JSON by Reuben Lillie)", source: "https://github.com/reubenlillie/daily-office", licence: "Public domain text; MIT JSON" },
+      { name: "Moby-Dick (Project Gutenberg #2701)", source: "https://www.gutenberg.org/ebooks/2701", licence: "Public domain" },
     ],
   });
   if (!BY_OSIS.has("Gen")) throw new Error("books.json is broken");

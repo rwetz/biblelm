@@ -83,6 +83,39 @@ tag(note, name)
   `[[John.3.16]]` links) so your study outlives the app.
 - Backup: an automatic daily copy of `notes.db` (keep 14).
 
+> **As built (notes version 2):** `notes.json` gained `memory` (verses learned
+> by heart, scheduled by FSRS-4.5, `src/lib/fsrs.ts`), `plans` (reading plans
+> followed, with the days read) and `deleted` (tombstones). With tombstones the
+> file is a state-based CRDT: Notebooks, "Merge another copy" folds in a
+> notes.json from another machine or a backup; newer edits win, deletions hold,
+> plan days union, and merging is commutative and idempotent (`mergeNotes`,
+> tested). This replaces the Automerge idea in IDEAS.md: no sync server, no new
+> dependency, and the file stays plain JSON. A note about a translation's
+> wording records that edition's content hash (`textHash`) and says so if the
+> text changes. "Print illustrated" lays a notebook out for paper with the
+> plates and paintings of each passage (`PrintNotebook.tsx`).
+
+## Atlas, Daily and the interlinear
+
+> **As built:** three study pages beyond the plan.
+>
+> - **Atlas** (`src/features/atlas`): an engraved map (sea ruled in fine lines,
+>   land in the page colour) of every geocoded place, sized by how often it is
+>   named; people with their family and every verse; a timeline of nine eras with
+>   the conventional dates most study Bibles print, labelled approximate. The
+>   verse panel lists the people and places a verse names.
+> - **Daily** (`src/features/daily`): the Daily Office for today from the 1979
+>   Book of Common Prayer (the calendar is `officeFor` in `src/lib/lectionary.ts`:
+>   Year One from Advent before an odd year, Propers by the Sunday closest to
+>   May 11 + 7n), the day's painting, four reading plans portioned by verse
+>   count (`src/lib/plans.ts`), and verses by heart, prompted by their first
+>   letters.
+> - **Interlinear**: a reader mode (toolbar or palette) that sets the Hebrew or
+>   Greek under each verse with transliteration and gloss, right to left for
+>   Hebrew. The 66 books only; the deuterocanon reads plainly.
+> - **Gallery** and **Look**: every picture in Bible order; Look shows one
+>   picture full window beside its passage ("look, read, look again").
+
 ## Study flows to build first
 
 1. **Read**: open a chapter, scroll, tap a verse for its cross references,

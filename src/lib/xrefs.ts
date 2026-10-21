@@ -150,3 +150,53 @@ export function connect(g: Graph, a: number, b: number, maxVisited = 400_000): n
   while (path[0] !== a) path.unshift(prev.get(path[0])!);
   return path;
 }
+
+// ── communities and allusions (scripts/data/graph.mjs) ──────────────────────
+
+export interface Community {
+  id: number;
+  /** The OpenBible topic that best covers it: a hint, not a title. */
+  topic: string;
+  size: number;
+  /** Most linked first: the community's centre. */
+  verses: number[];
+  books: [string, number][];
+}
+
+/** [NT verse, OT verse, alignment score, the shared wording] */
+export type Allusion = [number, number, number, string];
+
+const json = async <T,>(path: string): Promise<T> => JSON.parse(new TextDecoder().decode(await getBinary(path))) as T;
+let communities: Promise<Community[]> | null = null;
+let allusions: Promise<Allusion[]> | null = null;
+
+export const loadCommunities = () => {
+  communities ??= json<Community[]>("communities.json");
+  communities.catch(() => (communities = null));
+  return communities;
+};
+export const loadAllusions = () => {
+  allusions ??= json<Allusion[]>("allusions.json");
+  allusions.catch(() => (allusions = null));
+  return allusions;
+};
+
+/**
+ * Cross references gathered by chapter for the arc diagram: [from chapter,
+ * to chapter, votes] over the chapters in canonical order, strongest first.
+ */
+export function chapterArcs(g: Graph, chapterOf: Int32Array, limit = 12000): [number, number, number][] {
+  const sum = new Map<number, number>();
+  const C = Math.max(...chapterOf) + 1;
+  for (let i = 0; i < g.size; i++)
+    for (const l of g.out(i)) {
+      const a = chapterOf[i], b = chapterOf[l.to];
+      if (a === b || a < 0 || b < 0) continue;
+      const key = a < b ? a * C + b : b * C + a;
+      sum.set(key, (sum.get(key) ?? 0) + l.votes);
+    }
+  return [...sum]
+    .sort((x, y) => y[1] - x[1])
+    .slice(0, limit)
+    .map(([k, v]) => [Math.floor(k / C), k % C, v]);
+}

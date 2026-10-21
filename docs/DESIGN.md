@@ -36,6 +36,15 @@ current verse, the selected note and the primary action.
 
 Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 
+> **As built (Tenebrae):** a third scheme for the paintings, its own theme
+> (`tenebrae` in `src/app/theme.ts`) rather than a third mode: Caravaggio's
+> black ground `#0b0907`, lead-white text `#efe6d3`, and his vermilion
+> `#d9603f` as the one accent. Vellum and Nocturne are unchanged. The title
+> bar's button steps Vellum, Nocturne, Tenebrae (`useScheme` in
+> `src/app/scheme.ts`); Settings and the command palette offer all three. In
+> Tenebrae, Home opens on the day's painting instead of a Doré plate. Its light
+> variant (gesso and umber) is reached only by forcing light while in it.
+
 ## Typography
 
 | Use | Face | Licence | Notes |

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Button,
@@ -17,10 +17,11 @@ import {
   TooltipTrigger,
   cn,
 } from "@nexis/design";
-import { Fleuron, PlateFigure, usePlates } from "@/art/Art";
-import { platesInChapter } from "@/lib/art";
+import { DitherHero, Fleuron, PlateFigure, usePaintings, usePlates } from "@/art/Art";
+import { paintingCredit, paintingsInChapter, platesInChapter, type Painting } from "@/lib/art";
 import { loadTranslation, runs, type Run, type Translation, type Verse } from "@/lib/bible";
-import { BOOKS, book as bookOf, bookName, SHELVES, type Ref } from "@/lib/canon";
+import { isHebrew, loadInterlinear, type BookWords } from "@/lib/interlinear";
+import { BOOKS, book as bookOf, bookName, formatRef, SHELVES, type Ref } from "@/lib/canon";
 import { useCatalog, useTranslations } from "@/lib/hooks";
 import { noteCovers, useNotebooks } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
@@ -59,11 +60,12 @@ export function toggleVersePanel() {
 }
 
 export function ReadView() {
-  const { translation, parallel, location, shelves, face, textSize, columns, selected, read, select, set } = useStudy();
+  const { translation, parallel, location, shelves, face, textSize, columns, selected, interlinear, read, select, set } = useStudy();
   const ids = useMemo(() => [translation, ...parallel.filter((p) => p !== translation)], [translation, parallel]);
   const [ts, error] = useTranslations(ids);
   const main = ts?.[0];
   const plates = usePlates();
+  const paintings = usePaintings();
   const scroller = useRef<HTMLDivElement>(null);
   if (selected) lastSelected = selected;
 
@@ -97,6 +99,7 @@ export function ReadView() {
   const bookId = main.hasBook(location.book) ? location.book : main.books()[0];
   const verses = main.chapter(bookId, location.chapter);
   const chapterPlates = platesInChapter(plates, bookId, location.chapter);
+  const chapterPaintings = paintingsInChapter(paintings, bookId, location.chapter);
   const b = bookOf(bookId);
 
   return (
@@ -104,6 +107,7 @@ export function ReadView() {
       <div className="flex min-w-0 flex-1 flex-col">
         <ReaderToolbar t={main} bookId={bookId} />
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
+          {chapterPaintings.length > 0 && <Frontispiece key={`${bookId}.${location.chapter}`} paintings={chapterPaintings} />}
           <article
             className="mx-auto px-8 pb-24 pt-10"
             style={{ maxWidth: ts!.length > 1 ? "none" : columns ? "68rem" : "42rem", ["--scripture-face" as string]: FACES[face], ["--scripture-size" as string]: `${textSize}px` }}
@@ -120,6 +124,8 @@ export function ReadView() {
 
             {ts!.length > 1 ? (
               <Parallel ts={ts!} bookId={bookId} chapter={location.chapter} />
+            ) : interlinear ? (
+              <Interlinear verses={verses} bookId={bookId} chapter={location.chapter} selected={selected} onSelect={(v) => select({ book: v.book, chapter: v.chapter, verse: v.verse })} />
             ) : (
               <Chapter
                 verses={verses}
@@ -145,6 +151,52 @@ export function ReadView() {
         </div>
       </div>
       {selected && <VersePanel refSel={selected} translations={ts!} onClose={() => select(null)} shelves={shelves} onNavigate={(r) => read(r, { select: true })} onSetParallel={(p) => set({ parallel: p })} />}
+    </div>
+  );
+}
+
+/**
+ * A chapter a painting depicts opens with it: the painting kept whole in the
+ * middle, dissolving into the page above the chapter title. Several (Matthew
+ * 26 has three) take turns by the dots under the caption.
+ */
+function Frontispiece({ paintings }: { paintings: Painting[] }) {
+  const [i, setI] = useState(0);
+  const openLook = useStudy((s) => s.openLook);
+  const read = useStudy((s) => s.read);
+  const p = paintings[Math.min(i, paintings.length - 1)];
+  return (
+    <div className="relative">
+      <DitherHero hero={p} height="clamp(20rem, 54vh, 40rem)" width="72rem" fadeFrom={62} caption={false} />
+      <div className="relative z-10 mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-8 text-center text-xs text-muted-foreground">
+        <button type="button" className="font-garamond text-sm italic text-foreground hover:underline" onClick={() => openLook({ kind: "painting", id: p.id })}>
+          {p.title}
+        </button>
+        <span>{paintingCredit(p)}</span>
+        {p.ref && (
+          <button type="button" className="underline-offset-2 hover:underline" onClick={() => read(p.ref!, { select: true })}>
+            {formatRef(p.ref)}
+          </button>
+        )}
+        <Button variant="ghost" size="xs" onClick={() => openLook({ kind: "painting", id: p.id })}>
+          <Icon name="expand" size="xs" /> Look
+        </Button>
+        {paintings.length > 1 && (
+          <span className="flex gap-1.5" role="tablist" aria-label="Paintings of this chapter">
+            {paintings.map((q, k) => (
+              <button
+                key={q.id}
+                type="button"
+                role="tab"
+                aria-selected={k === i}
+                aria-label={q.title}
+                onClick={() => setI(k)}
+                className={cn("size-2 rounded-full", k === i ? "bg-brand" : "bg-muted-foreground/40 hover:bg-muted-foreground")}
+              />
+            ))}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -222,6 +274,53 @@ function Chapter({
   );
 }
 
+/**
+ * Interlinear reading: each verse, then its Hebrew or Greek word by word with
+ * a transliteration and an English gloss under each (STEPBible, CC BY).
+ * Books without the original-language data (the deuterocanon) read plainly.
+ */
+function Interlinear({ verses, bookId, chapter, selected, onSelect }: { verses: Verse[]; bookId: string; chapter: number; selected: Ref | null; onSelect: (v: Verse) => void }) {
+  const [words, setWords] = useState<BookWords | null | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    setWords(undefined);
+    loadInterlinear(bookId).then((w) => live && setWords(w));
+    return () => {
+      live = false;
+    };
+  }, [bookId]);
+  if (words === undefined) return <div className="grid place-items-center py-10"><Spinner /></div>;
+  return (
+    <div className="scripture space-y-6">
+      {!words && <p className="font-sans text-sm text-muted-foreground">No Hebrew or Greek for this book here: the interlinear covers the 66 books.</p>}
+      {verses.map((v) => {
+        const ws = words?.[`${chapter}.${v.verse}`] ?? [];
+        const rtl = isHebrew(ws);
+        return (
+          <div key={v.verse} data-v={v.verse} data-active={selected?.verse === v.verse && selected.chapter === chapter} onClick={() => onSelect(v)} className="cursor-pointer">
+            <p>
+              <sup className="vnum">{v.verse}</sup>
+              <VerseText raw={v.raw} />
+            </p>
+            {ws.length > 0 && (
+              <div dir={rtl ? "rtl" : "ltr"} className="mt-2 flex flex-wrap gap-x-4 gap-y-3">
+                {ws.map((w, i) => (
+                  <span key={i} className="flex flex-col items-center text-center" title={`${w[3]} · ${w[4]}`}>
+                    <span className={cn("leading-tight text-foreground", rtl ? "font-serif text-[1.35em]" : "text-[1.1em]")} lang={rtl ? "he" : "grc"}>{w[0]}</span>
+                    <span dir="ltr" className="font-sans text-[0.62em] italic text-muted-foreground">{w[1]}</span>
+                    <span dir="ltr" className="max-w-[9rem] font-sans text-[0.66em] text-foreground/80">{w[2]}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      <p className="font-sans text-xs text-muted-foreground">Hebrew (Leningrad Codex) and Greek (NA28 base text) with glosses from STEPBible, Tyndale House, CC BY 4.0.</p>
+    </div>
+  );
+}
+
 function RunText({ r }: { r: Run }) {
   const body = r.supplied ? <em className="supplied">{r.text}</em> : r.text;
   return r.wj ? <span className="wj">{body}</span> : <>{body}</>;
@@ -288,7 +387,7 @@ function Parallel({ ts, bookId, chapter }: { ts: Translation[]; bookId: string; 
 }
 
 function ReaderToolbar({ t, bookId }: { t: Translation; bookId: string }) {
-  const { location, shelves, translation, parallel, columns, selected, read, set } = useStudy();
+  const { location, shelves, translation, parallel, columns, selected, interlinear, read, set } = useStudy();
   const [catalog] = useCatalog();
   const books = t.books().filter((b) => shelves.includes(bookOf(b)?.shelf ?? "protestant"));
 
@@ -336,6 +435,14 @@ function ReaderToolbar({ t, bookId }: { t: Translation; bookId: string }) {
           </Button>
         </TooltipTrigger>
         <TooltipContent>Verse panel: notes, cross references, words ( p )</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant={interlinear ? "secondary" : "ghost"} size="icon-sm" aria-label="Interlinear" aria-pressed={interlinear} onClick={() => set({ interlinear: !interlinear })}>
+            <Icon name="text" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Interlinear: the Hebrew and Greek under each verse</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>

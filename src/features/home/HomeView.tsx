@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Button, Icon, Input } from "@nexis/design";
-import { DitherHero, Engraving, Fleuron, useHeroes, usePlates } from "@/art/Art";
-import { seasonalHero } from "@/lib/art";
+import { DitherHero, Engraving, Fleuron, useHeroes, usePaintings, usePlates } from "@/art/Art";
+import { paintingCredit, paintingForDay, paintingUrl, seasonalHero } from "@/lib/art";
+import { useScheme } from "@/app/scheme";
 import { wholeSentence } from "@/lib/bible";
 import { formatRef, parseOsis, type Ref } from "@/lib/canon";
 import { useCatalog, useTranslation } from "@/lib/hooks";
@@ -30,7 +31,17 @@ export function verseOfTheDay(date = new Date()): Ref {
 export function HomeView() {
   const heroes = useHeroes();
   const devHero = useStudy((s) => (s.devMode ? s.devHero : null));
-  const hero = useMemo(() => heroes.find((h) => h.id === devHero) ?? seasonalHero(heroes), [heroes, devHero]);
+  const paintings = usePaintings();
+  const [scheme] = useScheme();
+  const today = useMemo(() => paintingForDay(paintings), [paintings]);
+  // Tenebrae is the paintings' scheme: its Home opens on the day's painting in
+  // colour (an etching's paper would sit under the search box).
+  const band = useMemo(() => (today?.colour ? today : paintingForDay(paintings.filter((p) => p.colour))), [today, paintings]);
+  const hero = useMemo(
+    () => heroes.find((h) => h.id === devHero) ?? (scheme === "tenebrae" && band ? band : seasonalHero(heroes)),
+    [heroes, devHero, scheme, band],
+  );
+  const openLook = useStudy((s) => s.openLook);
   const { translation, history, read, searchFor, go } = useStudy();
   const [t] = useTranslation(translation);
   const [catalog] = useCatalog();
@@ -155,6 +166,23 @@ export function HomeView() {
             </div>
           </section>
         </div>
+        {today && (
+          <section className="mt-10 flex items-center gap-5 rounded-xl p-2">
+            <button type="button" onClick={() => openLook({ kind: "painting", id: today.id })} className="shrink-0">
+              <img src={paintingUrl(today.thumb)} alt={`${today.title}, ${paintingCredit(today)}`} className="h-28 w-24 rounded-sm object-cover" style={{ objectPosition: `${today.focusX}% ${today.focusY}%` }} />
+            </button>
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">To look at today</p>
+              <button type="button" onClick={() => openLook({ kind: "painting", id: today.id })} className="mt-1 block text-left font-garamond text-2xl hover:underline">
+                {today.title}
+              </button>
+              <p className="text-sm text-muted-foreground">{paintingCredit(today)}</p>
+              <Button variant="ghost" size="sm" className="-ml-3 mt-1" onClick={() => go("daily")}>
+                <Icon name="calendar" /> Today's readings and plans
+              </Button>
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

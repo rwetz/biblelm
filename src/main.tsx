@@ -11,7 +11,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { IN_TAURI, ThemeProvider, Toaster, TooltipProvider, USE_CUSTOM_WINDOW_CONTROLS } from "@nexis/design";
 import App from "./app/App";
-import { SCRIPTORIUM_ID, scriptorium } from "./app/theme";
+import { SCRIPTORIUM_ID, scriptorium, tenebrae } from "./app/theme";
 
 // Windows/Linux: the OS hands us a transparent, undecorated window and the
 // stylesheet paints the corners onto #root under this flag.
@@ -20,7 +20,7 @@ if (USE_CUSTOM_WINDOW_CONTROLS) document.documentElement.dataset.chrome = "borde
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <LazyMotion features={domAnimation} strict>
-      <ThemeProvider storageKey="biblelm" defaultThemeId={SCRIPTORIUM_ID} customThemes={[scriptorium]}>
+      <ThemeProvider storageKey="biblelm" defaultThemeId={SCRIPTORIUM_ID} customThemes={[scriptorium, tenebrae]}>
         <TooltipProvider delayDuration={300}>
           <App />
           <Toaster position="bottom-right" />

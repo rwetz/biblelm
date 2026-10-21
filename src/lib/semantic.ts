@@ -60,6 +60,13 @@ export async function moreLikeThis(verse: number, shelves: ReadonlySet<Shelf>, k
   return (await call<{ results: Hit[] }>({ kind: "like", verse, k, allow }, [allow.buffer])).results;
 }
 
+/** The verses met walking the line between two verses' meanings (IDEAS.md, Interpolation). */
+export async function between(a: number, b: number, shelves: ReadonlySet<Shelf>, steps = 8): Promise<Hit[]> {
+  await initSemantic();
+  const allow = await allowMask(shelves);
+  return (await call<{ results: Hit[] }>({ kind: "between", a, b, steps, allow }, [allow.buffer])).results;
+}
+
 /** Cosine similarity of every pair of verses in a passage (the chiasm finder). */
 export async function similarityMatrix(verses: number[]): Promise<Float32Array> {
   await initSemantic();

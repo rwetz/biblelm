@@ -3,7 +3,7 @@
 // reader can set it beside that verse and every page can pick art that fits
 // what the page is for (docs/ART.md).
 
-import type { Ref } from "./canon";
+import { BOOKS, type Ref } from "./canon";
 
 export interface PlateImage {
   file: string;
@@ -31,6 +31,8 @@ export interface Hero {
   file: string;
   /** Grayscale source, dithered live at the drawn size (src/art/dither.ts). */
   tone?: string;
+  /** The engraving as printed (no levels or gamma), for partial dithering (src/art/painting.ts). */
+  src?: string;
   algo?: "atkinson" | "bayer" | "blue";
   width: number;
   height: number;
@@ -42,6 +44,8 @@ export interface Hero {
 const BASE = `${import.meta.env.BASE_URL}art`;
 export const plateUrl = (img: PlateImage) => `${BASE}/dore/${img.file}`;
 export const heroUrl = (h: Hero) => `${BASE}/heroes/${h.tone ?? h.file}`;
+/** The untouched engraving behind a hero, falling back to the levelled tone. */
+export const heroSrcUrl = (h: Hero) => `${BASE}/heroes/${h.src ?? h.tone ?? h.file}`;
 
 let plates: Promise<Plate[]> | null = null;
 let heroes: Promise<Hero[]> | null = null;
@@ -144,4 +148,99 @@ export function easterSunday(y: number): Date {
   const m = Math.floor((a + 11 * h + 22 * l) / 451);
   const month = Math.floor((h + l - 7 * m + 114) / 31), dayOfMonth = ((h + l - 7 * m + 114) % 31) + 1;
   return new Date(y, month - 1, dayOfMonth);
+}
+
+// ── Paintings (scripts/art/paintings.mjs) ───────────────────────────────
+
+/** An oil painting or etching: Caravaggio, Rembrandt and their followers. */
+export interface Painting {
+  id: string;
+  title: string;
+  artist: string;
+  year: string;
+  ref: Ref | null;
+  /** For a painting tied to no single verse: what it shows. */
+  about?: string;
+  medium: string;
+  place: string;
+  /** In colour (kept as painted) or a print (tinted with the theme). */
+  colour: boolean;
+  /** Mean brightness 0..255: Caravaggio's are dark. */
+  key: number;
+  /** Where its light falls, percent: the focus of every crop. */
+  focusX: number;
+  focusY: number;
+  source: string;
+  licence: string;
+  full: PlateImage;
+  thumb: PlateImage;
+}
+
+export const paintingUrl = (img: PlateImage) => `${BASE}/paintings/${img.file}`;
+
+let paintings: Promise<Painting[]> | null = null;
+
+export function loadPaintings(): Promise<Painting[]> {
+  paintings ??= fetch(`${BASE}/paintings/paintings.json`)
+    .then((r) => (r.ok ? (r.json() as Promise<Painting[]>) : []))
+    .catch(() => []);
+  return paintings;
+}
+
+export function paintingsInChapter(all: Painting[], book: string, chapter: number): Painting[] {
+  return all.filter((p) => p.ref?.book === book && p.ref.chapter === chapter).sort((a, b) => (a.ref!.verse ?? 0) - (b.ref!.verse ?? 0));
+}
+
+/** Does a picture's passage include this verse? */
+export function depicts(ref: Ref | null, book: string, chapter: number, verse: number): boolean {
+  if (!ref || ref.book !== book || ref.chapter !== chapter) return false;
+  return verse >= (ref.verse ?? 0) && verse <= (ref.verseEnd ?? ref.verse ?? 0);
+}
+
+/** A painting's credit line: "Caravaggio, 1601". */
+export const paintingCredit = (p: Painting) => `${p.artist}, ${p.year}`;
+
+/** Paintings that set a page's mood, by page (docs/ART.md, Paintings). */
+export const PAGE_PAINTINGS: Record<string, string> = {
+  notebooks: "jerome-writing", // the scholar translating at his desk
+  topics: "seven-works-of-mercy", // Matthew 25 acted out in a Naples street
+  gallery: "calling-of-matthew",
+  dark: "denial-of-peter", // the empty and error states in Tenebrae
+};
+
+/**
+ * The painting for a day, following the church year like the Home hero: the
+ * Annunciation's dream in Advent, the Passion in Lent, the risen Christ at
+ * Easter, Paul on the road at Pentecost. Within a season it turns daily.
+ */
+export function paintingForDay(all: Painting[], date = new Date()): Painting | undefined {
+  if (!all.length) return undefined;
+  const y = date.getFullYear();
+  const day = (d: Date) => Math.floor(d.getTime() / 86_400_000);
+  const t = day(date);
+  const easter = day(easterSunday(y));
+  const christmas = day(new Date(y, 11, 25));
+  const xmasDow = new Date(y, 11, 25).getDay();
+  const advent = christmas - (xmasDow === 0 ? 28 : 21 + xmasDow);
+  const season =
+    t >= advent && t < christmas ? ["dream-of-joseph"]
+    : t >= christmas || t <= day(new Date(y, 0, 6)) ? ["simeon-in-the-temple", "dream-of-joseph"]
+    : t === easter - 2 ? ["three-crosses", "entombment"] // Good Friday
+    : t >= easter - 6 && t < easter ? ["taking-of-christ", "denial-of-peter", "christ-before-the-high-priest", "rembrandt-denial-of-peter", "entombment"] // Holy Week
+    : t >= easter - 46 && t < easter ? ["sacrifice-of-isaac", "jeremiah-lamenting", "prodigal-son", "taking-of-christ", "seven-works-of-mercy"] // Lent
+    : t >= easter && t < easter + 49 ? ["incredulity-of-thomas", "supper-at-emmaus", "raising-of-lazarus"]
+    : t >= easter + 49 && t < easter + 56 ? ["conversion-of-paul"]
+    : all.map((p) => p.id);
+  const pool = season.map((id) => all.find((p) => p.id === id)).filter((p): p is Painting => !!p);
+  const list = pool.length ? pool : all;
+  return list[((t % list.length) + list.length) % list.length];
+}
+
+const BOOK_ORDER = new Map(BOOKS.map((b, i) => [b.osis, i]));
+
+/** Sort pictures by the passage they show, in canonical order; unplaced last. */
+export function byBibleOrder<T extends { ref: Ref | null }>(a: T, b: T): number {
+  const x = a.ref, y = b.ref;
+  if (!x || !y) return x ? -1 : y ? 1 : 0;
+  return (BOOK_ORDER.get(x.book) ?? 999) - (BOOK_ORDER.get(y.book) ?? 999) || x.chapter - y.chapter || (x.verse ?? 0) - (y.verse ?? 0);
 }

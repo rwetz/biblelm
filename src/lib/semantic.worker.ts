@@ -9,7 +9,8 @@ type Req =
   | { id: number; kind: "init"; base: string }
   | { id: number; kind: "query"; text: string; k: number; allow?: Uint8Array }
   | { id: number; kind: "like"; verse: number; k: number; allow?: Uint8Array }
-  | { id: number; kind: "similarity"; verses: number[] };
+  | { id: number; kind: "similarity"; verses: number[] }
+  | { id: number; kind: "between"; a: number; b: number; steps: number; allow?: Uint8Array };
 
 let meta: Meta | null = null;
 let vecs: Int8Array | null = null;
@@ -74,6 +75,31 @@ self.onmessage = async (e: MessageEvent<Req>) => {
     if (r.kind === "like") {
       const q = Float32Array.from(vecs.subarray(r.verse * meta.dim, (r.verse + 1) * meta.dim), (x) => x / meta!.scale);
       return self.postMessage({ id: r.id, ok: true, results: topK(q, r.k, r.allow, r.verse) });
+    }
+    if (r.kind === "between") {
+      // Walk the straight line between two verses in meaning-space and take
+      // the nearest unvisited verse at each step: a path between two ideas.
+      const dim = meta.dim, scale = meta.scale;
+      const va = vecs.subarray(r.a * dim, (r.a + 1) * dim), vb = vecs.subarray(r.b * dim, (r.b + 1) * dim);
+      const seen = new Set([r.a, r.b]);
+      const path: { verse: number; score: number }[] = [];
+      for (let k = 1; k < r.steps; k++) {
+        const t = k / r.steps;
+        const q = new Float32Array(dim);
+        let norm = 0;
+        for (let d = 0; d < dim; d++) {
+          q[d] = ((1 - t) * va[d] + t * vb[d]) / scale;
+          norm += q[d] * q[d];
+        }
+        norm = Math.sqrt(norm) || 1;
+        for (let d = 0; d < dim; d++) q[d] /= norm;
+        const next = topK(q, 8, r.allow).find((h) => !seen.has(h.verse));
+        if (next) {
+          seen.add(next.verse);
+          path.push(next);
+        }
+      }
+      return self.postMessage({ id: r.id, ok: true, results: path });
     }
     if (r.kind === "similarity") {
       // Verse-by-verse cosine matrix for a passage (the chiasm finder).

@@ -10,8 +10,9 @@ import { TrainingView } from "./training/TrainingView";
 import { InferenceView } from "./inference/InferenceView";
 import { ModelView } from "./model/ModelView";
 import { InsideView } from "./inside/InsideView";
+import { LessonsView } from "./lessons/LessonsView";
 
-type Tab = "corpus" | "train" | "generate" | "model" | "inside";
+type Tab = "corpus" | "train" | "generate" | "model" | "inside" | "lessons";
 
 const LEDE = "A small language model trained from scratch on Scripture, and the tools to watch it learn. A study of the machine, not a voice for the text.";
 
@@ -40,7 +41,7 @@ function Frontispiece({ hero }: { hero?: Hero }) {
           <Dither
             key={hero.id}
             src={heroUrl(hero)}
-            algo={hero.algo === "bayer" ? "bayer" : "atkinson"}
+            algo={hero.algo === "bayer" ? "bayer" : hero.algo === "blue" ? "blue" : "atkinson"}
             label={`${hero.title}, after Gustave Doré`}
             edges={{ top: 0.04, right: 0.04, bottom: 0.14, left: 0.1 }}
             className="absolute inset-0 text-foreground opacity-90 dark:opacity-85"
@@ -85,12 +86,13 @@ export function LabView() {
               { id: "generate", label: "Generate", icon: "chat" },
               { id: "model", label: "Model", icon: "archive" },
               { id: "inside", label: "Inside", icon: "brain" },
+              { id: "lessons", label: "Lessons", icon: "chart-line" },
             ]}
           />
         </div>
       </div>
       <div className="flex flex-1 flex-col">
-        {!IN_TAURI && (
+        {!IN_TAURI && tab !== "lessons" && (
           <div className={cn(LAB_COLUMN, "pt-6")}>
             <Alert>
               <Icon name="info" />
@@ -104,6 +106,7 @@ export function LabView() {
         {tab === "generate" && <InferenceView />}
         {tab === "model" && <ModelView />}
         {tab === "inside" && <InsideView />}
+        {tab === "lessons" && <LessonsView />}
       </div>
     </div>
   );

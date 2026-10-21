@@ -97,3 +97,108 @@ export const scriptorium: Theme = {
     },
   },
 };
+
+// Tenebrae: a third scheme for the paintings. Caravaggio's black ground,
+// lead-white flesh and the vermilion of his cloaks as the one accent. Night
+// for looking at pictures; its light variant is a primed canvas (gesso and
+// umber), reached only by toggling light while in Tenebrae.
+export const TENEBRAE_ID = "tenebrae";
+
+export const tenebrae: Theme = {
+  id: TENEBRAE_ID,
+  name: "Tenebrae",
+  author: "BibleLM",
+  description: "Caravaggio's dark ground and vermilion, for the paintings.",
+  variants: {
+    light: {
+      colors: {
+        background: "#ece4d3",
+        foreground: "#1f1812",
+        card: "#f4eee1",
+        cardForeground: "#1f1812",
+        popover: "#f8f3e8",
+        popoverForeground: "#1f1812",
+        primary: "#2b211a",
+        primaryForeground: "#f4eee1",
+        secondary: "#e0d5bf",
+        secondaryForeground: "#1f1812",
+        muted: "#e0d5bf",
+        mutedForeground: "#62513f",
+        accent: "#dacdb3",
+        accentForeground: "#1f1812",
+        destructive: "#a3261b",
+        border: "rgba(31,24,18,0.15)",
+        input: "rgba(31,24,18,0.22)",
+        ring: "#a8361f",
+        sidebar: "#e4dac5",
+        sidebarForeground: "#1f1812",
+        sidebarPrimary: "#a8361f",
+        sidebarPrimaryForeground: "#f4eee1",
+        sidebarAccent: "#d6c8ac",
+        sidebarAccentForeground: "#1f1812",
+        sidebarBorder: "rgba(31,24,18,0.12)",
+        sidebarRing: "#a8361f",
+        radius: "0.5rem",
+      },
+      terminal: {
+        background: "#ece4d3",
+        foreground: "#1f1812",
+        ansi: [
+          "#1f1812", "#a8361f", "#4f7a2e", "#9a6a0b",
+          "#2f5f8a", "#7a3f74", "#2d7470", "#e0d5bf",
+          "#62513f", "#c2452b", "#5f9138", "#b67f12",
+          "#3b72a6", "#93508b", "#358a85", "#f4eee1",
+        ],
+      },
+    },
+    dark: {
+      colors: {
+        background: "#0b0907",
+        foreground: "#efe6d3",
+        card: "#13100c",
+        cardForeground: "#efe6d3",
+        popover: "#17130e",
+        popoverForeground: "#efe6d3",
+        primary: "#efe6d3",
+        primaryForeground: "#0b0907",
+        secondary: "#1f1914",
+        secondaryForeground: "#efe6d3",
+        muted: "#1f1914",
+        mutedForeground: "#a99b85",
+        accent: "#261f18",
+        accentForeground: "#efe6d3",
+        destructive: "#e5675e",
+        border: "rgba(239,230,211,0.09)",
+        input: "rgba(239,230,211,0.14)",
+        ring: "#d9603f",
+        sidebar: "#080605",
+        sidebarForeground: "#efe6d3",
+        sidebarPrimary: "#d9603f",
+        sidebarPrimaryForeground: "#0b0907",
+        sidebarAccent: "#211b15",
+        sidebarAccentForeground: "#efe6d3",
+        sidebarBorder: "rgba(239,230,211,0.07)",
+        sidebarRing: "#d9603f",
+        radius: "0.5rem",
+      },
+      terminal: {
+        background: "#0b0907",
+        foreground: "#efe6d3",
+        ansi: [
+          "#1f1914", "#e5675e", "#8fbf6a", "#d9a94a",
+          "#78a8d6", "#c48fbe", "#6fbcb4", "#d8cfbd",
+          "#5f5545", "#f08a80", "#a7d384", "#ecc068",
+          "#97c0e8", "#d9a8d2", "#8fd2ca", "#f6efe0",
+        ],
+      },
+    },
+  },
+};
+
+export type Scheme = "vellum" | "nocturne" | "tenebrae";
+
+export const SCHEMES: { id: Scheme; label: string; blurb: string }[] = [
+  { id: "vellum", label: "Vellum", blurb: "Parchment and rubric red" },
+  { id: "nocturne", label: "Nocturne", blurb: "Lamp-black and gilt" },
+  { id: "tenebrae", label: "Tenebrae", blurb: "Caravaggio's dark and vermilion, for the paintings" },
+];

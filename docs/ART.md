@@ -45,6 +45,46 @@ illustrated study Bibles.
 > *The Dumb Man Possessed* and *Death of Ananias* have no larger scan on
 > Commons and stay small.
 
+> **As built (paintings and partial dithering):** heroes no longer dither the
+> whole picture. `src/art/painting.ts` keeps the original at full resolution
+> where the picture is whole and lays dots over it only where it gives way:
+> the edges that dissolve into the page (a band of mixed cells, thinning to
+> nothing), a little grain, and in a dark painting its darkest ground. That is
+> the Zeron look: a painting, partly dotted. A colour painting keeps its colour
+> and its dots are its own colour at a few levels of light (the brightness is
+> ordered-dithered, the hue kept; the darkest cells take the painting's mean
+> umber, since their hue is scan noise). A print (Doré, or a Rembrandt etching)
+> is drawn as a positive in the theme's ink on the page, light staying light
+> in the dark schemes. The reveal goes brightest first, so the light seems to
+> fall into the scene. `heroes.mjs` and `literary.mjs` now also write each
+> engraving untouched (`-src.jpg`, resized only) for this; the levelled tone
+> files stay for the small, fully dithered art (corner plates, spots, sigils,
+> the Lab's frontispiece).
+>
+> **25 paintings** (`scripts/art/paintings.mjs`, credits in
+> [painting-credits.md](painting-credits.md)): the thirteen Caravaggios (The
+> Calling of Saint Matthew, Supper at Emmaus, The Taking of Christ, The
+> Incredulity of Saint Thomas, The Conversion on the Way to Damascus, The
+> Sacrifice of Isaac, David with the Head of Goliath, The Raising of Lazarus,
+> The Entombment, The Denial of Saint Peter, The Seven Works of Mercy, Judith
+> Beheading Holofernes, Saint Jerome Writing), ten Rembrandts (two of them
+> etchings) and one each by Honthorst and Georges de La Tour. They are kept
+> exactly as painted (resized only). Each records whether it is in colour (by
+> the spread of its chroma, so an etching's warm paper does not count), how
+> dark it is, and where its light falls, which becomes the focus of every crop.
+> A painting is a hero-tier picture: it opens the chapter it depicts as a
+> frontispiece above the title (Matthew 26 has three, in turn), never sits
+> between verses (those are Doré's engravings), and appears in Look, the
+> Gallery, the verse panel's "Seen in art", Daily, the Topics header (The
+> Seven Works of Mercy), the empty Notebooks page (Saint Jerome) and, in
+> Tenebrae, on Home. Hero bands with words over them always use a painting in
+> colour: an etching's bright paper would sit under the text.
+>
+> The Rembrandts worked: his light behaves like Caravaggio's under the dots.
+> The two etchings work as prints in Look and the Gallery but not as hero
+> bands. Tissot's watercolours were left out: the Brooklyn Museum's rights for
+> its scans could not be confirmed.
+
 ## Rules
 
 1. **Public domain only, provenance recorded.** Every image has a row in

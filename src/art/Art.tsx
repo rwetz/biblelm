@@ -6,8 +6,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn, useReducedMotion, useTheme } from "@nexis/design";
 import { formatRef } from "@/lib/canon";
-import { heroUrl, loadHeroes, loadLiterary, loadPlates, plateUrl, rotation, type Hero, type Plate } from "@/lib/art";
+import { heroSrcUrl, loadHeroes, loadLiterary, loadPaintings, loadPlates, paintingCredit, paintingUrl, plateUrl, rotation, type Hero, type Painting as PaintingData, type Plate } from "@/lib/art";
 import { useStudy } from "@/store/study";
+import { compose, cssColor, revealCells, type Composed, type PaintingLook } from "./painting";
 import { BAYER8, paintScattered, scatterSeeds, dither, fadeEdges, inkColor, loadImage, paint, toneGrid, type DitherAlgo, type Edges } from "./dither";
 
 export function usePlates(): Plate[] {
@@ -20,6 +21,18 @@ export function usePlates(): Plate[] {
     };
   }, []);
   return plates;
+}
+
+export function usePaintings(): PaintingData[] {
+  const [p, setP] = useState<PaintingData[]>([]);
+  useEffect(() => {
+    let live = true;
+    loadPaintings().then((x) => live && setP(x));
+    return () => {
+      live = false;
+    };
+  }, []);
+  return p;
 }
 
 export function useHeroes(): Hero[] {
@@ -61,11 +74,14 @@ export function Engraving({
   ghost = false,
   className,
   style,
+  loading = "lazy",
 }: {
   plate: Plate;
   size?: "full" | "thumb";
   /** Faint decoration: an inverted print in dark mode. */
   ghost?: boolean;
+  /** "eager" where it must be there at once (a notebook going to the printer). */
+  loading?: "lazy" | "eager";
   className?: string;
   style?: React.CSSProperties;
 }) {
@@ -75,7 +91,7 @@ export function Engraving({
       src={plateUrl(img)}
       width={img.width}
       height={img.height}
-      loading="lazy"
+      loading={loading}
       decoding="async"
       draggable={false}
       alt={`${plate.title}, Gustave Doré, 1866`}
@@ -357,7 +373,7 @@ export function ArtSpot({ plate, title, children, className }: { plate?: Plate; 
       {art && (
         <Dither
           src={plateUrl(plate.full)}
-          algo="floyd"
+          algo="blue"
           dot={1}
           focusY={35}
           label={`${plate.title}, after Gustave Doré`}
@@ -373,25 +389,166 @@ export function ArtSpot({ plate, title, children, className }: { plate?: Plate; 
 }
 
 /**
- * Tier 1: a dithered hero, faded into the page. `width` frames the picture in
- * a centred window (its sides fade) so more of a portrait plate shows on a
- * wide screen; `clearLeft` keeps the left of the band paper for a title.
+ * A picture kept as it is, with dots only where it gives way: its fading
+ * edges, a little grain, and (for a tenebrist painting) its darkest ground.
+ * Colour paintings keep their colour; a print is drawn in the theme's ink on
+ * the page. Composed at device resolution for the drawn size, revealed cell
+ * by cell with the brightest light first.
+ */
+export function Painting({
+  src,
+  look,
+  dot = 3,
+  reveal = true,
+  label,
+  className,
+  style,
+}: {
+  src: string;
+  look: PaintingLook;
+  /** CSS pixels per dot. */
+  dot?: number;
+  reveal?: boolean;
+  label?: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const reduced = useReducedMotion();
+  const { paletteEpoch, resolvedMode } = useTheme();
+  const dark = resolvedMode === "dark";
+  const [size, setSize] = useState<[number, number] | null>(null);
+  const revealed = useRef<string | null>(null);
+  const lookRef = useRef(look);
+  lookRef.current = look;
+  const lookKey = JSON.stringify(look);
+
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    let timer = 0;
+    const measure = () => setSize([el.clientWidth, el.clientHeight]);
+    const ro = new ResizeObserver(() => {
+      clearTimeout(timer);
+      timer = window.setTimeout(measure, revealed.current ? 140 : 0);
+    });
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      clearTimeout(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    const cv = canvas.current;
+    if (!size || !cv || size[0] < 2 || size[1] < 2) return;
+    let cancelled = false;
+    let raf = 0;
+    loadImage(src)
+      .then((img) => {
+        if (cancelled) return;
+        // Device pixels, capped so a huge window stays quick to compose.
+        const dpr = Math.min(window.devicePixelRatio || 1, Math.sqrt(4_200_000 / (size[0] * size[1])), 3);
+        const w = Math.max(1, Math.round(size[0] * dpr)), h = Math.max(1, Math.round(size[1] * dpr));
+        cv.width = w;
+        cv.height = h;
+        cv.style.width = `${size[0]}px`;
+        cv.style.height = `${size[1]}px`;
+        const ink = inkColor(cv);
+        const page = cssColor(cv, "var(--background)");
+        const c: Composed = compose(img, w, h, Math.max(1, Math.round(dot * dpr)), lookRef.current, ink, page, dark);
+        const ctx = cv.getContext("2d")!;
+        const animate = reveal && !reduced && revealed.current !== src;
+        revealed.current = src;
+        if (!animate) return ctx.putImageData(c.final, 0, 0);
+        const shown = new ImageData(w, h);
+        const total = c.order.length;
+        let done = 0;
+        const t0 = performance.now();
+        const step = (now: number) => {
+          const t = Math.min(1, (now - t0) / 1300);
+          // Ease out: the light arrives quickly, the ground settles slowly.
+          const upto = Math.round(total * (1 - (1 - t) ** 2));
+          revealCells(c, shown, done, upto);
+          done = upto;
+          ctx.putImageData(shown, 0, 0);
+          if (t < 1 && !cancelled) raf = requestAnimationFrame(step);
+        };
+        raf = requestAnimationFrame(step);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [size, src, dot, reveal, lookKey, reduced, paletteEpoch, dark]);
+
+  return (
+    <div ref={box} className={cn("relative overflow-hidden", className)} style={style}>
+      <canvas
+        ref={canvas}
+        role={label ? "img" : undefined}
+        aria-label={label}
+        aria-hidden={label ? undefined : true}
+        className="absolute left-0 top-0"
+      />
+    </div>
+  );
+}
+
+/** What a hero band can show: a Doré hero (an engraving) or a painting. */
+export type HeroArt = Hero | PaintingData;
+export const isPainting = (a: HeroArt): a is PaintingData => "artist" in a;
+
+/** The source, look and credit of a hero band's art. */
+export function heroArt(a: HeroArt) {
+  if (isPainting(a))
+    return {
+      key: a.id,
+      src: paintingUrl(a.full),
+      colour: a.colour,
+      focusX: a.focusX,
+      focusY: a.focusY,
+      // Tenebrism: the darker the painting, the more of its ground turns to dots.
+      shadow: a.key < 70 ? 0.6 : 0.25,
+      label: `${a.title}, ${paintingCredit(a)}`,
+      credit: `${a.title}, ${paintingCredit(a)}`,
+    };
+  return {
+    key: a.id,
+    src: heroSrcUrl(a),
+    colour: false,
+    focusX: 50,
+    focusY: a.focusY ?? 40,
+    shadow: 0,
+    label: `${a.title}, after Gustave Doré`,
+    credit: `${a.title}, ${a.work ? `from ${a.work}, ` : ""}after Gustave Doré`,
+  };
+}
+
+/**
+ * Tier 1: a hero, faded into the page in dots. The picture itself is kept
+ * whole in the middle (src/art/painting.ts); only its edges, and a
+ * painting's dark ground, become dots. `width` frames it in a centred window
+ * (its sides dissolve too); `clearLeft` keeps the left of the band for a title.
  */
 export function DitherHero({
   hero,
   className,
   height = "58vh",
-  focusY = 38,
+  focusY,
   width,
   clearLeft = false,
   fadeFrom = 55,
   caption = true,
+  dot = 2,
   children,
 }: {
-  hero?: Hero;
+  hero?: HeroArt;
   className?: string;
   height?: string;
-  /** Vertical focus of the crop, in percent: Doré's plates are portrait. */
+  /** Vertical focus of the crop, in percent; a painting's own light by default. */
   focusY?: number;
   /** Max width of the picture window, e.g. "72rem". Full-bleed when unset. */
   width?: string;
@@ -399,31 +556,29 @@ export function DitherHero({
   /** Where the fade into the page begins, in percent of the height. */
   fadeFrom?: number;
   caption?: boolean;
+  dot?: number;
   children?: React.ReactNode;
 }) {
   const mode = useStudy((s) => s.illustrations);
   const show = hero && mode === "full";
-  // Every edge breaks up into dots (fadeEdges), never a blur.
-  const side = width ? 0.1 : 0;
+  const art = hero ? heroArt(hero) : null;
+  const side = width ? 0.24 : 0;
   const edges: Edges = { bottom: 1 - fadeFrom / 100, right: side, left: clearLeft ? 0.85 : side };
   return (
     <div className={cn("relative w-full shrink-0 overflow-hidden", className)} style={{ height }}>
-      {show && (
-        <Dither
-          src={heroUrl(hero!)}
-          algo={hero!.algo === "bayer" ? "bayer" : "atkinson"}
-          focusY={focusY}
-          label={`${hero!.title}, after Gustave Doré`}
-          edges={edges}
-          key={hero!.id}
-          className="absolute inset-y-0 left-1/2 w-full -translate-x-1/2 text-foreground opacity-90 dark:opacity-80"
+      {show && art && (
+        <Painting
+          key={art.key}
+          src={art.src}
+          dot={dot}
+          look={{ colour: art.colour, focusX: art.focusX, focusY: focusY ?? art.focusY, edges, shadow: art.shadow, grain: 0.06 }}
+          label={art.label}
+          className="absolute inset-y-0 left-1/2 w-full -translate-x-1/2"
           style={{ maxWidth: width }}
         />
       )}
-      {show && caption && (
-        <span className="pointer-events-none absolute bottom-2 right-6 z-20 font-garamond text-xs italic text-muted-foreground">
-          {hero!.title}, {hero!.work ? `from ${hero!.work}, ` : ""}after Gustave Doré
-        </span>
+      {show && art && caption && (
+        <span className="pointer-events-none absolute bottom-2 right-6 z-20 font-garamond text-xs italic text-muted-foreground">{art.credit}</span>
       )}
       {children && <div className="relative z-10 flex h-full flex-col">{children}</div>}
     </div>

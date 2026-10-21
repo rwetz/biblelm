@@ -12,7 +12,9 @@
 //   blue      void-and-cluster blue noise threshold (Ulichney 1993): no
 //             pattern artefacts, the most organic.
 //
-// Each hero also gets a grayscale "tone" JPEG (levels and gamma already
+// Each hero also gets its untouched engraving ("src", resized only), which
+// the app shows whole with dots only where it fades (src/art/painting.ts),
+// and a grayscale "tone" JPEG (levels and gamma already
 // applied). The app dithers that live at the size it is drawn (src/art/dither.ts),
 // so a hero can be framed for any window and its dots stay square; the 1-bit
 // PNG is kept as the fallback and for anything that wants the fixed print.
@@ -159,7 +161,15 @@ async function main() {
       .gamma(1.2)
       .jpeg({ quality: 76, mozjpeg: true })
       .toFile(join(OUT, tone));
-    done.push({ id: `hero-${h.plate}`, plate: h.plate, title: h.title, algo: h.algo, file, tone, width: info.width, height: info.height });
+    // The engraving as printed, only resized: the app keeps it intact where
+    // the picture is whole and lays dots over it only where it dissolves.
+    const src = `${h.plate}-src.jpg`;
+    await sharp(readFileSync(join(SRC, `${h.plate}.img`)))
+      .grayscale()
+      .resize({ width: TONE_WIDTH, withoutEnlargement: true })
+      .jpeg({ quality: 82, mozjpeg: true })
+      .toFile(join(OUT, src));
+    done.push({ id: `hero-${h.plate}`, plate: h.plate, title: h.title, algo: h.algo, file, tone, src, width: info.width, height: info.height });
     console.log(`  ${h.plate} ${h.algo} ${info.width}x${info.height}`);
   }
   writeFileSync(join(OUT, "heroes.json"), JSON.stringify(done));

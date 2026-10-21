@@ -1,19 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, Icon, Input, SectionLabel, Segmented, Spinner, VirtualList, cn } from "@nexis/design";
-import { CornerPlate, usePagePlate } from "@/art/Art";
-import { PAGE_PLATES } from "@/lib/art";
+import { CornerPlate, DitherHero, usePagePlate, usePaintings } from "@/art/Art";
+import { PAGE_PAINTINGS, PAGE_PLATES } from "@/lib/art";
 import type { Translation, VerseIndex } from "@/lib/bible";
 import { formatRef, parseRef, type Ref } from "@/lib/canon";
 import { useGraph, useIndex, useTopics, useTranslation } from "@/lib/hooks";
 import { loadTopicKinds, passages, topicPlaces, type Topic, type TopicKinds, type TopicPlace } from "@/lib/topics";
 import { genreOf } from "@/lib/jev";
 import { connect, studyWalk } from "@/lib/xrefs";
-import { useStudy } from "@/store/study";
+import { shelfSet, useStudy } from "@/store/study";
+import { between } from "@/lib/semantic";
 import { DataMissing } from "@/features/read/ReadView";
 import { ScriptureMap } from "./ScriptureMap";
 import { Structure } from "./Structure";
+import { Words } from "./Words";
+import { Links } from "./Links";
+import { Echoes } from "./Echoes";
 
-type Tab = "topics" | "walk" | "map" | "structure";
+type Tab = "topics" | "walk" | "map" | "structure" | "words" | "links" | "echoes";
 
 export function TopicsView() {
   const { topic, walk, translation } = useStudy();
@@ -21,6 +25,8 @@ export function TopicsView() {
   const [t, error] = useTranslation(translation);
   const [index] = useIndex();
   const plate = usePagePlate(PAGE_PLATES.topics);
+  // The Seven Works of Mercy: Matthew 25 acted out in a Naples street.
+  const mercy = usePaintings().find((p) => p.id === PAGE_PAINTINGS.topics);
   useEffect(() => {
     if (walk) setTab("walk");
     else if (topic) setTab("topics");
@@ -29,9 +35,9 @@ export function TopicsView() {
   if (error) return <DataMissing message={error} />;
   return (
     <div className="relative isolate flex min-h-0 flex-1 flex-col">
-      {tab !== "map" && <CornerPlate plate={plate} corner="br" />}
-      <div className="border-b border-border/60">
-      <div className="mx-auto flex w-full max-w-6xl items-end gap-4 px-8 pb-3 pt-8">
+      {(tab === "topics" || tab === "walk") && <CornerPlate plate={plate} corner="br" />}
+      <DitherHero hero={mercy} height="8.5rem" clearLeft fadeFrom={30} caption={false} className="border-b border-border/60">
+      <div className="mx-auto flex h-full w-full max-w-6xl items-end gap-4 px-8 pb-3 pt-8">
         <div>
           <h1 className="font-blackletter text-4xl">Topics</h1>
           <p className="mt-1 text-sm text-muted-foreground">Themes across Scripture, the paths cross references draw, and the shape of a passage.</p>
@@ -46,10 +52,13 @@ export function TopicsView() {
             { id: "walk", label: "Walk", icon: "nodes" },
             { id: "map", label: "Map", icon: "map" },
             { id: "structure", label: "Structure", icon: "grid" },
+            { id: "words", label: "Words", icon: "text" },
+            { id: "links", label: "Links", icon: "network" },
+            { id: "echoes", label: "Echoes", icon: "quote" },
           ]}
         />
       </div>
-      </div>
+      </DitherHero>
       {!t || !index ? (
         <div className="grid flex-1 place-items-center"><Spinner /></div>
       ) : tab === "topics" ? (
@@ -58,6 +67,12 @@ export function TopicsView() {
         <Walk t={t} index={index} />
       ) : tab === "map" ? (
         <ScriptureMap t={t} index={index} />
+      ) : tab === "words" ? (
+        <Words t={t} />
+      ) : tab === "links" ? (
+        <Links t={t} index={index} />
+      ) : tab === "echoes" ? (
+        <Echoes t={t} index={index} />
       ) : (
         <Structure t={t} index={index} />
       )}
@@ -299,6 +314,8 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
   const [to, setTo] = useState("Genesis 22:8");
   const [walkFrom, setWalkFrom] = useState<number | null>(null);
   const [chain, setChain] = useState<number[] | null | undefined>(undefined);
+  const [idea, setIdea] = useState<number[] | "loading" | "error" | null>(null);
+  const shelves = useStudy((s) => s.shelves);
 
   useEffect(() => {
     if (seed) {
@@ -362,6 +379,41 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
                   <li key={v} className="relative">
                     <span className="absolute -left-[21px] top-3 size-2.5 rounded-full bg-brand" />
                     <PassageRow t={t} index={index} start={v} end={v} extra={<span className="ml-2 font-mono text-[10px] text-muted-foreground">step {i}</span>} />
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+          <SectionLabel className="mt-10">Between two ideas</SectionLabel>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Not by links but by meaning: walk the straight line between the two verses and stop at the nearest verse at each step, so one idea turns into the
+            other one passage at a time.
+          </p>
+          <Button
+            variant="outline"
+            className="mt-3"
+            disabled={idea === "loading"}
+            onClick={async () => {
+              const a = resolve(from), b = resolve(to);
+              if (a === undefined || b === undefined) return setIdea("error");
+              setIdea("loading");
+              try {
+                setIdea([a, ...(await between(a, b, shelfSet(shelves))).map((h) => h.verse), b]);
+              } catch {
+                setIdea("error");
+              }
+            }}
+          >
+            {idea === "loading" ? <Spinner /> : <Icon name="sparkle" />} Walk between them
+          </Button>
+          <div className="mt-4">
+            {idea === "error" && <p className="text-sm text-muted-foreground">Meaning search needs the verse embeddings (pnpm data:embed) and two verse references.</p>}
+            {Array.isArray(idea) && (
+              <ol className="relative space-y-1 border-l border-dashed border-border pl-4">
+                {idea.map((v) => (
+                  <li key={v} className="relative">
+                    <span className="absolute -left-[21px] top-3 size-2.5 rounded-full border border-brand bg-background" />
+                    <PassageRow t={t} index={index} start={v} end={v} />
                   </li>
                 ))}
               </ol>

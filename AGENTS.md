@@ -11,7 +11,7 @@ plan), then the doc for the area you are touching:
 | The data files and how to rebuild them | [docs/DATA.md](docs/DATA.md) |
 | Embeddings, Jev, the Lab | [docs/ML.md](docs/ML.md) |
 | Nexis design, themes, typography | [docs/DESIGN.md](docs/DESIGN.md) |
-| Illustrations | [docs/ART.md](docs/ART.md), [docs/art-credits.md](docs/art-credits.md) |
+| Illustrations | [docs/ART.md](docs/ART.md), [docs/art-credits.md](docs/art-credits.md), [docs/painting-credits.md](docs/painting-credits.md) |
 | Algorithm ideas | [docs/IDEAS.md](docs/IDEAS.md) |
 
 ## Principles
@@ -36,10 +36,12 @@ plan), then the doc for the area you are touching:
 src/
   app/              shell (App.tsx), Scriptorium theme
   art/Art.tsx       Engraving, PlateFigure, CornerPlate, DitherHero, ornaments
-  features/         home, read (+VersePanel), search, topics (+map, structure),
-                    notebooks, lab (corpus, training, inference, model, inside), settings
+  features/         home, read (+VersePanel), search, topics (+map, structure,
+                    words, links, echoes), atlas, gallery, look, daily, notebooks,
+                    lab (corpus, training, inference, model, inside, lessons), settings
   lib/              canon, bible (verse store), search, xrefs (graph), topics,
-                    semantic (+ worker), jev, art, backend
+                    semantic (+ worker), suffix (+ worker), words, els, atlas,
+                    interlinear, lectionary, plans, fsrs, jev, art, backend
   store/            study (prefs + place), notebooks (your notes)
 src-tauri/src/      lib.rs (Lab workers, paths), study.rs (notes, export, Jev)
 python/biblelm/     the Lab: GPT, training, generation, ONNX, inspect_model
@@ -58,7 +60,10 @@ scripts/data|art/   offline builders (pnpm data); outputs are git-ignored
   fallback. Changing a Rust command's shape changes its type there in the same
   commit.
 - **Art**: a plate beside its passage is a positive engraving (`.engraving`),
-  never dithered, and only in the chapter it depicts. Heroes, corner plates,
+  never dithered, and only in the chapter it depicts. A painting is kept as
+  painted (resized only) and dotted only where it dissolves (`Painting`,
+  `src/art/painting.ts`); it opens its chapter as a frontispiece, never between
+  verses. Words over a hero band need a painting in colour. Heroes, corner plates,
   the sidebar vignette and empty-state spots are 1-bit, dithered live at their
   drawn size by `Dither` (`src/art/dither.ts`). Never under body text above 8%
   opacity, never in the accent colour (the `CrossLoader` is live progress, not
@@ -66,7 +71,7 @@ scripts/data|art/   offline builders (pnpm data); outputs are git-ignored
   `src/lib/art.ts`). Blackletter is for big titles, book names and drop caps
   only; anything smaller or longer is Garamond.
 - Never commit `data/`, `runs/`, `data-src/`, `art-src/`, `public/data`,
-  `public/art/dore|heroes`, `public/models`, weights or keys.
+  `public/art/dore|heroes|paintings`, `public/models`, weights or keys.
   `TYPESAFE_API_KEY` stays in the user's environment and never reaches the
   webview. No hosted large model (Opus 5.5 or larger) is used: ask first.
 - Importers parse downloads as text; never execute downloaded content.

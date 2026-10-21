@@ -19,10 +19,13 @@ import { useCatalog } from "@/lib/hooks";
 import { jevAvailable, setJevBypass } from "@/lib/jev";
 import { useStudy } from "@/store/study";
 import { DeveloperPanel } from "./DeveloperPanel";
+import { useScheme } from "@/app/scheme";
+import { SCHEMES } from "@/app/theme";
 
 export function SettingsView() {
   const study = useStudy();
   const theme = useTheme();
+  const [scheme, setScheme] = useScheme();
   const [catalog] = useCatalog();
   const plate = usePagePlate(PAGE_PLATES.settings);
   const [jev, setJev] = useState<boolean | null>(null);
@@ -40,20 +43,15 @@ export function SettingsView() {
 
         <Panel title="Appearance">
           <div className="space-y-5">
-            <Field label="Light and dark" inline>
-              <Segmented
-                label="Mode"
-                size="sm"
-                value={theme.mode}
-                onChange={theme.setMode}
-                segments={[
-                  { id: "light", label: "Vellum" },
-                  { id: "dark", label: "Nocturne" },
-                  { id: "system", label: "System" },
-                ]}
-              />
+            <Field label="Scheme" hint={SCHEMES.find((x) => x.id === scheme)?.blurb} inline>
+              <Segmented label="Scheme" size="sm" value={scheme} onChange={setScheme} segments={SCHEMES.map((x) => ({ id: x.id, label: x.label }))} />
             </Field>
-            <Field label="Illustrations" hint="Doré's engravings beside the passages, and the dithered scenes on Home and the Lab." inline>
+            {scheme !== "tenebrae" && (
+              <Field label="Follow the system's light and dark" inline>
+                <Switch checked={theme.mode === "system"} onCheckedChange={(on) => theme.setMode(on ? "system" : theme.resolvedMode)} />
+              </Field>
+            )}
+            <Field label="Illustrations" hint="Doré's engravings beside the passages, the paintings that open their chapters, and the scenes on each page." inline>
               <Segmented
                 label="Illustrations"
                 size="sm"
@@ -121,6 +119,11 @@ export function SettingsView() {
                     {t.books.length} books, {t.verses.toLocaleString()} verses · {t.licence} ·{" "}
                     <a href={t.source} target="_blank" rel="noreferrer" className="underline">eBible.org</a>
                   </p>
+                  {t.hash && (
+                    <p className="mt-0.5 text-[11px] text-muted-foreground/80" title="The first digits of the SHA-256 of the text: notes about a translation's wording record it, so they know which edition they were written against.">
+                      Edition <code className="font-mono">{t.hash}</code>
+                    </p>
+                  )}
                 </div>
                 {study.translation === t.id ? (
                   <Badge variant="brand">Reading</Badge>
@@ -170,6 +173,11 @@ export function SettingsView() {
               <li>Texts: public domain, from eBible.org.</li>
               <li>Cross references and topics: OpenBible.info, CC-BY.</li>
               <li>Illustrations: Gustave Doré, La Grande Bible de Tours (1866), public domain, via Wikimedia Commons.</li>
+              <li>Paintings: Caravaggio, Rembrandt, Honthorst and Georges de La Tour, public domain (Wikimedia Commons; the Met and the Rijksmuseum, CC0).</li>
+              <li>Places: OpenBible.info Bible Geocoding Data, CC BY 4.0. Coastlines and rivers: Natural Earth, public domain.</li>
+              <li>People and the Hebrew and Greek interlinear: STEPBible (Tyndale House), TIPNR, TAHOT and TAGNT, CC BY 4.0.</li>
+              <li>Daily Office: the Book of Common Prayer (1979), public domain; JSON by Reuben Lillie, MIT.</li>
+              <li>Moby-Dick (the Bible-codes control text): Project Gutenberg, public domain.</li>
               <li>Faces: UnifrakturMaguntia, Grenze Gotisch, IM Fell English, EB Garamond (SIL Open Font License).</li>
               <li>Strong's dictionaries: Open Scriptures JSON edition, CC-BY-SA.</li>
               <li>Embeddings: BAAI bge-small-en-v1.5 (MIT).</li>

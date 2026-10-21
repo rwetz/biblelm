@@ -6,7 +6,46 @@ All notable changes to BibleLM. Format based on
 
 ## Unreleased
 
+### Added
+
+- **Paintings.** All thirteen Caravaggios from the research list (The Calling
+  of Saint Matthew, Supper at Emmaus, The Taking of Christ, The Incredulity of
+  Saint Thomas, The Conversion on the Way to Damascus, The Sacrifice of Isaac,
+  David with the Head of Goliath, The Raising of Lazarus, The Entombment, The
+  Denial of Saint Peter, The Seven Works of Mercy, Judith Beheading Holofernes,
+  Saint Jerome Writing), ten Rembrandts, Honthorst and Georges de La Tour,
+  public domain (docs/painting-credits.md). Each opens the chapter it depicts
+  as a frontispiece.
+- **Partial dithering.** Heroes keep the original picture intact and turn
+  only its dissolving edges, and a dark painting's ground, into dots, in the
+  painting's own colours; prints are drawn in the theme's ink. The light
+  arrives first.
+- **Tenebrae**, a third scheme: Caravaggio's black and vermilion. Vellum and
+  Nocturne are unchanged; the title bar button steps through all three.
+- **Look**: one picture, the whole window, beside its passage. **Gallery**:
+  every painting and plate in Bible order. **Seen in art** in the verse panel.
+- **Atlas**: an engraved map of 1,278 places (OpenBible.info), 3,127 people
+  with their families (STEPBible), and a timeline of the eras. The verse panel
+  lists the people and places a verse names.
+- **Daily**: the 1979 Prayer Book's Daily Office for today, the day's
+  painting, four reading plans, and verses learned by heart (FSRS).
+- **Interlinear** reading: the Hebrew and Greek under each verse with
+  transliteration and gloss (STEPBible, CC BY).
+- **Topics**: Words (a book's own words, collocations, words used once,
+  closeness in style), Links (every cross reference as an arc diagram, and
+  347 communities of passages) and Echoes (536 places the New Testament quotes
+  the Old). Walk can go "between two ideas" by meaning.
+- **Search** counts a phrase in every translation at once (a suffix array).
+- **Lab, Lessons**: Zipf's law, and the Bible-codes search run on Genesis and
+  Moby-Dick side by side against what chance predicts.
+- **Notebooks**: print one illustrated, or merge in another copy of your notes.
+  Notes on a translation's wording record the exact edition.
+
 ### Changed
+
+- **Notes file version 2** adds memory verses, reading plans and tombstones;
+  version 1 files migrate without losing anything.
+- Empty states dither with blue noise.
 
 - **Sharper plates.** 42 Doré plates that came from small copies (as narrow as
   330 px) are rebuilt from larger public-domain scans, cropped from page scans

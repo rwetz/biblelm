@@ -109,3 +109,50 @@
     transition: none !important;
   }
 }
+
+/* ── Printing a notebook ──────────────────────────────────────────────── */
+
+/* The illustrated notebook (PrintNotebook) exists only on paper. Paper is
+   always Vellum: the dark schemes' light text would vanish on white. */
+.print-sheet {
+  display: none;
+}
+@media print {
+  #root,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+  .print-sheet {
+    display: block;
+    --background: #ffffff;
+    --foreground: #1d1711;
+    --muted-foreground: #4f4336;
+    --brand: #a3311d;
+    --border: rgba(0, 0, 0, 0.2);
+    color: var(--foreground);
+    background: var(--background);
+    padding: 0 8mm;
+  }
+  .print-sheet .engraving {
+    mix-blend-mode: normal;
+    filter: none;
+  }
+  .print-title {
+    display: flex;
+    min-height: 92vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    break-after: page;
+  }
+  .print-note {
+    break-inside: avoid-page;
+  }
+  .print-sheet blockquote {
+    border-color: var(--brand);
+  }
+  @page {
+    margin: 16mm 14mm;
+  }
+}

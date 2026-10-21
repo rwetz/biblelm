@@ -13,7 +13,6 @@ import {
   TooltipContent,
   TooltipTrigger,
   useCommandPaletteShortcut,
-  useTheme,
   ViewEnter,
   WindowResizeEdges,
   type PaletteCommand,
@@ -28,10 +27,17 @@ import { HomeView } from "@/features/home/HomeView";
 import { ReadView, chapterStep, toggleVersePanel } from "@/features/read/ReadView";
 import { SearchView } from "@/features/search/SearchView";
 import { TopicsView } from "@/features/topics/TopicsView";
+import { AtlasView } from "@/features/atlas/AtlasView";
+import { GalleryView } from "@/features/gallery/GalleryView";
+import { DailyView } from "@/features/daily/DailyView";
+import { Look } from "@/features/look/Look";
 import { NotebooksView } from "@/features/notebooks/NotebooksView";
 import { LabView } from "@/features/lab/LabView";
 import { SettingsView } from "@/features/settings/SettingsView";
 import { useNotebooks } from "@/store/notebooks";
+import { loadPaintings, paintingForDay, type Painting } from "@/lib/art";
+import { nextScheme, useScheme } from "@/app/scheme";
+import { SCHEMES } from "@/app/theme";
 import { useStudy, type Page } from "@/store/study";
 
 const NAV: SidebarNavSection<Page>[] = [
@@ -42,6 +48,9 @@ const NAV: SidebarNavSection<Page>[] = [
       { id: "read", label: "Read", icon: "document" },
       { id: "search", label: "Search", icon: "search" },
       { id: "topics", label: "Topics", icon: "nodes" },
+      { id: "atlas", label: "Atlas", icon: "map" },
+      { id: "gallery", label: "Gallery", icon: "image" },
+      { id: "daily", label: "Daily", icon: "calendar" },
       { id: "notebooks", label: "Notebooks", icon: "note" },
     ],
   },
@@ -49,11 +58,18 @@ const NAV: SidebarNavSection<Page>[] = [
   { items: [{ id: "settings", label: "Settings", icon: "settings" }] },
 ];
 
+// The paintings, for commands that open one (loaded once at start).
+let paintingsCache: Painting[] = [];
+loadPaintings().then((p) => (paintingsCache = p));
+
 const VIEWS: Record<Page, () => React.ReactNode> = {
   home: () => <HomeView />,
   read: () => <ReadView />,
   search: () => <SearchView />,
   topics: () => <TopicsView />,
+  atlas: () => <AtlasView />,
+  gallery: () => <GalleryView />,
+  daily: () => <DailyView />,
   notebooks: () => <NotebooksView />,
   lab: () => <LabView />,
   settings: () => <SettingsView />,
@@ -104,22 +120,25 @@ export default function App() {
         </main>
       </div>
       <Status />
+      <Look />
       <CommandPalette open={palette} onOpenChange={setPalette} commands={commands} placeholder="Type a command, a book, or a page" />
     </div>
   );
 }
 
+/** Vellum, Nocturne, Tenebrae: one click steps to the next scheme. */
 function ModeToggle() {
-  const theme = useTheme();
-  const dark = theme.resolvedMode === "dark";
+  const [scheme, setScheme] = useScheme();
+  const next = nextScheme(scheme);
+  const label = SCHEMES.find((s) => s.id === next)!.label;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label="Toggle light and dark" onClick={() => theme.setMode(dark ? "light" : "dark")}>
-          <Icon name={dark ? "theme-light" : "theme-dark"} />
+        <Button variant="ghost" size="icon-sm" aria-label={`Switch to ${label}`} onClick={() => setScheme(next)}>
+          <Icon name={scheme === "vellum" ? "theme-dark" : scheme === "nocturne" ? "contrast" : "theme-light"} />
         </Button>
       </TooltipTrigger>
-      <TooltipContent>{dark ? "Vellum (light)" : "Nocturne (dark)"}</TooltipContent>
+      <TooltipContent>{label}</TooltipContent>
     </Tooltip>
   );
 }
@@ -149,7 +168,7 @@ function Status() {
 
 function useCommands(openPalette: () => void): PaletteCommand[] {
   const study = useStudy();
-  const theme = useTheme();
+  const [, setScheme] = useScheme();
   const [catalog] = useCatalog();
   const { notebooks, setActive } = useNotebooks();
   return useMemo(() => {
@@ -164,6 +183,8 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       { id: "next-ch", label: "Next chapter", group: "Read", icon: "chevron-right", shortcut: "]", run: () => chapterStep(1) },
       { id: "prev-ch", label: "Previous chapter", group: "Read", icon: "chevron-left", shortcut: "[", run: () => chapterStep(-1) },
       { id: "verse-panel", label: study.selected ? "Hide the verse panel" : "Show the verse panel", group: "Read", icon: "info", shortcut: "P", keywords: ["notes", "cross references", "sidebar"], run: () => { if (study.page !== "read") study.go("read"); toggleVersePanel(); } },
+      { id: "interlinear", label: study.interlinear ? "Read without the Hebrew and Greek" : "Read interlinear (Hebrew and Greek)", group: "Read", icon: "text", keywords: ["greek", "hebrew", "original", "strongs"], run: () => { study.set({ interlinear: !study.interlinear }); if (study.page !== "read") study.go("read"); } },
+      { id: "look-today", label: "Look: today's painting", group: "Art", icon: "image", keywords: ["caravaggio", "rembrandt", "visio divina", "gallery"], run: () => { const p = paintingForDay(paintingsCache); if (p) study.openLook({ kind: "painting", id: p.id }); } },
       { id: "columns", label: study.columns ? "Read in one column" : "Read in two columns", group: "Read", icon: "split-vertical", run: () => study.set({ columns: !study.columns }) },
       { id: "red-letter", label: study.redLetter ? "Words of Christ in black" : "Words of Christ in red", group: "Read", icon: "quote", keywords: ["red letter", "jesus"], run: () => study.set({ redLetter: !study.redLetter }) },
       { id: "bigger", label: "Larger text", group: "Read", icon: "zoom-in", run: () => study.set({ textSize: Math.min(28, study.textSize + 1) }) },
@@ -204,7 +225,7 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
     const appearance: PaletteCommand[] = [
       ...art,
       { id: "dev", label: study.devMode ? "Turn developer mode off" : "Turn developer mode on", group: "Appearance", icon: "code", keywords: ["debug", "art", "hero", "plates"], run: () => { study.set({ devMode: !study.devMode }); if (!study.devMode) study.go("settings"); } },
-      { id: "mode", label: "Toggle light and dark", group: "Appearance", icon: "contrast", keywords: ["theme", "vellum", "nocturne"], run: () => theme.setMode(theme.resolvedMode === "dark" ? "light" : "dark") },
+      ...SCHEMES.map((sc) => ({ id: `scheme-${sc.id}`, label: `Scheme: ${sc.label}`, group: "Appearance", icon: "contrast" as const, keywords: ["theme", "light", "dark", sc.blurb], run: () => setScheme(sc.id) })),
     ];
     const nbs: PaletteCommand[] = [
       { id: "nb-new", label: "New notebook", group: "Notebooks", icon: "add", run: () => { study.go("notebooks"); window.dispatchEvent(new CustomEvent("biblelm:new-notebook")); } },
@@ -215,5 +236,5 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
     ];
     void openPalette;
     return [...books, ...nav, ...reading, ...translations, ...shelves, ...nbs, ...appearance];
-  }, [study, theme, catalog, notebooks, setActive, openPalette]);
+  }, [study, setScheme, catalog, notebooks, setActive, openPalette]);
 }

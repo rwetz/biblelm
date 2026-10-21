@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,16 +22,20 @@ import {
   SectionLabel,
   Textarea,
   toast,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   IN_TAURI,
   cn,
 } from "@nexis/design";
-import { ArtSpot, Engraving, usePagePlate, usePlates } from "@/art/Art";
-import { PAGE_PLATES, type Plate } from "@/lib/art";
+import { ArtSpot, Engraving, Painting, usePagePlate, usePaintings, usePlates } from "@/art/Art";
+import { PAGE_PAINTINGS, PAGE_PLATES, paintingCredit, paintingUrl, type Plate } from "@/lib/art";
 import { backend } from "@/lib/backend";
 import { formatRef, parseOsis, SHELVES, type Shelf } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
 import { toMarkdown, useNotebooks, type Note, type Notebook } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
+import { PrintNotebook } from "./PrintNotebook";
 
 const label = (osis: string) => {
   const r = parseOsis(osis);
@@ -55,6 +59,7 @@ export function NotebooksView() {
         <div className="flex items-center gap-2 px-4 pb-2 pt-6">
           <h1 className="font-blackletter text-3xl">Notebooks</h1>
           <span className="flex-1" />
+          <MergeButton />
           <Button variant="ghost" size="icon-sm" aria-label="New notebook" onClick={() => setCreating(true)}>
             <Icon name="add" />
           </Button>
@@ -72,6 +77,46 @@ export function NotebooksView() {
       </div>
       <NotebookDialog open={creating} onOpenChange={setCreating} />
     </div>
+  );
+}
+
+/**
+ * Merge in another copy of your notes (a notes.json from another machine, or
+ * one of the daily backups): nothing is lost, newer edits win, deletions hold.
+ */
+function MergeButton() {
+  const mergeFrom = useNotebooks((s) => s.mergeFrom);
+  const input = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <input
+        ref={input}
+        type="file"
+        accept=".json,application/json"
+        className="hidden"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          try {
+            const before = useNotebooks.getState().notes.length;
+            mergeFrom(JSON.parse(await f.text()));
+            const after = useNotebooks.getState().notes.length;
+            toast.success("Merged", { description: `${after - before >= 0 ? after - before : 0} notes added; newer edits kept.` });
+          } catch (err) {
+            toast.error("Could not merge that file", { description: String(err) });
+          }
+        }}
+      />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon-sm" aria-label="Merge another copy of your notes" onClick={() => input.current?.click()}>
+            <Icon name="git-compare" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Merge another copy of your notes (from another machine or a backup)</TooltipContent>
+      </Tooltip>
+    </>
   );
 }
 
@@ -93,6 +138,32 @@ function NotebookRow({ b, active, onClick }: { b: Notebook; active: boolean; onC
 }
 
 function EmptyNotebooks({ plate, onCreate }: { plate?: Plate; onCreate: () => void }) {
+  // Saint Jerome at his desk, translating: the scholar's own picture.
+  const jerome = usePaintings().find((p) => p.id === PAGE_PAINTINGS.notebooks);
+  const art = useStudy((s) => s.illustrations) !== "off";
+  if (jerome && art)
+    return (
+      <div className="grid h-full place-items-center p-8">
+        <div className="flex max-w-xl flex-col items-center text-center">
+          <Painting
+            src={paintingUrl(jerome.full)}
+            dot={2}
+            label={`${jerome.title}, ${paintingCredit(jerome)}`}
+            look={{ colour: jerome.colour, focusX: jerome.focusX, focusY: jerome.focusY, edges: { top: 0.2, right: 0.22, bottom: 0.25, left: 0.22 }, grain: 0.04, shadow: 0.5 }}
+            className="mb-4 aspect-[7/5] w-[30rem] max-w-full"
+          />
+          <p className="font-garamond text-3xl">A study of your own</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+            A notebook is one study: Romans with Paul, the Psalms of lament, the Apocrypha as a curiosity. Each keeps the translations and canon you chose
+            for it, and notes anchored to verses so they follow the text into every translation.
+          </p>
+          <Button variant="brand" className="mt-5" onClick={onCreate}>
+            <Icon name="add" /> New notebook
+          </Button>
+          <p className="mt-4 font-garamond text-xs italic text-muted-foreground">{jerome.title}, {paintingCredit(jerome)}</p>
+        </div>
+      </div>
+    );
   return (
     <div className="grid h-full place-items-center p-8">
       <ArtSpot plate={plate} title={<span className="text-3xl">A study of your own</span>} className="max-w-md">
@@ -113,6 +184,7 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
   const study = useStudy();
   const plates = usePlates();
   const [editing, setEditing] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [filter, setFilter] = useState("");
   const mine = useMemo(
@@ -166,6 +238,9 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
             <Button variant="outline" size="sm" onClick={exportMd}>
               <Icon name="download" /> Export Markdown
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setPrinting(true)}>
+              <Icon name="file-pdf" /> Print illustrated
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
               <Icon name="edit" /> Edit
             </Button>
@@ -200,6 +275,7 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
         </>
       )}
 
+      {printing && <PrintNotebook nb={nb} onDone={() => setPrinting(false)} />}
       <NotebookDialog open={editing} onOpenChange={setEditing} editing={nb} onSave={(patch) => updateNotebook(nb.id, patch)} />
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>

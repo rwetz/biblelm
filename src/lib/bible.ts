@@ -21,6 +21,8 @@ export interface TranslationMeta {
   strongs?: boolean;
   /** Marks the words of Christ (⸢ … ⸣ in the printed text). */
   redLetter?: boolean;
+  /** First 16 hex digits of the SHA-256 of the text: which edition, exactly. */
+  hash?: string;
 }
 
 interface ChapterData {
@@ -31,7 +33,7 @@ interface BookData {
   osis: string;
   chapters: ChapterData[];
 }
-interface TranslationData extends Omit<TranslationMeta, "books" | "verses" | "source" | "licence" | "strongs" | "redLetter"> {
+interface TranslationData extends Omit<TranslationMeta, "books" | "verses" | "source" | "licence" | "strongs" | "redLetter" | "hash"> {
   books: BookData[];
 }
 

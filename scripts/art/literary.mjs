@@ -73,8 +73,11 @@ async function main() {
     const info = await sharp(data, { raw: { width: raw.width, height: raw.height, channels: 1 } })
       .jpeg({ quality: 76, mozjpeg: true })
       .toFile(join(OUT, tone));
+    const src = `${id}-src.jpg`;
+    await sharp(readFileSync(cached)).grayscale().resize({ width: TONE_WIDTH, withoutEnlargement: true }).jpeg({ quality: 82, mozjpeg: true }).toFile(join(OUT, src));
     done.push({
       id: `hero-${id}`,
+      src,
       plate: id,
       title: l.title,
       work: l.work,

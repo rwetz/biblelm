@@ -5,7 +5,9 @@
 import { create } from "zustand";
 import type { Ref, Shelf } from "@/lib/canon";
 
-export type Page = "home" | "read" | "search" | "topics" | "notebooks" | "lab" | "settings";
+export type Page = "home" | "read" | "search" | "topics" | "atlas" | "gallery" | "daily" | "notebooks" | "lab" | "settings";
+/** A picture opened to look at: a painting or a Doré plate, by id. */
+export type LookTarget = { kind: "painting" | "plate"; id: string };
 export type Illustrations = "full" | "margins" | "off";
 export type ReadingFace = "garamond" | "fell" | "gothic";
 
@@ -31,8 +33,14 @@ interface StudyState {
   /** The verse the verse panel is open on. */
   selected: Ref | null;
   history: Ref[];
+  /** Reading with the Hebrew and Greek under each verse. */
+  interlinear: boolean;
+  /** The picture open in Look (full window), or none. */
+  look: LookTarget | null;
   /** Hand-offs between pages (not persisted). */
   topic: string | null;
+  /** A person or place to open in the Atlas. */
+  atlas: { kind: "place" | "person"; id: string } | null;
   walk: Ref | null;
   query: string;
 
@@ -42,7 +50,9 @@ interface StudyState {
   openTopic: (name: string) => void;
   openWalk: (ref: Ref) => void;
   searchFor: (q: string) => void;
-  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "devMode" | "devHero" | "devPlate">>) => void;
+  openLook: (t: LookTarget | null) => void;
+  openAtlas: (kind: "place" | "person", id: string) => void;
+  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
 }
 
 const KEY = "biblelm:study";
@@ -56,6 +66,7 @@ const DEFAULTS = {
   textSize: 18,
   columns: false,
   redLetter: true,
+  interlinear: false,
   location: { book: "John", chapter: 1, verse: 0 } as Ref,
   history: [] as Ref[],
   devMode: false,
@@ -74,8 +85,8 @@ function load(): typeof DEFAULTS {
 
 function save(s: StudyState) {
   try {
-    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, location, history, devMode, devHero, devPlate } = s;
-    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, location, history, devMode, devHero, devPlate }));
+    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, interlinear, location, history, devMode, devHero, devPlate } = s;
+    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, interlinear, location, history, devMode, devHero, devPlate }));
   } catch {
     // Storage blocked: preferences just won't persist.
   }
@@ -84,6 +95,8 @@ function save(s: StudyState) {
 export const useStudy = create<StudyState>((set, get) => ({
   ...load(),
   selected: null,
+  look: null,
+  atlas: null,
   topic: null,
   walk: null,
   query: "",
@@ -91,6 +104,8 @@ export const useStudy = create<StudyState>((set, get) => ({
   openTopic: (topic) => set({ page: "topics", topic, walk: null }),
   openWalk: (walk) => set({ page: "topics", walk, topic: null }),
   searchFor: (query) => set({ page: "search", query }),
+  openLook: (look) => set({ look }),
+  openAtlas: (kind, id) => set({ page: "atlas", atlas: { kind, id } }),
   read: (ref, opts) => {
     const chapter = { book: ref.book, chapter: ref.chapter, verse: 0 };
     const history = [chapter, ...get().history.filter((h) => h.book !== ref.book || h.chapter !== ref.chapter)].slice(0, 12);

@@ -10,8 +10,11 @@
 import { create } from "zustand";
 import { backend } from "@/lib/backend";
 import type { Shelf } from "@/lib/canon";
+import { newCard, review, type Card, type Grade } from "@/lib/fsrs";
 
-export const VERSION = 1;
+// 2: verses learned by heart (memory), reading plans (plans) and tombstones
+// (deleted) so two copies of the file can be merged without losing anything.
+export const VERSION = 2;
 
 export interface Notebook {
   id: string;
@@ -33,6 +36,8 @@ export interface Note {
   end?: string;
   /** Set when the note is about one translation's wording. */
   translation?: string;
+  /** That translation's content hash when the note was written: the exact wording. */
+  textHash?: string;
   body: string;
   tags: string[];
   created: number;
@@ -46,15 +51,34 @@ export interface Highlight {
   created: number;
 }
 
+/** A reading plan you are following (src/lib/plans.ts). */
+export interface PlanProgress {
+  id: string;
+  plan: string;
+  /** Local date the plan began, "YYYY-MM-DD". */
+  started: string;
+  /** Day numbers (1-based) marked read. */
+  done: number[];
+}
+
+/** Something deleted, remembered so a merge does not bring it back. */
+export interface Tombstone {
+  id: string;
+  at: number;
+}
+
 export interface NotesData {
   version: number;
   notebooks: Notebook[];
   notes: Note[];
   highlights: Highlight[];
   active: string | null;
+  memory: Card[];
+  plans: PlanProgress[];
+  deleted: Tombstone[];
 }
 
-const EMPTY: NotesData = { version: VERSION, notebooks: [], notes: [], highlights: [], active: null };
+const EMPTY: NotesData = { version: VERSION, notebooks: [], notes: [], highlights: [], active: null, memory: [], plans: [], deleted: [] };
 
 /** Bring any saved shape up to the current one without losing anything. */
 export function migrate(raw: unknown): NotesData {
@@ -67,6 +91,45 @@ export function migrate(raw: unknown): NotesData {
     notes: Array.isArray(r.notes) ? r.notes.map((n) => ({ ...n, tags: Array.isArray(n.tags) ? n.tags : [] })) : [],
     highlights: Array.isArray(r.highlights) ? r.highlights : [],
     active: typeof r.active === "string" ? r.active : null,
+    // Version 1 had none of these.
+    memory: Array.isArray(r.memory) ? r.memory : [],
+    plans: Array.isArray(r.plans) ? r.plans.map((p) => ({ ...p, done: Array.isArray(p.done) ? p.done : [] })) : [],
+    deleted: Array.isArray(r.deleted) ? r.deleted : [],
+  };
+}
+
+/**
+ * Merge another copy of the notes file into this one (from a second machine,
+ * or a backup): a state-based CRDT. Every item has a unique id; when both
+ * copies have it the newer edit wins; anything either copy deleted stays
+ * deleted unless it was edited after; plans keep every day either copy read.
+ * Merging is commutative and idempotent, so the order of merges never matters.
+ */
+export function mergeNotes(a: NotesData, b: NotesData): NotesData {
+  const deleted = new Map<string, number>();
+  for (const t of [...a.deleted, ...b.deleted]) deleted.set(t.id, Math.max(deleted.get(t.id) ?? 0, t.at));
+  const stamp = (x: object) => {
+    const y = x as { updated?: number; created?: number; last?: number };
+    return Math.max(y.updated ?? 0, y.created ?? 0, y.last ?? 0);
+  };
+  const newer = <T extends object>(x: T, y: T) => (stamp(y) > stamp(x) || (stamp(y) === stamp(x) && JSON.stringify(y) > JSON.stringify(x)) ? y : x);
+  function union<T extends { id: string }>(xs: T[], ys: T[], pick: (x: T, y: T) => T = newer): T[] {
+    const m = new Map<string, T>();
+    for (const x of [...xs, ...ys]) m.set(x.id, m.has(x.id) ? pick(m.get(x.id)!, x) : x);
+    return [...m.values()].filter((x) => !(deleted.has(x.id) && deleted.get(x.id)! >= stamp(x))).sort((p, q) => (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
+  }
+  const plans = union(a.plans, b.plans, (x, y) => ({ ...newer(x, y), done: [...new Set([...x.done, ...y.done])].sort((p, q) => p - q) }));
+  return {
+    ...b,
+    ...a,
+    version: VERSION,
+    notebooks: union(a.notebooks, b.notebooks),
+    notes: union(a.notes, b.notes),
+    highlights: union(a.highlights, b.highlights),
+    memory: union(a.memory, b.memory),
+    plans,
+    deleted: [...deleted].sort().map(([id, at]) => ({ id, at })),
+    active: a.active ?? b.active,
   };
 }
 
@@ -80,10 +143,18 @@ interface NotebooksState extends NotesData {
   updateNotebook: (id: string, patch: Partial<Omit<Notebook, "id" | "created">>) => void;
   deleteNotebook: (id: string) => void;
   setActive: (id: string | null) => void;
-  addNote: (n: Pick<Note, "notebook" | "start" | "end" | "translation" | "body"> & { tags?: string[] }) => string;
+  addNote: (n: Pick<Note, "notebook" | "start" | "end" | "translation" | "textHash" | "body"> & { tags?: string[] }) => string;
   updateNote: (id: string, patch: Partial<Pick<Note, "body" | "tags" | "translation" | "end">>) => void;
   deleteNote: (id: string) => void;
   toggleHighlight: (notebook: string, ref: string) => void;
+  /** Learn a verse (or range) by heart; again removes it. */
+  toggleMemory: (ref: string, end?: string) => void;
+  reviewCard: (id: string, grade: Grade) => void;
+  startPlan: (plan: string, started: string) => void;
+  stopPlan: (id: string) => void;
+  markPlanDay: (id: string, day: number, read: boolean) => void;
+  /** Merge another notes file into this one (see mergeNotes). */
+  mergeFrom: (other: unknown) => void;
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -92,14 +163,18 @@ export const useNotebooks = create<NotebooksState>((set, get) => {
   const persist = () => {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      const { version, notebooks, notes, highlights, active } = get();
-      backend.notesSave({ version, notebooks, notes, highlights, active }).catch((e) => set({ error: String(e) }));
+      backend.notesSave({ ...snapshot() }).catch((e) => set({ error: String(e) }));
     }, 400);
+  };
+  const snapshot = (): NotesData => {
+    const { version, notebooks, notes, highlights, active, memory, plans, deleted } = get();
+    return { version, notebooks, notes, highlights, active, memory, plans, deleted };
   };
   const commit = (patch: Partial<NotesData>) => {
     set(patch);
     persist();
   };
+  const bury = (...ids: string[]) => [...get().deleted, ...ids.map((id) => ({ id, at: Date.now() }))];
 
   return {
     ...EMPTY,
@@ -128,6 +203,7 @@ export const useNotebooks = create<NotebooksState>((set, get) => {
         notes: get().notes.filter((n) => n.notebook !== id),
         highlights: get().highlights.filter((h) => h.notebook !== id),
         active: get().active === id ? null : get().active,
+        deleted: bury(id, ...get().notes.filter((n) => n.notebook === id).map((n) => n.id), ...get().highlights.filter((h) => h.notebook === id).map((h) => h.id)),
       }),
     setActive: (active) => commit({ active }),
 
@@ -139,7 +215,7 @@ export const useNotebooks = create<NotebooksState>((set, get) => {
     },
     updateNote: (id, patch) =>
       commit({ notes: get().notes.map((n) => (n.id === id ? { ...n, ...patch, updated: Date.now() } : n)) }),
-    deleteNote: (id) => commit({ notes: get().notes.filter((n) => n.id !== id) }),
+    deleteNote: (id) => commit({ notes: get().notes.filter((n) => n.id !== id), deleted: bury(id) }),
 
     toggleHighlight: (notebook, ref) => {
       const has = get().highlights.find((h) => h.notebook === notebook && h.ref === ref);
@@ -147,8 +223,22 @@ export const useNotebooks = create<NotebooksState>((set, get) => {
         highlights: has
           ? get().highlights.filter((h) => h !== has)
           : [...get().highlights, { id: uid(), notebook, ref, created: Date.now() }],
+        ...(has ? { deleted: bury(has.id) } : {}),
       });
     },
+
+    toggleMemory: (ref, end) => {
+      const has = get().memory.find((c) => c.ref === ref && c.end === end);
+      commit(has ? { memory: get().memory.filter((c) => c !== has), deleted: bury(has.id) } : { memory: [...get().memory, newCard(uid(), ref, end)] });
+    },
+    reviewCard: (id, grade) => commit({ memory: get().memory.map((c) => (c.id === id ? review(c, grade) : c)) }),
+    startPlan: (plan, started) => commit({ plans: [...get().plans, { id: uid(), plan, started, done: [] }] }),
+    stopPlan: (id) => commit({ plans: get().plans.filter((p) => p.id !== id), deleted: bury(id) }),
+    markPlanDay: (id, day, read) =>
+      commit({
+        plans: get().plans.map((p) => (p.id === id ? { ...p, done: read ? [...new Set([...p.done, day])].sort((a, b) => a - b) : p.done.filter((d) => d !== day) } : p)),
+      }),
+    mergeFrom: (other) => commit(mergeNotes(snapshot(), migrate(other))),
   };
 });
 

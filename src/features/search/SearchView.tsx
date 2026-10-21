@@ -16,7 +16,8 @@ import { QueryReading, useQueryReading } from "./JevReading";
 import { LiveSearch } from "./LiveSearch";
 import { Answer } from "./Answer";
 import { parseCode } from "@/lib/strongs";
-import { loadTranslation, type Translation as T2 } from "@/lib/bible";
+import { listTranslations, loadTranslation, type Translation as T2 } from "@/lib/bible";
+import { findEverywhere, type PhraseHits } from "@/lib/suffix";
 
 const EXAMPLES = [
   "John 3:16",
@@ -118,6 +119,7 @@ export function SearchView() {
           <ResultArrival replayKey={submitted} className="mt-8 space-y-8">
             {wantsMeaning && <Answer query={submitted} t={t} index={index} shelves={shelfs} onOpen={(r) => read(r, { select: true })} />}
             <Exact r={exact} t={t} onOpen={(r) => read(r, { select: true })} />
+            {(exact.kind === "search" || exact.kind === "no_results") && <EveryTranslation phrase={submitted} onOpen={(r) => read(r, { select: true })} />}
             {topicHits.length > 0 && (
               <section>
                 <SectionLabel>Topics</SectionLabel>
@@ -135,6 +137,61 @@ export function SearchView() {
         )}
       </div>
     </PlatePage>
+  );
+}
+
+/**
+ * The phrase in every translation at once, with exact counts: a suffix array
+ * per translation (src/lib/suffix.ts). Shows how wording differs: "charity"
+ * in the KJV is "love" in the WEB.
+ */
+function EveryTranslation({ phrase, onOpen }: { phrase: string; onOpen: (r: Ref) => void }) {
+  const [hits, setHits] = useState<PhraseHits[] | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    setHits(null);
+    setOpen(null);
+  }, [phrase]);
+  const clean = phrase.replace(/^["“]|["”]$/g, "").trim();
+  if (!clean || clean.length < 2) return null;
+  if (!hits)
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-ml-2 text-muted-foreground"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            const metas = await listTranslations();
+            setHits(await findEverywhere(await Promise.all(metas.map((m) => loadTranslation(m.id))), clean));
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {busy ? <Spinner /> : <Icon name="search-global" />} Count “{clean}” in every translation
+      </Button>
+    );
+  return (
+    <section>
+      <SectionLabel>“{clean}” in every translation</SectionLabel>
+      <div className="mt-2 divide-y divide-border/50">
+        {hits.map((h) => (
+          <div key={h.translation.meta.id}>
+            <button type="button" disabled={!h.count} onClick={() => setOpen(open === h.translation.meta.id ? null : h.translation.meta.id)} className="flex w-full items-baseline gap-3 px-1 py-2 text-left disabled:opacity-60">
+              <span className="w-12 text-xs font-semibold">{h.translation.meta.abbr}</span>
+              <span className="flex-1 text-sm text-muted-foreground">{h.translation.meta.name}</span>
+              <span className="font-mono text-sm tabular-nums">{h.count.toLocaleString()}</span>
+            </button>
+            {open === h.translation.meta.id && h.verses.slice(0, 20).map((v) => <VerseRow key={`${v.book}.${v.chapter}.${v.verse}`} v={v} onOpen={onOpen} label={`${formatRef(v)} · ${h.translation.meta.abbr}`} />)}
+          </div>
+        ))}
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">Exact matches from the start of a word, ignoring case; counts are occurrences, not verses.</p>
+    </section>
   );
 }
 

@@ -79,3 +79,27 @@ it would look like in the app. Ordered roughly from easiest to most ambitious.
   Atkinson (Bill Atkinson, the original Mac) and void-and-cluster blue noise
   (Ulichney, 1993). Implementing all four in the art pipeline is a good small
   project in itself. See [ART.md](ART.md).
+
+## As built
+
+Every idea above is now in the app except where noted:
+
+| Idea | Where |
+|---|---|
+| Suffix array | Search, "Count in every translation": a suffix array of word starts per translation in a worker (`src/lib/suffix.worker.ts`). Word starts rather than every character, and built in the app at first use rather than in Rust at import |
+| tf-idf, PMI collocations, hapax legomena | Topics, Words (`src/lib/words.ts`) |
+| Zipf's law | Lab, Lessons |
+| PageRank study walk, shortest paths | Topics, Walk (already built) |
+| Community detection | Topics, Links. Louvain with Leiden's connectivity guarantee (each community split into its connected parts) rather than full Leiden, at resolution 12, computed offline (`scripts/data/graph.mjs`) |
+| Arc diagram | Topics, Links: chapters on a line, 12,000 strongest chapter pairs, hover lights a book |
+| Scripture map, chiasm finder | Topics (already built) |
+| Allusion finder | Topics, Echoes: Smith-Waterman over KJV words, seeded by rare shared three-word runs. Paraphrase without shared words is left to each verse's "More like this" |
+| Interpolation | Topics, Walk, "Between two ideas" (`between` in `semantic.worker.ts`) |
+| Logit lens, attention heads, per-verse perplexity | Lab, Inside (already built; perplexity is "Surprise") |
+| Bible codes lesson | Lab, Lessons: the ELS search on Genesis and on Moby-Dick of equal length, beside the count chance predicts. On the English KJV, not the Hebrew |
+| Burrows' Delta | Topics, Words, "Closest in style", with the caveat on screen |
+| FSRS | Daily, By heart |
+| CRDT notebooks | Notebooks, merge: a last-writer-wins state CRDT with tombstones instead of Automerge (STUDY.md) |
+| Content-addressed texts | each translation's `hash`; wording notes record it |
+| Four dithering algorithms | Floyd-Steinberg, Bayer, Atkinson and void-and-cluster blue noise, all live in `src/art/dither.ts` |
+

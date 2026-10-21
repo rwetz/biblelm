@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Icon, ScrollArea, SectionLabel, Spinner, Textarea, toast, Tooltip, TooltipContent, TooltipTrigger, cn } from "@nexis/design";
 import { listTranslations, loadTranslation, type Translation, type VerseIndex } from "@/lib/bible";
 import { formatRef, osisOf, type Ref, type Shelf } from "@/lib/canon";
-import { useGraph, useIndex } from "@/lib/hooks";
+import { useCatalog, useGraph, useIndex } from "@/lib/hooks";
 import { useFlip } from "@/lib/flip";
 import { rankXrefs, XREF_LEVELS, type XrefRanking } from "@/lib/jev";
 import { moreLikeThis, type Hit } from "@/lib/semantic";
@@ -13,6 +13,9 @@ import { VerseText } from "./ReadView";
 import { wordDiff } from "./diff";
 import { StrongsEntry, VerseWords } from "./WordStudy";
 import { VerseReading } from "@/features/search/JevReading";
+import { usePaintings, usePlates } from "@/art/Art";
+import { depicts, paintingCredit, paintingUrl, plateUrl } from "@/lib/art";
+import { PlacesAndPeople } from "@/features/atlas/VerseAtlas";
 
 /** Everything about one verse: other translations, cross references, topics, similar verses, your notes. */
 export function VersePanel({
@@ -46,6 +49,7 @@ export function VersePanel({
         <h2 className="font-garamond text-xl">{formatRef(refSel)}</h2>
         <span className="flex-1" />
         <HighlightButton osis={osis} />
+        <MemoryButton osis={osis} />
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -82,6 +86,9 @@ export function VersePanel({
             <CompareAll refSel={refSel} base={main} />
           </section>
 
+          <SeenInArt refSel={refSel} />
+          <PlacesAndPeople osis={osis} />
+
           {tagged && <VerseWords osis={osis} t={tagged} onStudy={setStudy} />}
           {tagged && study && (
             <div className="rounded-lg bg-muted/40 p-3">
@@ -111,6 +118,49 @@ export function VersePanel({
         </div>
       </ScrollArea>
     </aside>
+  );
+}
+
+/** Paintings and plates that show this verse, each opening in Look. */
+function SeenInArt({ refSel }: { refSel: Ref }) {
+  const paintings = usePaintings();
+  const plates = usePlates();
+  const openLook = useStudy((s) => s.openLook);
+  const v = refSel.verse ?? 0;
+  const shown = [
+    ...paintings.filter((p) => depicts(p.ref, refSel.book, refSel.chapter, v)).map((p) => ({ kind: "painting" as const, id: p.id, title: p.title, by: paintingCredit(p), src: paintingUrl(p.thumb), colour: p.colour })),
+    ...plates.filter((p) => depicts(p.ref, refSel.book, refSel.chapter, v)).map((p) => ({ kind: "plate" as const, id: p.id, title: p.title, by: "Doré, 1866", src: plateUrl(p.thumb), colour: false })),
+  ];
+  if (!shown.length) return null;
+  return (
+    <section>
+      <SectionLabel>Seen in art</SectionLabel>
+      <div className="mt-2 grid grid-cols-2 gap-3">
+        {shown.map((a) => (
+          <button key={a.id} type="button" className="group text-left" onClick={() => openLook({ kind: a.kind, id: a.id })}>
+            <img src={a.src} alt="" loading="lazy" className={cn("aspect-[4/3] w-full rounded-sm object-cover", !a.colour && "engraving")} />
+            <span className="mt-1 block font-garamond text-sm leading-tight group-hover:underline">{a.title}</span>
+            <span className="text-[11px] text-muted-foreground">{a.by}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Learn this verse by heart (Daily, By heart); again stops. */
+function MemoryButton({ osis }: { osis: string }) {
+  const { memory, toggleMemory } = useNotebooks();
+  const on = memory.some((c) => c.ref === osis && !c.end);
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button variant={on ? "secondary" : "ghost"} size="icon-sm" aria-label="Learn by heart" aria-pressed={on} onClick={() => toggleMemory(osis)}>
+          <Icon name="star" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{on ? "Learning by heart (Daily). Click to stop" : "Learn by heart"}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -186,6 +236,9 @@ function CompareAll({ refSel, base }: { refSel: Ref; base: Translation }) {
 function Notes({ osis }: { osis: string }) {
   const { active, notebooks, notes, addNote, updateNote, deleteNote, createNotebook } = useNotebooks();
   const study = useStudy();
+  const [catalog] = useCatalog();
+  // Content addresses: which exact edition of each translation a note was written against.
+  const hashOf = (id?: string) => catalog?.find((m) => m.id === id)?.hash;
   const [draft, setDraft] = useState("");
   const mine = useMemo(() => notes.filter((n) => n.notebook === active && noteCovers(n, osis)), [notes, active, osis]);
   const nb = notebooks.find((b) => b.id === active);
@@ -217,6 +270,9 @@ function Notes({ osis }: { osis: string }) {
           />
           <div className="flex items-center gap-2 px-1 text-[11px] text-muted-foreground">
             {n.translation && <Badge variant="outline">{n.translation.toUpperCase()} wording</Badge>}
+            {n.textHash && hashOf(n.translation) && n.textHash !== hashOf(n.translation) && (
+              <span title={`Written against edition ${n.textHash}; this one is ${hashOf(n.translation)}`}>the text has changed since</span>
+            )}
             <span className="flex-1" />
             <button type="button" className="opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100" onClick={() => deleteNote(n.id)}>
               Delete
@@ -244,7 +300,7 @@ function Notes({ osis }: { osis: string }) {
           size="sm"
           variant="ghost"
           disabled={!draft.trim()}
-          onClick={() => { addNote({ notebook: nb.id, start: osis, body: draft.trim(), translation: study.translation }); setDraft(""); }}
+          onClick={() => { addNote({ notebook: nb.id, start: osis, body: draft.trim(), translation: study.translation, textHash: hashOf(study.translation) }); setDraft(""); }}
         >
           About the {study.translation.toUpperCase()} wording
         </Button>
