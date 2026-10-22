@@ -5,6 +5,7 @@ import {
   Field,
   Icon,
   IN_TAURI,
+  Input,
   Panel,
   Segmented,
   Slider,
@@ -22,6 +23,7 @@ import { useStudy } from "@/store/study";
 import { DeveloperPanel } from "./DeveloperPanel";
 import { useScheme } from "@/app/scheme";
 import { SCHEMES } from "@/app/theme";
+import { PageMark } from "@/art/SidebarArt";
 
 export function SettingsView() {
   const study = useStudy();
@@ -36,11 +38,29 @@ export function SettingsView() {
     jevAvailable().then(setJev);
     backend.dataDir().then(setDataDir).catch(() => {});
   }, []);
+  // The command palette jumps to a setting by its label: scroll to it and flash it once.
+  useEffect(() => {
+    const jump = (e: Event) => {
+      const want = (e as CustomEvent<string>).detail.toLowerCase();
+      requestAnimationFrame(() => {
+        const els = [...document.querySelectorAll<HTMLElement>("main label, main [data-slot=panel] h2, main h2, main h3")];
+        const hit = els.find((el) => el.textContent?.trim().toLowerCase().startsWith(want));
+        const box = hit?.closest<HTMLElement>("[data-slot=field]") ?? hit?.parentElement;
+        if (!box) return;
+        box.scrollIntoView({ block: "center", behavior: "smooth" });
+        box.classList.remove("setting-flash");
+        void box.offsetWidth;
+        box.classList.add("setting-flash");
+      });
+    };
+    window.addEventListener("biblelm:setting", jump);
+    return () => window.removeEventListener("biblelm:setting", jump);
+  }, []);
 
   return (
     <PlatePage plate={plate} corner="tr">
       <div className="relative mx-auto w-full max-w-3xl space-y-6 px-8 pb-24 pt-10">
-        <h1 className="font-blackletter text-4xl">Settings</h1>
+        <h1 className="flex items-center gap-3 font-blackletter text-4xl"><PageMark page="settings" />Settings</h1>
 
         <Panel title="Appearance">
           <div className="space-y-5">
@@ -86,6 +106,12 @@ export function SettingsView() {
             </Field>
             <Field label="Two columns, like a printed Bible" inline>
               <Switch checked={study.columns} onCheckedChange={(columns) => study.set({ columns })} />
+            </Field>
+            <Field label="Ornaments" hint="The small dithered devices: headpieces, the evangelists' emblems, the mark beside each page in the sidebar." inline>
+              <Switch checked={study.ornaments} onCheckedChange={(ornaments) => study.set({ ornaments })} />
+            </Field>
+            <Field label="Your name" hint="Printed on the title page of a notebook. Stays on this computer." inline>
+              <Input value={study.name} onChange={(e) => study.set({ name: e.target.value })} placeholder="Optional" className="h-8 w-56" />
             </Field>
           </div>
         </Panel>

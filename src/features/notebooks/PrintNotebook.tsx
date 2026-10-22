@@ -11,6 +11,7 @@ import { bookName, formatRef, parseOsis } from "@/lib/canon";
 import { useTranslation } from "@/lib/hooks";
 import { VerseText } from "@/features/read/ReadView";
 import { bibleOrder, noteSpans, spansLabel, useNotebooks, type Note, type Notebook } from "@/store/notebooks";
+import { useStudy } from "@/store/study";
 
 const label = (osis: string) => {
   const r = parseOsis(osis);
@@ -19,6 +20,7 @@ const label = (osis: string) => {
 
 /** `keep` picks the notes (one book or chapter, from Export); `subtitle` names them on the title page. */
 export function PrintNotebook({ nb, keep, subtitle, onDone }: { nb: Notebook; keep?: (n: Note) => boolean; subtitle?: string; onDone: () => void }) {
+  const name = useStudy((s) => s.name.trim());
   const notes = useNotebooks((s) => s.notes).filter((n) => n.notebook === nb.id && (keep?.(n) ?? true)).sort(bibleOrder);
   const [t] = useTranslation(nb.translations[0] ?? "kjv");
   const plates = usePlates();
@@ -42,6 +44,7 @@ export function PrintNotebook({ nb, keep, subtitle, onDone }: { nb: Notebook; ke
     <div className="print-sheet">
       <section className="print-title">
         <h1 className="font-blackletter text-6xl">{nb.title}</h1>
+        {name && <p className="mt-3 font-garamond text-lg italic">kept by {name}</p>}
         {subtitle && <p className="mt-3 font-garamond text-2xl">{subtitle}</p>}
         {nb.description && <p className="mt-4 font-garamond text-xl italic">{nb.description}</p>}
         {cover && <Engraving plate={cover} loading="eager" className="mx-auto mt-10 max-h-[60vh] w-auto" />}

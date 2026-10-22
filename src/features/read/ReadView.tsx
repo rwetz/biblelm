@@ -25,6 +25,7 @@ import { BOOKS, book as bookOf, bookName, formatRef, SHELVES, type Ref } from "@
 import { useCatalog, useTranslations } from "@/lib/hooks";
 import { noteEndsAt, useNotebooks } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
+import { EVANGELIST, ORNAMENTS } from "@/art/ornaments";
 import { BookPicker } from "./BookPicker";
 import { TranslationPicker } from "./TranslationPicker";
 import { VersePanel } from "./VersePanel";
@@ -132,8 +133,10 @@ export function ReadView() {
                 <Badge variant="outline" className="mb-3">{SHELVES.find((s) => s.id === b.shelf)?.label}</Badge>
               )}
               <h1 className="font-blackletter text-5xl leading-tight text-foreground">{bookName(bookId)}</h1>
-              <p className="mt-2 font-garamond text-lg italic text-muted-foreground">
+              <p className="mt-2 flex items-center justify-center gap-3 font-garamond text-lg italic text-muted-foreground">
+                {EVANGELIST[bookId] && <Ornament name={EVANGELIST[bookId]} label={ORNAMENTS[EVANGELIST[bookId]].title} className="h-11" />}
                 {bookId === "Ps" ? `Psalm ${location.chapter}` : `Chapter ${location.chapter}`}
+                {EVANGELIST[bookId] && <span className="w-11" />}
               </p>
             </header>
 

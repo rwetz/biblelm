@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Icon, Input, SectionLabel, Segmented, Spinner, VirtualList, cn } from "@nexis/design";
+import { Button, Icon, Input, SectionLabel,Spinner, VirtualList, cn } from "@nexis/design";
 import { CornerPlate, DitherHero, usePagePlate, usePaintings } from "@/art/Art";
 import { PAGE_PAINTINGS, PAGE_PLATES } from "@/lib/art";
 import type { Translation, VerseIndex } from "@/lib/bible";
@@ -17,6 +17,9 @@ import { Words } from "./Words";
 import { Links } from "./Links";
 import { Echoes } from "./Echoes";
 import { Studies } from "./Studies";
+import { SearchField } from "@/app/controls";
+import { PageMark } from "@/art/SidebarArt";
+import { Sections } from "@/app/Sections";
 
 type Tab = "topics" | "studies" | "walk" | "map" | "structure" | "words" | "links" | "echoes";
 
@@ -38,33 +41,33 @@ export function TopicsView() {
   return (
     <div className="relative isolate flex min-h-0 flex-1 flex-col">
       {(tab === "topics" || tab === "walk") && <CornerPlate plate={plate} corner="br" />}
-      <DitherHero hero={mercy} height="8.5rem" clearLeft fadeFrom={30} caption={false} className="border-b border-border/60">
+      <DitherHero hero={mercy} height="8.5rem" clearLeft fadeFrom={30} caption={false}>
       <div className="mx-auto flex h-full w-full max-w-6xl items-end gap-4 px-8 pb-3 pt-8">
         <div>
-          <h1 className="font-blackletter text-4xl">Topics</h1>
+          <h1 className="flex items-center gap-3 font-blackletter text-4xl"><PageMark page="topics" />Topics</h1>
           <p className="mt-1 text-sm text-muted-foreground">Themes across Scripture, the paths cross references draw, and the shape of a passage.</p>
-        </div>
-        <span className="flex-1" />
-        {/* Eight views: on a narrow window the strip scrolls rather than running off the edge. */}
-        <div className="-mb-1 min-w-0 shrink overflow-x-auto pb-1">
-        <Segmented
-          label="View"
-          value={tab}
-          onChange={setTab}
-          segments={[
-            { id: "topics", label: "Index", icon: "list-bullet" },
-            { id: "studies", label: "Studies", icon: "document" },
-            { id: "walk", label: "Walk", icon: "nodes" },
-            { id: "map", label: "Map", icon: "map" },
-            { id: "structure", label: "Structure", icon: "grid" },
-            { id: "words", label: "Words", icon: "text" },
-            { id: "links", label: "Links", icon: "network" },
-            { id: "echoes", label: "Echoes", icon: "quote" },
-          ]}
-        />
         </div>
       </div>
       </DitherHero>
+      <div className="relative z-10 border-b border-border/60">
+        <div className="mx-auto w-full max-w-6xl px-8 py-2">
+          <Sections
+            label="Topics"
+            value={tab}
+            onChange={setTab}
+            sections={[
+              { id: "topics", name: "Index", gist: "6,712 themes", mark: "ihs" },
+              { id: "studies", name: "Studies", gist: "for young men", mark: "cross" },
+              { id: "walk", name: "Walk", gist: "where verses lead", mark: "compass" },
+              { id: "map", name: "Map", gist: "Scripture by meaning", mark: "sun" },
+              { id: "structure", name: "Structure", gist: "a passage's shape", mark: "urn" },
+              { id: "words", name: "Words", gist: "a book's own words", mark: "quill" },
+              { id: "links", name: "Links", gist: "chapters bound together", mark: "wheels" },
+              { id: "echoes", name: "Echoes", gist: "the Old in the New", mark: "eagle" },
+            ]}
+          />
+        </div>
+      </div>
       {!t || !index ? (
         <div className="grid flex-1 place-items-center"><Spinner /></div>
       ) : tab === "topics" ? (
@@ -204,7 +207,7 @@ function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
     <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1">
       <div className="flex w-80 shrink-0 flex-col border-r border-border/60">
         <div className="space-y-3 p-3">
-          <Input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={`Search ${topics.length.toLocaleString()} topics`} />
+          <SearchField value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={`Search ${topics.length.toLocaleString()} topics`} />
           {kinds && (
             <div className="flex flex-wrap gap-1.5">
               {kinds.kinds.map((k) => (

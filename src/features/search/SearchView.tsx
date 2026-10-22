@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Badge, Button, Icon, Input, ResultArrival, SectionLabel, Spinner, Stat, cn } from "@nexis/design";
+import { Badge, Button, Icon, ResultArrival, SectionLabel, Spinner, Stat, cn } from "@nexis/design";
 import { ArtSpot, PlatePage, usePagePlate } from "@/art/Art";
 import { PAGE_PLATES } from "@/lib/art";
 import type { Translation, Verse, VerseIndex } from "@/lib/bible";
@@ -18,6 +18,8 @@ import { Answer } from "./Answer";
 import { parseCode } from "@/lib/strongs";
 import { listTranslations, loadTranslation, type Translation as T2 } from "@/lib/bible";
 import { findEverywhere, type PhraseHits } from "@/lib/suffix";
+import { SearchField } from "@/app/controls";
+import { PageMark } from "@/art/SidebarArt";
 
 const EXAMPLES = [
   "John 3:16",
@@ -70,7 +72,7 @@ export function SearchView() {
   return (
     <PlatePage plate={plate} corner="br" hidePlate={typing}>
       <div className="relative mx-auto w-full max-w-3xl px-8 pb-24 pt-12">
-        <h1 className="font-blackletter text-4xl">Search the Scriptures</h1>
+        <h1 className="flex items-center gap-3 font-blackletter text-4xl"><PageMark page="search" />Search the Scriptures</h1>
         <p className="mt-1 text-sm text-muted-foreground">A reference, a word, a question, or what you are looking for in your own words.</p>
         <form
           className="mt-6 flex gap-2"
@@ -79,10 +81,7 @@ export function SearchView() {
             submit(q.trim());
           }}
         >
-          <div className="relative flex-1">
-            <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="John 3:16, fear not, verses about patience…" className="h-11 pl-9 text-base" />
-          </div>
+          <SearchField ref={input} size="lg" value={q} onChange={(e) => setQ(e.target.value)} placeholder="John 3:16, fear not, verses about patience…" className="flex-1" />
           <Button type="submit" variant="brand" className="h-11" disabled={!q.trim()}>
             Search
           </Button>

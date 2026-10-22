@@ -226,6 +226,29 @@ top-right, masked with a soft radial edge. Static, low contrast.
 > licence as the trinity mark; both share the distance field and WebGL loop in
 > `src/art/sdfMark.ts`.
 
+> **As built (ornaments, round two):** the four evangelists' emblems (the
+> winged man, the lion, the ox, the eagle) are drawn by hand like the rest and
+> stand beside every Gospel chapter's number; the woodcut roundels still head
+> chapter 1. Each page has an ornament (`PAGE_ORNAMENT` in `SidebarArt.tsx`),
+> shown beside its title and large in the sidebar between the nav and the
+> vignette, where each change of page dissolves one and resolves the next.
+> The palette's groups, the Lab's rooms and the timeline's eras carry them
+> too. Settings, Ornaments turns every ornament off (study preference
+> `ornaments`).
+
+> **As built (angels):** the seraphim and ophanim, from public-domain sources
+> and drawn by hand. Woodcuts: Matthäus Merian's *Vision of Ezekiel* (1630) as
+> a plate in Ezekiel 1 and the Lab's sidebar picture, with its wheel full of
+> eyes and its four-faced living creature cut out as spots; a winged-heads
+> roundel after a fifteenth-century Italian woodcut (Didron). Ornaments: a
+> six-winged seraph (Isaiah 6:2), the winged eye (Revelation 4:6-8) and an
+> ophan, rings within rings full of eyes (Ezekiel 1:16-18). The Lab's rooms
+> take them: Training the ophan, Generate the seraph, Inside the winged eye.
+> The Lab's mark beside its title is now the dithered rose (`RoseMark`), and
+> its front page shows the translations and the alphabet under the title.
+> A page's views are numbered sections everywhere (`src/app/Sections.tsx`):
+> the Lab, Topics, the Atlas, the Gallery.
+
 ## Dithering pipeline
 
 Offline, scripted, reproducible: `scripts/art/dither.py` (or a small Rust

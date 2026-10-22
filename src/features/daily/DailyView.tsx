@@ -14,7 +14,8 @@ import { PLANS, planDay, planDays, portionLabel, todayISO } from "@/lib/plans";
 import { useTranslation } from "@/lib/hooks";
 import { useNotebooks } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
-import { VerseText } from "@/features/read/ReadView";
+import { VerseText } from "@/features/read/ReadView";
+import { PageMark } from "@/art/SidebarArt";
 
 export function DailyView() {
   const translation = useStudy((s) => s.translation);
@@ -35,7 +36,7 @@ export function DailyView() {
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <DitherHero hero={band} height="17rem" clearLeft fadeFrom={42} caption={false}>
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-end px-8 pb-5">
-          <h1 className="font-blackletter text-5xl">Daily</h1>
+          <h1 className="flex items-center gap-3 font-blackletter text-5xl"><PageMark page="daily" />Daily</h1>
           <p className="mt-1 font-garamond text-lg italic text-muted-foreground">
             {date}
             {office?.label ? ` · ${office.label}` : ""}

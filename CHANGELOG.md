@@ -8,6 +8,35 @@ All notable changes to BibleLM. Format based on
 
 ### Added
 
+- **Seraphim and ophanim**: Merian's engraving of Ezekiel's vision (1630,
+  public domain) beside Ezekiel 1, its wheel full of eyes and its four-faced
+  creature as spots; hand-drawn ornaments of a six-winged seraph, the winged
+  eye and an ophan, used across the Lab.
+- **Numbered sections** in place of icon tabs on the Lab, Topics, the Atlas and
+  the Gallery: a numeral, a name, a line on what is there, a dithered ornament.
+- The Lab's front page shows the translations and the whole alphabet under its
+  title, beside the dithered rose.
+
+- **A new command palette** for the app only (pages, every setting, the
+  Lab's rooms; Scripture stays in Search): the placeholder types out things to
+  try, a dithered compass resolves as matches narrow, each group has its
+  ornament, and a settings command opens Settings on that row and flashes it.
+- **Search fields and dropdowns of one family** (`src/app/controls.tsx`): no
+  glow ring on focus, a line of ink dots that drifts while you type; the
+  browser's native dropdowns are gone.
+- **Ornaments everywhere, and a switch for them**: the current page's
+  ornament in the sidebar (re-dithered on each move), marks beside page
+  titles, hand-drawn emblems of the four evangelists beside every Gospel
+  chapter; Settings, Ornaments turns them all off.
+- **The Lab's front page**: a much larger title and lit rose, the model's
+  vital numbers, and the six rooms as a numbered table of contents.
+- **The Atlas**: the map glides to a chosen place, ripples its coasts like an
+  engraved map, names the seas, carries a cartouche and a scale bar, and
+  brings the places in most-named first; the timeline's eras are hatched,
+  each has its ornament, and the rows arrive as you scroll.
+- **Your name**: asked once on first start (optional), printed on a
+  notebook's title page; Settings, Your name.
+
 - **Woodcuts and engravings beyond Doré**, only from public-domain or CC0
   sources and checked file by file (`scripts/art/woodcuts.mjs`): Dürer's
   Apocalypse and St Jerome, Schnorr von Carolsfeld, Blake's Job, the
@@ -49,6 +78,13 @@ All notable changes to BibleLM. Format based on
   lights, rubric and gilt, circling it.
 
 ### Changed
+
+- Home's hero follows the church year in every scheme (the day's painting
+  stays in Look at today).
+- Printing leaves out the browser's own header and footer (date, address,
+  page count) and sets everything in the book faces.
+- A hero's credit sits under the picture's own edge, and a windowed hero
+  dissolves at the top as well.
 
 - The Topics view strip scrolls on a narrow window instead of running off it.
 

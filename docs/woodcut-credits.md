@@ -18,3 +18,7 @@ Beyond Doré: each work is public domain; each scan is a Wikimedia Commons file 
 | Mark the Evangelist | Four Evangelists, book illustration, 16th century | Gospel head | CC0 | [Commons](https://commons.wikimedia.org/wiki/File:Evangelist_Marcus,_RP-P-OB-21.770.jpg) |
 | Luke the Evangelist | Four Evangelists, book illustration, 16th century | Gospel head | CC0 | [Commons](https://commons.wikimedia.org/wiki/File:Evangelist_Lucas,_RP-P-OB-21.771.jpg) |
 | John the Evangelist | Four Evangelists, book illustration, 16th century | Gospel head | CC0 | [Commons](https://commons.wikimedia.org/wiki/File:Evangelist_Johannes,_RP-P-OB-21.772.jpg) |
+| Ezekiel's Vision of the Chariot | Matthäus Merian the Elder, 1630 | Ezekiel 1 | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Ezekiel-Vision-Merkaba.jpg) |
+| A Wheel within a Wheel, Full of Eyes | Matthäus Merian the Elder, 1630 | ophan | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Ezekiel-Vision-Merkaba.jpg) |
+| The Living Creature | Matthäus Merian the Elder, 1630 | living creature | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Ezekiel-Vision-Merkaba.jpg) |
+| The Trinity amid the Winged Heads | after an Italian woodcut of the fifteenth century (Didron, Christian Iconography), 1886 | seraphim | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Christian_iconography_-_or,_The_history_of_Christian_art_in_the_Middle_Ages_Vol._2_Fig._147.png) |

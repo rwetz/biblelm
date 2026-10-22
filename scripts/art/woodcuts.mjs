@@ -46,6 +46,11 @@ export const WOODCUTS = [
   { n: 1012, id: "evangelist-mark", title: "Mark the Evangelist", by: ["Four Evangelists, book illustration", "16th century"], ref: null, book: "Mark", file: "Evangelist Marcus, RP-P-OB-21.770.jpg", crop: [0.1, 0.24, 0.8, 0.62], trim: true, role: "Gospel head" },
   { n: 1013, id: "evangelist-luke", title: "Luke the Evangelist", by: ["Four Evangelists, book illustration", "16th century"], ref: null, book: "Luke", file: "Evangelist Lucas, RP-P-OB-21.771.jpg", crop: [0.1, 0.24, 0.8, 0.62], trim: true, role: "Gospel head" },
   { n: 1014, id: "evangelist-john", title: "John the Evangelist", by: ["Four Evangelists, book illustration", "16th century"], ref: null, book: "John", file: "Evangelist Johannes, RP-P-OB-21.772.jpg", crop: [0.1, 0.24, 0.8, 0.62], trim: true, role: "Gospel head" },
+  // The living creatures and the wheels full of eyes (Ezekiel 1), and the seraphim about the throne.
+  { n: 1015, id: "merian-ezekiel-vision", title: "Ezekiel's Vision of the Chariot", by: ["Matthäus Merian the Elder", "1630"], ref: "Ezek.1.15-16", file: "Ezekiel-Vision-Merkaba.jpg", role: "Ezekiel 1" },
+  { n: 1016, id: "merian-ophan", title: "A Wheel within a Wheel, Full of Eyes", by: ["Matthäus Merian the Elder", "1630"], ref: null, file: "Ezekiel-Vision-Merkaba.jpg", crop: [0.76, 0.44, 0.23, 0.42], role: "ophan" },
+  { n: 1017, id: "merian-living-creature", title: "The Living Creature", by: ["Matthäus Merian the Elder", "1630"], ref: null, file: "Ezekiel-Vision-Merkaba.jpg", crop: [0.5, 0.46, 0.2, 0.32], role: "living creature" },
+  { n: 1018, id: "seraphim-ring", title: "The Trinity amid the Winged Heads", by: ["after an Italian woodcut of the fifteenth century (Didron, Christian Iconography)", "1886"], ref: null, file: "Christian iconography - or, The history of Christian art in the Middle Ages Vol. 2 Fig. 147.png", crop: [0, 0, 1, 0.86], role: "seraphim" },
 ];
 
 function parseRef(s) {

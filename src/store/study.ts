@@ -23,6 +23,12 @@ interface StudyState {
   columns: boolean;
   /** Words of Christ in red, where the translation marks them. */
   redLetter: boolean;
+  /** The hand-drawn dithered ornaments (headpieces, page marks, the sidebar's). */
+  ornaments: boolean;
+  /** Your name, for the title page of a printed notebook. Empty: not given. */
+  name: string;
+  /** Whether the first-start welcome (which asks the name) has been seen. */
+  welcomed: boolean;
   location: Ref;
   /** Developer mode: preview any hero or plate to hunt for art bugs (Settings). */
   devMode: boolean;
@@ -59,7 +65,7 @@ interface StudyState {
   searchFor: (q: string) => void;
   openLook: (t: LookTarget | null) => void;
   openAtlas: (kind: "place" | "person", id: string) => void;
-  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
+  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "ornaments" | "name" | "welcomed" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
 }
 
 const KEY = "biblelm:study";
@@ -73,6 +79,9 @@ const DEFAULTS = {
   textSize: 18,
   columns: false,
   redLetter: true,
+  ornaments: true,
+  name: "",
+  welcomed: false,
   interlinear: false,
   location: { book: "John", chapter: 1, verse: 0 } as Ref,
   history: [] as Ref[],
@@ -92,8 +101,8 @@ function load(): typeof DEFAULTS {
 
 function save(s: StudyState) {
   try {
-    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, interlinear, location, history, devMode, devHero, devPlate } = s;
-    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, interlinear, location, history, devMode, devHero, devPlate }));
+    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, name, welcomed, interlinear, location, history, devMode, devHero, devPlate } = s;
+    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, name, welcomed, interlinear, location, history, devMode, devHero, devPlate }));
   } catch {
     // Storage blocked: preferences just won't persist.
   }

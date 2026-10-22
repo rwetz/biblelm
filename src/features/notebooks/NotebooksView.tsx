@@ -35,6 +35,8 @@ import { bibleOrder, noteSpans, spansLabel, useNotebooks, type Note, type Notebo
 import { useStudy } from "@/store/study";
 import { ExportDialog, type PrintScope } from "./ExportDialog";
 import { PrintNotebook } from "./PrintNotebook";
+import { SearchField } from "@/app/controls";
+import { PageMark } from "@/art/SidebarArt";
 
 const label = (osis: string) => {
   const r = parseOsis(osis);
@@ -56,7 +58,7 @@ export function NotebooksView() {
     <div className="relative flex min-h-0 flex-1">
       <aside className="flex w-72 shrink-0 flex-col border-r border-border/60 bg-sidebar/40">
         <div className="flex items-center gap-2 px-4 pb-2 pt-6">
-          <h1 className="font-blackletter text-3xl">Notebooks</h1>
+          <h1 className="flex items-center gap-3 font-blackletter text-3xl"><PageMark page="notebooks" />Notebooks</h1>
           <span className="flex-1" />
           <MergeButton />
           <Button variant="ghost" size="icon-sm" aria-label="New notebook" onClick={() => setCreating(true)}>
@@ -239,7 +241,7 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
 
       <div className="mt-8 flex items-center gap-3">
         <SectionLabel className="flex-1">{mine.length} notes</SectionLabel>
-        <Input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter notes" className="h-8 w-56" />
+        <SearchField size="sm" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter notes" className="w-56" />
       </div>
       <div className="mt-3 space-y-3">
         {mine.map((n) => (

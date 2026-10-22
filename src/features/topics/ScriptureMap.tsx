@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Icon, Input, resolveCssColor, Spinner, Tooltip, TooltipContent, TooltipTrigger, useTheme } from "@nexis/design";
+import { Button, Icon, resolveCssColor, Spinner, Tooltip, TooltipContent, TooltipTrigger, useTheme } from "@nexis/design";
 import { getBinary, type Translation, type VerseIndex } from "@/lib/bible";
 import { book, bookName, formatRef, parseRef } from "@/lib/canon";
 import { genreOf } from "@/lib/jev";
 import { useStudy } from "@/store/study";
+import { SearchField } from "@/app/controls";
 
 // Every verse as a star, placed by meaning: the embedding vectors projected to
 // 2D with UMAP (scripts/data/embed.mjs). Verses that say similar things sit
@@ -333,7 +334,7 @@ export function ScriptureMap({ t, index }: { t: Translation; index: VerseIndex }
             if (r) goToBook(r.book);
           }}
         >
-          <Input value={find} onChange={(e) => setFind(e.target.value)} placeholder="Find a book, e.g. Psalms" className="h-8 w-56 bg-card/90 text-sm" />
+          <SearchField size="sm" value={find} onChange={(e) => setFind(e.target.value)} placeholder="Find a book, e.g. Psalms" className="w-56 bg-card/90 backdrop-blur-sm" />
           {focusBook && (
             <Button type="button" variant="ghost" size="sm" onClick={() => { setFocusBook(null); setFind(""); }}>
               Show all

@@ -16,7 +16,14 @@ export type OrnamentName =
   | "wheels"
   | "sun"
   | "lamp"
-  | "quill";
+  | "quill"
+  | "angel"
+  | "lion"
+  | "ox"
+  | "eagle"
+  | "seraph"
+  | "winged-eye"
+  | "ophan";
 
 /** Ink density 0..1 as a gray for this scheme. */
 type Ink = (density: number) => string;
@@ -58,6 +65,26 @@ const grapes = (x: number, y: number, s: number) => {
   });
   return out;
 };
+
+/** The ring every evangelist's emblem sits in, like a medallion in a Gospel book. */
+const roundel = (k: Ink) =>
+  `<circle cx="50" cy="50" r="46" fill="none" stroke="${k(0.95)}" stroke-width="2.6"/><circle cx="50" cy="50" r="41.5" fill="none" stroke="${k(0.55)}" stroke-width="1"/>` +
+  Array.from({ length: 24 }, (_, i) => `<circle cx="50" cy="6.2" r="0.9" transform="rotate(${i * 15} 50 50)" fill="${k(0.8)}"/>`).join("");
+
+/** A wing of layered feathers, drawn pointing left from (x, y); mirror for the right. */
+const wing = (x: number, y: number, k: Ink, rows = 4, len = 30) => {
+  let out = "";
+  for (let r = 0; r < rows; r++) {
+    const l = len - r * 5, yy = y + r * 6;
+    out += `<path d="M${x} ${yy} C${x - l * 0.45} ${yy - 9 + r} ${x - l * 0.85} ${yy - 4} ${x - l} ${yy + 4} C${x - l * 0.7} ${yy + 3} ${x - l * 0.35} ${yy + 6} ${x} ${yy + 7} Z" fill="${k(0.95 - r * 0.12)}" stroke="${k(0.15)}" stroke-width="0.6"/>`;
+  }
+  return out;
+};
+
+/** An eye: lids, a shaded iris, the pupil and its glint, at (x, y), `w` wide. */
+const eye = (k: Ink, x: number, y: number, w: number, id: string) =>
+  `<path d="M${x - w / 2} ${y} C${x - w / 4} ${y - w * 0.36} ${x + w / 4} ${y - w * 0.36} ${x + w / 2} ${y} C${x + w / 4} ${y + w * 0.36} ${x - w / 4} ${y + w * 0.36} ${x - w / 2} ${y}Z" fill="${k(0.05)}" stroke="${k(1)}" stroke-width="${Math.max(0.6, w * 0.05)}"/>` +
+  `<circle cx="${x}" cy="${y}" r="${w * 0.2}" fill="url(#${id})"/><circle cx="${x}" cy="${y}" r="${w * 0.09}" fill="${k(1)}"/><circle cx="${x - w * 0.06}" cy="${y - w * 0.07}" r="${w * 0.035}" fill="${k(0)}"/>`;
 
 const DRAWINGS: Record<OrnamentName, Drawing> = {
   // A printer's flower: a bud between two curling leaves, between rules of dots.
@@ -297,9 +324,174 @@ const DRAWINGS: Record<OrnamentName, Drawing> = {
       );
     },
   },
+
+  // The four living creatures (Ezekiel 1:10, Revelation 4:7), each the emblem
+  // of a Gospel since Jerome: the man for Matthew, the lion for Mark, the ox
+  // for Luke, the eagle for John. Winged, haloed, in a ring.
+  angel: {
+    w: 100,
+    h: 100,
+    title: "The man, for Matthew",
+    draw: (k) =>
+      `<defs>${lin("robe", k, [0.35, 0.95], "x")}${rad("face", k, 0.15, 0.55)}</defs>` +
+      roundel(k) +
+      mirror(100, wing(44, 34, k, 4, 30)) +
+      `<circle cx="50" cy="24" r="10.5" fill="none" stroke="${k(0.9)}" stroke-width="1.6"/>` +
+      `<circle cx="50" cy="25" r="7" fill="url(#face)" stroke="${k(0.95)}" stroke-width="0.8"/>` +
+      `<path d="M47.5 25 L48.5 25 M51.5 25 L52.5 25" stroke="${k(1)}" stroke-width="1.2"/>` +
+      `<path d="M50 32 C40 36 37 52 35 80 L65 80 C63 52 60 36 50 32Z" fill="url(#robe)"/>` +
+      `<path d="M50 34 L50 79 M44 46 C47 50 53 50 56 46" stroke="${k(0.2)}" stroke-width="1" fill="none"/>` +
+      `<rect x="43" y="52" width="14" height="10" rx="1" fill="${k(0.15)}" stroke="${k(1)}" stroke-width="1.2"/><path d="M50 52 L50 62" stroke="${k(1)}" stroke-width="0.8"/>`,
+  },
+
+  lion: {
+    w: 100,
+    h: 100,
+    title: "The lion, for Mark",
+    draw: (k) => {
+      // The mane as two rings of curling locks, the outer darker, around a lit face.
+      let mane = "";
+      for (const [r, n, d, size] of [[29, 16, 0.95, 6.2], [22, 14, 0.7, 5.2]] as const) {
+        for (let i = 0; i < n; i++) {
+          const t = (i / n) * Math.PI * 2 + (r === 22 ? 0.2 : 0);
+          const x = 50 + r * Math.cos(t), y = 52 + r * Math.sin(t) * 1.05;
+          mane += `<path d="M${x - size} ${y} C${x - size} ${y - size * 1.3} ${x + size} ${y - size * 1.3} ${x + size * 0.6} ${y + size * 0.2} C${x + size * 0.3} ${y - size * 0.5} ${x - size * 0.3} ${y - size * 0.4} ${x - size * 0.2} ${y + size * 0.5}" fill="${k(d)}" stroke="${k(0.2)}" stroke-width="0.5" transform="rotate(${(t * 180) / Math.PI + 90} ${x} ${y})"/>`;
+        }
+      }
+      return (
+        `<defs>${rad("muzzle", k, 0.1, 0.6, 0.5, 0.35)}</defs>` +
+        roundel(k) +
+        mane +
+        `<circle cx="36" cy="34" r="5" fill="${k(0.9)}"/><circle cx="64" cy="34" r="5" fill="${k(0.9)}"/><circle cx="36" cy="34" r="2.2" fill="${k(0.3)}"/><circle cx="64" cy="34" r="2.2" fill="${k(0.3)}"/>` +
+        `<path d="M50 35 C38 35 34 46 36 56 C38 66 44 70 50 70 C56 70 62 66 64 56 C66 46 62 35 50 35Z" fill="url(#muzzle)" stroke="${k(0.95)}" stroke-width="1.2"/>` +
+        `<path d="M41 48 C43 45.5 46 45.5 47.5 48 M52.5 48 C54 45.5 57 45.5 59 48" stroke="${k(1)}" stroke-width="1.5" fill="none"/>` +
+        `<circle cx="44.3" cy="49.5" r="1.3" fill="${k(1)}"/><circle cx="55.7" cy="49.5" r="1.3" fill="${k(1)}"/>` +
+        `<path d="M47 50 L47 56 M53 50 L53 56" stroke="${k(0.4)}" stroke-width="0.7"/>` +
+        `<path d="M45.5 56 C47 55 53 55 54.5 56 L50 60.5 Z" fill="${k(1)}"/>` +
+        `<path d="M50 60.5 L50 63 M44 63.5 C47 66.5 53 66.5 56 63.5" stroke="${k(1)}" stroke-width="1.3" fill="none"/>` +
+        `<path d="M40 59 L33 58 M40 61.5 L33 63 M60 59 L67 58 M60 61.5 L67 63" stroke="${k(0.8)}" stroke-width="0.6"/>`
+      );
+    },
+  },
+
+  ox: {
+    w: 100,
+    h: 100,
+    title: "The ox, for Luke",
+    draw: (k) =>
+      `<defs>${lin("hide", k, [0.95, 0.45, 0.9], "x")}${lin("horn", k, [0.2, 0.9])}</defs>` +
+      roundel(k) +
+      mirror(
+        100,
+        `<path d="M38 32 C26 32 16 26 14 14 C22 22 30 24 40 26 Z" fill="url(#horn)" stroke="${k(0.95)}" stroke-width="0.9"/>` +
+          `<path d="M36 38 C28 36 22 40 20 46 C26 46 32 44 37 42 Z" fill="${k(0.85)}"/>`,
+      ) +
+      `<path d="M36 28 C40 24 60 24 64 28 C67 40 64 56 60 66 C57 74 43 74 40 66 C36 56 33 40 36 28Z" fill="url(#hide)"/>` +
+      `<path d="M50 28 L50 50" stroke="${k(0.25)}" stroke-width="1"/>` +
+      `<circle cx="43" cy="42" r="2" fill="${k(1)}"/><circle cx="57" cy="42" r="2" fill="${k(1)}"/>` +
+      `<ellipse cx="50" cy="66" rx="9" ry="6" fill="${k(0.2)}" stroke="${k(1)}" stroke-width="1"/>` +
+      `<ellipse cx="46.5" cy="66" rx="1.6" ry="2.2" fill="${k(1)}"/><ellipse cx="53.5" cy="66" rx="1.6" ry="2.2" fill="${k(1)}"/>`,
+  },
+
+  eagle: {
+    w: 100,
+    h: 100,
+    title: "The eagle, for John",
+    draw: (k) => {
+      // A wing raised as in heraldry: long primaries fanning up and out, then coverts.
+      let w = "";
+      for (let i = 0; i < 7; i++) {
+        const a = -6 + i * 8;
+        const len = 40 - i * 2.4;
+        w += `<path d="M45 46 C${45 - len * 0.2} 44 ${45 - len * 0.6} 40 ${45 - len} 40 C${45 - len * 0.7} 46 ${45 - len * 0.3} 49 45 50Z" transform="rotate(${a} 45 46)" fill="${k(0.95 - (i % 2) * 0.2)}" stroke="${k(0.1)}" stroke-width="0.6"/>`;
+      }
+      w += `<path d="M45 42 C38 38 30 40 27 46 C33 47 40 49 45 52Z" fill="${k(0.6)}" stroke="${k(0.1)}" stroke-width="0.6"/>`;
+      return (
+        `<defs>${lin("breast", k, [0.95, 0.35, 0.9], "x")}</defs>` +
+        roundel(k) +
+        mirror(100, w + `<path d="M47 70 L40 84 L46 80 L48 86 L50 78 Z" fill="${k(0.9)}"/><path d="M46 70 L42 74 M47 72 L44 77" stroke="${k(0.95)}" stroke-width="1.4"/>`) +
+        `<path d="M50 32 C43 36 42 52 44 64 C46 73 54 73 56 64 C58 52 57 36 50 32Z" fill="url(#breast)"/>` +
+        `<path d="M46 44 C48 46 52 46 54 44 M46 51 C48 53 52 53 54 51 M47 58 C49 60 51 60 53 58" stroke="${k(0.2)}" stroke-width="0.8" fill="none"/>` +
+        `<circle cx="51" cy="26" r="7" fill="${k(0.85)}" stroke="${k(1)}" stroke-width="0.8"/>` +
+        `<path d="M57 24 C62 24 64 27 61 30 C60 28 58 28 57 29 Z" fill="${k(1)}"/>` +
+        `<circle cx="53" cy="24.5" r="1.2" fill="${k(0.05)}"/>` +
+        `<circle cx="51" cy="26" r="10.5" fill="none" stroke="${k(0.75)}" stroke-width="1"/>`
+      );
+    },
+  },
+
+  // "Each one had six wings; with twain he covered his face, and with twain he
+  // covered his feet, and with twain he did fly" (Isaiah 6:2).
+  seraph: {
+    w: 100,
+    h: 100,
+    title: "Seraph",
+    draw: (k) => {
+      // Each pair is one layered wing and its mirror, turned about the shoulders.
+      const pair = (rot: number, rows: number, len: number) =>
+        mirror(100, `<g transform="rotate(${rot} 46 50)">${wing(46, 46, k, rows, len)}</g>`);
+      return (
+        `<defs>${rad("glow", k, 0.05, 0.55, 0.5, 0.45)}</defs>` +
+        Array.from({ length: 24 }, (_, i) => `<path d="M50 50 L49.3 3 L50.7 3Z" transform="rotate(${i * 15} 50 50)" fill="${k(i % 2 ? 0.25 : 0.45)}"/>`).join("") +
+        pair(38, 4, 34) + // two over the head
+        pair(-30, 4, 34) + // two over the feet
+        pair(4, 5, 44) + // two to fly
+        `<circle cx="50" cy="49" r="9.5" fill="url(#glow)" stroke="${k(1)}" stroke-width="1.1"/>` +
+        `<path d="M45 48.5 Q47 50 49 48.5 M51 48.5 Q53 50 55 48.5" stroke="${k(1)}" stroke-width="0.9" fill="none"/>` +
+        `<path d="M50 49 L50 52.5 M48.2 54.6 L51.8 54.6" stroke="${k(0.9)}" stroke-width="0.8"/>` +
+        `<circle cx="50" cy="49" r="12.5" fill="none" stroke="${k(0.85)}" stroke-width="1" stroke-dasharray="1.4 1.6"/>`
+      );
+    },
+  },
+
+  // The eye with wings: the watchful living creatures, "full of eyes before and behind" (Revelation 4:6-8).
+  "winged-eye": {
+    w: 120,
+    h: 100,
+    title: "Winged eye",
+    draw: (k) =>
+      `<defs>${rad("iris", k, 0.4, 0.95, 0.4, 0.4)}</defs>` +
+      mirror(120, `<g transform="rotate(16 44 50)">${wing(44, 44, k, 5, 46)}</g><g transform="rotate(-28 44 54)">${wing(44, 54, k, 3, 28)}</g>`) +
+      Array.from({ length: 13 }, (_, i) => `<path d="M60 50 L59.3 14 L60.7 14Z" transform="rotate(${-72 + i * 12} 60 50)" fill="${k(0.45)}"/>`).join("") +
+      `<ellipse cx="60" cy="50" rx="19" ry="12.5" fill="${k(0)}"/>` +
+      eye(k, 60, 50, 34, "iris"),
+  },
+
+  // "Their rings were full of eyes round about them four", "a wheel in the middle of a wheel" (Ezekiel 1:16-18).
+  ophan: {
+    w: 100,
+    h: 100,
+    title: "Ophan",
+    draw: (k) => {
+      const ring = (rx: number, ry: number, rot: number, eyes: number, w: number) => {
+        let out = `<ellipse cx="50" cy="50" rx="${rx}" ry="${ry}" transform="rotate(${rot} 50 50)" fill="none" stroke="${k(0.95)}" stroke-width="5"/><ellipse cx="50" cy="50" rx="${rx}" ry="${ry}" transform="rotate(${rot} 50 50)" fill="none" stroke="${k(0.3)}" stroke-width="1.2"/>`;
+        for (let i = 0; i < eyes; i++) {
+          const t = (i / eyes) * Math.PI * 2;
+          const r = (rot * Math.PI) / 180;
+          const ex = rx * Math.cos(t), ey = ry * Math.sin(t);
+          const x = 50 + ex * Math.cos(r) - ey * Math.sin(r), y = 50 + ex * Math.sin(r) + ey * Math.cos(r);
+          out += eye(k, x, y, w, "iris");
+        }
+        return out;
+      };
+      const flames = Array.from({ length: 14 }, (_, i) => `<path d="M50 6 C47 10 48 13 50 16 C52 13 53 10 50 6Z" transform="rotate(${i * 25.7} 50 50)" fill="${k(0.55)}"/>`).join("");
+      return (
+        `<defs>${rad("iris", k, 0.35, 0.95, 0.4, 0.4)}</defs>` +
+        flames +
+        ring(38, 38, 0, 10, 6.4) +
+        ring(38, 14, 60, 6, 5.4) +
+        ring(38, 14, -60, 6, 5.4) +
+        `<circle cx="50" cy="50" r="5.5" fill="${k(0.95)}"/>` +
+        eye(k, 50, 50, 9, "iris")
+      );
+    },
+  },
 };
 
 export const ORNAMENTS: Readonly<Record<OrnamentName, Pick<Drawing, "w" | "h" | "title">>> = DRAWINGS;
+
+/** The emblem of each Gospel. */
+export const EVANGELIST: Record<string, OrnamentName> = { Matt: "angel", Mark: "lion", Luke: "ox", John: "eagle" };
 
 /**
  * The ornament as an SVG data URL in grays for the scheme. Rasterised large

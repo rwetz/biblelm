@@ -574,7 +574,8 @@ export function DitherHero({
   const art = hero ? heroArt(hero) : null;
   const painted = !!hero && isPainting(hero);
   const side = width ? (painted ? 0.24 : 0.1) : 0;
-  const edges: Edges = { bottom: 1 - fadeFrom / 100, right: side, left: clearLeft ? 0.85 : side };
+  // A windowed picture dissolves on every side, the top a little too, so no edge reads as a cut.
+  const edges: Edges = { top: width ? 0.05 : 0, bottom: 1 - fadeFrom / 100, right: side, left: clearLeft ? 0.85 : side };
   return (
     <div className={cn("relative w-full shrink-0 overflow-hidden", className)} style={{ height }}>
       {show && art && !painted && (
@@ -603,7 +604,10 @@ export function DitherHero({
         />
       )}
       {show && art && caption && (
-        <span className="pointer-events-none absolute bottom-2 right-6 z-20 font-garamond text-xs italic text-muted-foreground">{art.credit}</span>
+        // The credit hangs under the picture's own right edge, not the band's.
+        <div className="pointer-events-none absolute inset-x-0 bottom-2 z-20 mx-auto flex justify-end px-6" style={{ maxWidth: width }}>
+          <span className="font-garamond text-xs italic text-muted-foreground">{art.credit}</span>
+        </div>
       )}
       {children && <div className="relative z-10 flex h-full flex-col">{children}</div>}
     </div>
@@ -692,13 +696,30 @@ export function Heptagram({ className }: { className?: string }) {
  * theme's ink at the size it is drawn. Size it by width or height; the other
  * follows the drawing. `label` only when it means something (Morning, Evening).
  */
-export function Ornament({ name, algo = "atkinson", dot = 1, label, className }: { name: OrnamentName; algo?: DitherAlgo; dot?: number; label?: string; className?: string }) {
+export function Ornament({
+  name,
+  algo = "atkinson",
+  dot = 1,
+  label,
+  level,
+  reveal,
+  className,
+}: {
+  name: OrnamentName;
+  algo?: DitherAlgo;
+  dot?: number;
+  label?: string;
+  /** How much of it is resolved, 0 to 1 (see Dither). */
+  level?: number;
+  reveal?: boolean;
+  className?: string;
+}) {
   const dark = useTheme().resolvedMode === "dark";
-  const mode = useStudy((s) => s.illustrations);
+  const off = useStudy((s) => s.illustrations === "off" || !s.ornaments);
   const src = useMemo(() => ornamentSrc(name, dark), [name, dark]);
-  if (mode === "off") return null;
+  if (off) return null;
   const o = ORNAMENTS[name];
-  return <Dither src={src} algo={algo} dot={dot} focusY={50} label={label} className={cn("shrink-0 text-foreground", className)} style={{ aspectRatio: `${o.w} / ${o.h}` }} />;
+  return <Dither src={src} algo={algo} dot={dot} focusY={50} label={label} level={level} reveal={reveal} className={cn("shrink-0 text-foreground", className)} style={{ aspectRatio: `${o.w} / ${o.h}` }} />;
 }
 
 /** A fleuron between sections. */

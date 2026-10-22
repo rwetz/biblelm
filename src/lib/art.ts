@@ -132,7 +132,7 @@ export const SIDEBAR_PLATES: Record<string, number> = {
   search: 205, // The Return of the Prodigal Son: "was lost, and is found"
   topics: 225, // The Apostles Preaching the Gospel
   notebooks: 157, // Baruch
-  lab: 128, // Ezekiel Prophesying: wheels within wheels, the machine
+  lab: 1015, // Merian, Ezekiel's vision: the wheels full of eyes, the living creatures
   settings: 1010, // The 1534 Luther Bible's title page, Cranach's workshop
 };
 

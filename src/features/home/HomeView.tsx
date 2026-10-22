@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
-import { Button, Icon, Input } from "@nexis/design";
+import { Button, Icon } from "@nexis/design";
 import { TrinityMark } from "@/art/TrinityMark";
 import { DitherHero, Engraving, Fleuron, useHeroes, usePaintings, usePlates } from "@/art/Art";
 import { paintingCredit, paintingForDay, paintingUrl, seasonalHero } from "@/lib/art";
-import { useScheme } from "@/app/scheme";
 import { wholeSentence } from "@/lib/bible";
 import { formatRef, parseOsis, type Ref } from "@/lib/canon";
 import { useCatalog, useTranslation } from "@/lib/hooks";
@@ -11,6 +10,7 @@ import { useNotebooks } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
 import { VerseText } from "@/features/read/ReadView";
 import { QueryReading } from "@/features/search/JevReading";
+import { SearchField } from "@/app/controls";
 
 // A year of well-loved verses, one a day (the list is references only; the
 // words come from whichever translation you read).
@@ -33,15 +33,10 @@ export function HomeView() {
   const heroes = useHeroes();
   const devHero = useStudy((s) => (s.devMode ? s.devHero : null));
   const paintings = usePaintings();
-  const [scheme] = useScheme();
   const today = useMemo(() => paintingForDay(paintings), [paintings]);
-  // Tenebrae is the paintings' scheme: its Home opens on the day's painting in
-  // colour (an etching's paper would sit under the search box).
-  const band = useMemo(() => (today?.colour ? today : paintingForDay(paintings.filter((p) => p.colour))), [today, paintings]);
-  const hero = useMemo(
-    () => heroes.find((h) => h.id === devHero) ?? (scheme === "tenebrae" && band ? band : seasonalHero(heroes)),
-    [heroes, devHero, scheme, band],
-  );
+  // The hero follows the church year in every scheme (one of the dithered
+  // Doré heroes); the day's painting has its own place below, in Look at today.
+  const hero = useMemo(() => heroes.find((h) => h.id === devHero) ?? seasonalHero(heroes), [heroes, devHero]);
   const openLook = useStudy((s) => s.openLook);
   const { translation, history, read, searchFor, go } = useStudy();
   const [t] = useTranslation(translation);
@@ -67,15 +62,7 @@ export function HomeView() {
             }}
           >
             <div className="rounded-2xl bg-card/90 p-2 shadow-sm ring-1 ring-foreground/8 backdrop-blur-[2px]">
-              <div className="relative">
-                <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search the Scriptures, or type a reference"
-                  className="h-12 border-none bg-transparent pl-9 text-base shadow-none focus-visible:ring-0"
-                />
-              </div>
+              <SearchField size="lg" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search the Scriptures, or type a reference" className="bg-transparent hover:bg-transparent focus-within:bg-transparent" />
               <QueryReading query={q} className="px-2" />
               <div className="flex items-center gap-2 px-2 pb-1 pt-1 text-xs text-muted-foreground">
                 <button type="button" onClick={() => go("settings")} className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 hover:bg-muted">
@@ -97,7 +84,7 @@ export function HomeView() {
       </DitherHero>
 
         <section className="mx-auto w-full max-w-3xl shrink-0 px-8 pb-8 text-center">
-          <TrinityMark className="mx-auto mb-3 size-14" />
+          <TrinityMark className="mx-auto mb-3 mt-6 size-14" />
           <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
           {passage?.verses.length ? (
             <blockquote className="mt-4">

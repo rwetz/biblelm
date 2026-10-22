@@ -8,6 +8,7 @@ import type { Translation } from "@/lib/bible";
 import { BOOKS, bookName, formatRef } from "@/lib/canon";
 import { collocates, delta, distinctive, hapax } from "@/lib/words";
 import { useStudy } from "@/store/study";
+import { Choice } from "@/app/controls";
 
 export function Words({ t }: { t: Translation }) {
   const [book, setBook] = useState("Eccl");
@@ -32,11 +33,7 @@ export function Words({ t }: { t: Translation }) {
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-8 py-6 lg:grid-cols-3">
         <section>
           <SectionLabel>A book's own words</SectionLabel>
-          <select value={book} onChange={(e) => setBook(e.target.value)} className="mt-2 h-8 w-full rounded-md border border-input bg-background px-2 text-sm" aria-label="Book">
-            {books.map((b) => (
-              <option key={b.osis} value={b.osis}>{b.name}</option>
-            ))}
-          </select>
+          <Choice size="sm" label="Book" value={book} onChange={setBook} options={books.map((b) => ({ value: b.osis, label: b.name }))} className="mt-2 w-full" />
           <p className="mt-2 text-xs text-muted-foreground">Words {bookName(book)} uses far more than the rest of the Bible (tf-idf): its fingerprint.</p>
           <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             {dist.map((d) => (
