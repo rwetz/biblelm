@@ -95,6 +95,17 @@ tag(note, name)
 > text changes. "Print illustrated" lays a notebook out for paper with the
 > plates and paintings of each passage (`PrintNotebook.tsx`).
 
+> **As built (notes version 3):** a note can cover separate runs of verses in
+> one chapter: `start` and `end` hold the first run, `more` the rest
+> (`spansOf`, `noteSpans`, `noteCovers` in `src/store/notebooks.ts`, tested).
+> The reader picks verses like a file list (`pick` in `src/store/study.ts`:
+> ctrl toggles, shift takes the run from the anchor, ctrl+shift adds it), and
+> with more than one picked the verse panel becomes the passage panel. A
+> selection stays within one chapter. Export (`ExportDialog.tsx`) takes the
+> whole notebook, one book or one chapter, as one Markdown file, a file per
+> book or a file per chapter, with the verses quoted in the notebook's main
+> translation, or sends the same choice to Print illustrated.
+
 ## Atlas, Daily and the interlinear
 
 > **As built:** three study pages beyond the plan.

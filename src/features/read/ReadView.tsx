@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import {
   Badge,
   Button,
@@ -23,7 +23,7 @@ import { loadTranslation, runs, type Run, type Translation, type Verse } from "@
 import { isHebrew, loadInterlinear, type BookWords } from "@/lib/interlinear";
 import { BOOKS, book as bookOf, bookName, formatRef, SHELVES, type Ref } from "@/lib/canon";
 import { useCatalog, useTranslations } from "@/lib/hooks";
-import { noteCovers, useNotebooks } from "@/store/notebooks";
+import { noteEndsAt, useNotebooks } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
 import { BookPicker } from "./BookPicker";
 import { TranslationPicker } from "./TranslationPicker";
@@ -47,6 +47,14 @@ export async function chapterStep(delta: 1 | -1) {
   s.read({ book: nb, chapter: delta > 0 ? nc[0] : nc[nc.length - 1], verse: 0 });
 }
 
+/** A click on a verse: alone opens it; ctrl (cmd) and shift pick several, as in a file list. */
+type OnPick = (v: { book: string; chapter: number; verse: number }, e: MouseEvent) => void;
+
+/** Shift-click would otherwise drag a text selection across the verses. */
+const noTextSelect = (e: MouseEvent) => {
+  if (e.shiftKey || e.ctrlKey || e.metaKey) e.preventDefault();
+};
+
 /** The verse the panel last showed, so it can come back after it is closed. */
 let lastSelected: Ref | null = null;
 
@@ -60,7 +68,7 @@ export function toggleVersePanel() {
 }
 
 export function ReadView() {
-  const { translation, parallel, location, shelves, face, textSize, columns, selected, interlinear, read, select, set } = useStudy();
+  const { translation, parallel, location, shelves, face, textSize, columns, selected, selection, interlinear, read, select, pick, set } = useStudy();
   const ids = useMemo(() => [translation, ...parallel.filter((p) => p !== translation)], [translation, parallel]);
   const [ts, error] = useTranslations(ids);
   const main = ts?.[0];
@@ -68,6 +76,8 @@ export function ReadView() {
   const paintings = usePaintings();
   const scroller = useRef<HTMLDivElement>(null);
   if (selected) lastSelected = selected;
+  const picked = useMemo(() => new Set(selected ? selection : []), [selected, selection]);
+  const onPick: OnPick = (v, e) => pick({ book: v.book, chapter: v.chapter, verse: v.verse }, { ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey });
 
   // Keyboard: [ and ] turn chapters (unless typing).
   useEffect(() => {
@@ -123,16 +133,16 @@ export function ReadView() {
             </header>
 
             {ts!.length > 1 ? (
-              <Parallel ts={ts!} bookId={bookId} chapter={location.chapter} />
+              <Parallel ts={ts!} bookId={bookId} chapter={location.chapter} picked={picked} onPick={onPick} />
             ) : interlinear ? (
-              <Interlinear verses={verses} bookId={bookId} chapter={location.chapter} selected={selected} onSelect={(v) => select({ book: v.book, chapter: v.chapter, verse: v.verse })} />
+              <Interlinear verses={verses} bookId={bookId} chapter={location.chapter} picked={picked} onPick={onPick} />
             ) : (
               <Chapter
                 verses={verses}
                 plates={chapterPlates}
                 columns={columns}
-                selected={selected}
-                onSelect={(v) => select({ book: v.book, chapter: v.chapter, verse: v.verse })}
+                picked={picked}
+                onPick={onPick}
                 onPlateRef={(r) => read(r, { select: true })}
               />
             )}
@@ -150,7 +160,7 @@ export function ReadView() {
           </article>
         </div>
       </div>
-      {selected && <VersePanel refSel={selected} translations={ts!} onClose={() => select(null)} shelves={shelves} onNavigate={(r) => read(r, { select: true })} onSetParallel={(p) => set({ parallel: p })} />}
+      {selected && selection.length > 0 && <VersePanel refSel={selected} verses={selection} translations={ts!} onClose={() => select(null)} shelves={shelves} onNavigate={(r) => read(r, { select: true })} onSetParallel={(p) => set({ parallel: p })} />}
     </div>
   );
 }
@@ -205,15 +215,15 @@ function Chapter({
   verses,
   plates,
   columns,
-  selected,
-  onSelect,
+  picked,
+  onPick,
   onPlateRef,
 }: {
   verses: Verse[];
   plates: ReturnType<typeof usePlates>;
   columns: boolean;
-  selected: Ref | null;
-  onSelect: (v: Verse) => void;
+  picked: Set<number>;
+  onPick: OnPick;
   onPlateRef: (r: Ref) => void;
 }) {
   const notebook = useNotebooks((s) => s.active);
@@ -248,14 +258,16 @@ function Chapter({
             {p.map((v, vi) => {
               const osis = `${v.book}.${v.chapter}.${v.verse}`;
               const first = pi === 0 && vi === 0;
-              const hasNote = notebook && notes.some((n) => n.notebook === notebook && noteCovers(n, osis));
+              // A note is marked once, where each of its runs of verses ends.
+              const hasNote = notebook && notes.some((n) => n.notebook === notebook && noteEndsAt(n, osis));
               return (
                 <span
                   key={v.verse}
                   data-v={v.verse}
-                  data-active={selected?.verse === v.verse && selected.chapter === v.chapter && selected.book === v.book}
+                  data-active={picked.has(v.verse)}
                   data-hl={hl.has(osis)}
-                  onClick={() => onSelect(v)}
+                  onMouseDown={noTextSelect}
+                  onClick={(e) => onPick(v, e)}
                   className="cursor-pointer"
                 >
                   {!first && <sup className="vnum">{v.verse}</sup>}
@@ -279,7 +291,7 @@ function Chapter({
  * a transliteration and an English gloss under each (STEPBible, CC BY).
  * Books without the original-language data (the deuterocanon) read plainly.
  */
-function Interlinear({ verses, bookId, chapter, selected, onSelect }: { verses: Verse[]; bookId: string; chapter: number; selected: Ref | null; onSelect: (v: Verse) => void }) {
+function Interlinear({ verses, bookId, chapter, picked, onPick }: { verses: Verse[]; bookId: string; chapter: number; picked: Set<number>; onPick: OnPick }) {
   const [words, setWords] = useState<BookWords | null | undefined>(undefined);
   useEffect(() => {
     let live = true;
@@ -297,7 +309,7 @@ function Interlinear({ verses, bookId, chapter, selected, onSelect }: { verses: 
         const ws = words?.[`${chapter}.${v.verse}`] ?? [];
         const rtl = isHebrew(ws);
         return (
-          <div key={v.verse} data-v={v.verse} data-active={selected?.verse === v.verse && selected.chapter === chapter} onClick={() => onSelect(v)} className="cursor-pointer">
+          <div key={v.verse} data-v={v.verse} data-active={picked.has(v.verse)} onMouseDown={noTextSelect} onClick={(e) => onPick(v, e)} className="cursor-pointer">
             <p>
               <sup className="vnum">{v.verse}</sup>
               <VerseText raw={v.raw} />
@@ -346,9 +358,7 @@ export function VerseText({ raw, dropcap = false }: { raw: string; dropcap?: boo
   return <>{parts.map((r, i) => <RunText key={i} r={r} />)}</>;
 }
 
-function Parallel({ ts, bookId, chapter }: { ts: Translation[]; bookId: string; chapter: number }) {
-  const select = useStudy((s) => s.select);
-  const selected = useStudy((s) => s.selected);
+function Parallel({ ts, bookId, chapter, picked, onPick }: { ts: Translation[]; bookId: string; chapter: number; picked: Set<number>; onPick: OnPick }) {
   const nums = useMemo(() => {
     const set = new Set<number>();
     for (const t of ts) for (const v of t.chapter(bookId, chapter)) set.add(v.verse);
@@ -366,8 +376,9 @@ function Parallel({ ts, bookId, chapter }: { ts: Translation[]; bookId: string; 
         <div
           key={n}
           data-v={n}
-          data-active={selected?.verse === n && selected.chapter === chapter}
-          onClick={() => select({ book: bookId, chapter, verse: n })}
+          data-active={picked.has(n)}
+          onMouseDown={noTextSelect}
+          onClick={(e) => onPick({ book: bookId, chapter, verse: n }, e)}
           className="grid cursor-pointer gap-x-8 border-b border-border/40 py-2"
           style={{ gridTemplateColumns: `repeat(${ts.length}, minmax(0, 1fr))` }}
         >

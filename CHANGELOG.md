@@ -6,6 +6,25 @@ All notable changes to BibleLM. Format based on
 
 ## Unreleased
 
+### Added
+
+- **Notes on several verses at once**: in the reader, ctrl-click (cmd on a
+  Mac) adds or drops a verse, shift-click takes every verse from the last one
+  clicked, ctrl+shift-click adds that run, as in a file list. The verse panel
+  then shows the passage ("Romans 8:2–5, 9–11") and a note written there
+  covers all of it. Highlight, copy and learn by heart work on the passage too.
+- **Export, your way**: the whole notebook, one book or one chapter, as one
+  Markdown file, a file per book or a file per chapter, with the verses quoted
+  above each note; or printed (and saved as PDF) with the pictures.
+
+### Changed
+
+- Notes file version 3: a note can cover several separate runs of verses in
+  one chapter (`more`). Older files load unchanged.
+- Notes are listed and exported in Bible order (Genesis before Exodus), not by
+  the letters of the book's abbreviation.
+- The reader marks a note once, where each of its runs ends, not on every verse.
+
 ## [2.0.0] — 2026-10-21
 
 BibleLM becomes an illustrated Bible study tool with the ML lab inside it.

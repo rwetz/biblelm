@@ -9,12 +9,13 @@
 
 import { create } from "zustand";
 import { backend } from "@/lib/backend";
-import type { Shelf } from "@/lib/canon";
+import { BOOKS, type Shelf } from "@/lib/canon";
 import { newCard, review, type Card, type Grade } from "@/lib/fsrs";
 
 // 2: verses learned by heart (memory), reading plans (plans) and tombstones
 // (deleted) so two copies of the file can be merged without losing anything.
-export const VERSION = 2;
+// 3: a note can cover several separate runs of verses in one chapter (more).
+export const VERSION = 3;
 
 export interface Notebook {
   id: string;
@@ -34,6 +35,8 @@ export interface Note {
   start: string;
   /** Inclusive end of a range in the same chapter, OSIS. */
   end?: string;
+  /** Further runs of verses in the same chapter after the first ("Rom 8:2-5, 9-11"), in order. */
+  more?: Span[];
   /** Set when the note is about one translation's wording. */
   translation?: string;
   /** That translation's content hash when the note was written: the exact wording. */
@@ -42,6 +45,12 @@ export interface Note {
   tags: string[];
   created: number;
   updated: number;
+}
+
+/** One run of verses: a start and an optional inclusive end in the same chapter, OSIS. */
+export interface Span {
+  start: string;
+  end?: string;
 }
 
 export interface Highlight {
@@ -88,7 +97,7 @@ export function migrate(raw: unknown): NotesData {
     ...r,
     version: VERSION,
     notebooks: Array.isArray(r.notebooks) ? r.notebooks : [],
-    notes: Array.isArray(r.notes) ? r.notes.map((n) => ({ ...n, tags: Array.isArray(n.tags) ? n.tags : [] })) : [],
+    notes: Array.isArray(r.notes) ? r.notes.map(migrateNote) : [],
     highlights: Array.isArray(r.highlights) ? r.highlights : [],
     active: typeof r.active === "string" ? r.active : null,
     // Version 1 had none of these.
@@ -96,6 +105,17 @@ export function migrate(raw: unknown): NotesData {
     plans: Array.isArray(r.plans) ? r.plans.map((p) => ({ ...p, done: Array.isArray(p.done) ? p.done : [] })) : [],
     deleted: Array.isArray(r.deleted) ? r.deleted : [],
   };
+}
+
+function migrateNote(n: Note): Note {
+  const out = { ...n, tags: Array.isArray(n.tags) ? n.tags : [] };
+  // Version 2 had no `more`; keep only well-formed spans where a file has one.
+  if ("more" in out) {
+    const more = Array.isArray(out.more) ? out.more.filter((s) => s && typeof s.start === "string") : [];
+    if (more.length) out.more = more;
+    else delete out.more;
+  }
+  return out;
 }
 
 /**
@@ -143,7 +163,7 @@ interface NotebooksState extends NotesData {
   updateNotebook: (id: string, patch: Partial<Omit<Notebook, "id" | "created">>) => void;
   deleteNotebook: (id: string) => void;
   setActive: (id: string | null) => void;
-  addNote: (n: Pick<Note, "notebook" | "start" | "end" | "translation" | "textHash" | "body"> & { tags?: string[] }) => string;
+  addNote: (n: Pick<Note, "notebook" | "start" | "end" | "more" | "translation" | "textHash" | "body"> & { tags?: string[] }) => string;
   updateNote: (id: string, patch: Partial<Pick<Note, "body" | "tags" | "translation" | "end">>) => void;
   deleteNote: (id: string) => void;
   toggleHighlight: (notebook: string, ref: string) => void;
@@ -242,40 +262,118 @@ export const useNotebooks = create<NotebooksState>((set, get) => {
   };
 });
 
-/** Does a note's range cover this verse? */
-export function noteCovers(n: Note, osis: string): boolean {
-  if (n.start === osis || n.end === osis) return true;
-  if (!n.end) return false;
-  const [b, c, v] = osis.split(".");
-  const [sb, sc, sv] = n.start.split(".");
-  const ev = n.end.split(".")[2];
-  return b === sb && c === sc && +v >= +sv && +v <= +ev;
+/** Every span a note covers, the first from start and end. */
+export function noteSpans(n: Pick<Note, "start" | "end" | "more">): Span[] {
+  return [{ start: n.start, end: n.end }, ...(n.more ?? [])];
 }
 
-/** A notebook as Markdown files: one per book touched, plus an index. */
-export function toMarkdown(data: NotesData, notebookId: string, refLabel: (osis: string) => string) {
+const verseOf = (osis: string) => +osis.split(".")[2];
+
+/** Does a note cover this verse (in any of its spans)? */
+export function noteCovers(n: Pick<Note, "start" | "end" | "more">, osis: string): boolean {
+  const [b, c, v] = osis.split(".");
+  return noteSpans(n).some((s) => {
+    if (s.start === osis || s.end === osis) return true;
+    if (!s.end) return false;
+    const [sb, sc] = s.start.split(".");
+    return b === sb && c === sc && +v >= verseOf(s.start) && +v <= verseOf(s.end);
+  });
+}
+
+/** Does one of a note's spans end on this verse? (The reader marks the note there.) */
+export function noteEndsAt(n: Pick<Note, "start" | "end" | "more">, osis: string): boolean {
+  return noteSpans(n).some((s) => (s.end ?? s.start) === osis);
+}
+
+/** Verses of one chapter (any order, repeats allowed) as runs: 2,3,4,5,9,10,11 → 2-5, 9-11. */
+export function spansOf(book: string, chapter: number, verses: number[]): Span[] {
+  const vs = [...new Set(verses)].filter((v) => v > 0).sort((a, b) => a - b);
+  const out: Span[] = [];
+  for (let i = 0; i < vs.length; ) {
+    let j = i;
+    while (j + 1 < vs.length && vs[j + 1] === vs[j] + 1) j++;
+    out.push({ start: `${book}.${chapter}.${vs[i]}`, ...(j > i ? { end: `${book}.${chapter}.${vs[j]}` } : {}) });
+    i = j + 1;
+  }
+  return out;
+}
+
+/** The note fields for a set of spans: the first as start and end, the rest as more. */
+export function spanFields(spans: Span[]): Pick<Note, "start" | "end" | "more"> {
+  const [first, ...rest] = spans;
+  return { start: first.start, ...(first.end ? { end: first.end } : {}), ...(rest.length ? { more: rest } : {}) };
+}
+
+/** "Romans 8:2–5, 9–11", given how to label a start verse ("Romans 8:2"). */
+export function spansLabel(spans: Span[], refLabel: (osis: string) => string): string {
+  const tail = (s: Span) => `${verseOf(s.start)}${s.end ? `–${verseOf(s.end)}` : ""}`;
+  const [first, ...rest] = spans;
+  return [refLabel(first.start) + (first.end ? `–${verseOf(first.end)}` : ""), ...rest.map(tail)].join(", ");
+}
+
+const BOOK_ORDER = new Map(BOOKS.map((b, i) => [b.osis, i]));
+
+/** Notes in Bible order: canonical book, then chapter, then verse. */
+export function bibleOrder(a: Pick<Note, "start">, b: Pick<Note, "start">): number {
+  const [ab, ac, av] = a.start.split(".");
+  const [bb, bc, bv] = b.start.split(".");
+  return (BOOK_ORDER.get(ab) ?? 999) - (BOOK_ORDER.get(bb) ?? 999) || +ac - +bc || +av - +bv;
+}
+
+export interface ExportOptions {
+  /** Which notes go out; all of the notebook's by default. */
+  keep?: (n: Note) => boolean;
+  /** One file per book (the default), one per chapter, or a single file. */
+  split?: "book" | "chapter" | "one";
+  /** The verses of a span, to quote above its note (one line each). */
+  passage?: (span: Span) => string[];
+  /** The translation the passage is quoted from, named under it. */
+  passageFrom?: string;
+}
+
+export const fileSafe = (s: string) => s.replace(/[^\p{L}\p{N} -]/gu, "").trim() || "notebook";
+
+/** A notebook as Markdown files (Obsidian-friendly, with [[John.3.16]] links), plus an index. */
+export function toMarkdown(data: NotesData, notebookId: string, refLabel: (osis: string) => string, opts: ExportOptions = {}) {
   const nb = data.notebooks.find((b) => b.id === notebookId);
   if (!nb) return [];
-  const notes = data.notes.filter((n) => n.notebook === notebookId).sort((a, b) => a.start.localeCompare(b.start, undefined, { numeric: true }));
-  const byBook = new Map<string, Note[]>();
+  const split = opts.split ?? "book";
+  const notes = data.notes.filter((n) => n.notebook === notebookId && (opts.keep?.(n) ?? true)).sort(bibleOrder);
+  const bookTitle = (b: string) => refLabel(`${b}.1`).replace(/ 1$/, "");
+  const chapterTitle = (b: string, c: string) => (b === "Ps" ? `Psalm ${c}` : `Chapter ${c}`);
+
+  const noteMd = (n: Note, depth: number) => {
+    const spans = noteSpans(n);
+    const head = `${"#".repeat(depth)} [[${n.start}]] ${spansLabel(spans, refLabel)}${n.translation ? ` (${n.translation.toUpperCase()} wording)` : ""}`;
+    const quoted = opts.passage ? spans.map((s) => opts.passage!(s).map((l) => `> ${l}`).join("\n")).filter(Boolean) : [];
+    const quote = quoted.length ? `${quoted.join("\n>\n> ...\n>\n")}${opts.passageFrom ? `\n>\n> (${opts.passageFrom})` : ""}\n\n` : "";
+    const tags = n.tags.length ? `\n${n.tags.map((t) => `#${t.replace(/\s+/g, "-")}`).join(" ")}\n` : "";
+    return `${head}\n\n${quote}${n.body.trim()}\n${tags}`;
+  };
+
+  // Bible order: book, then chapter.
+  const groups: { book: string; chapter: string; notes: Note[] }[] = [];
   for (const n of notes) {
-    const b = n.start.split(".")[0];
-    byBook.set(b, [...(byBook.get(b) ?? []), n]);
+    const [b, c] = n.start.split(".");
+    const last = groups[groups.length - 1];
+    if (last && last.book === b && last.chapter === c) last.notes.push(n);
+    else groups.push({ book: b, chapter: c, notes: [n] });
   }
-  const files = [...byBook].map(([b, list]) => ({
-    path: `${b}.md`,
-    body:
-      `# ${refLabel(`${b}.1`).replace(/ 1$/, "")}\n\n` +
-      list
-        .map((n) => {
-          const label = refLabel(n.start) + (n.end ? `-${n.end.split(".")[2]}` : "");
-          return `## [[${n.start}]] ${label}${n.translation ? ` (${n.translation.toUpperCase()})` : ""}\n\n${n.body.trim()}\n${n.tags.length ? `\n${n.tags.map((t) => `#${t.replace(/\s+/g, "-")}`).join(" ")}\n` : ""}`;
-        })
-        .join("\n"),
-  }));
-  files.unshift({
-    path: "README.md",
-    body: `# ${nb.title}\n\n${nb.description}\n\nTranslations: ${nb.translations.join(", ").toUpperCase()}\n\n${[...byBook.keys()].map((b) => `- [[${b}]]`).join("\n")}\n`,
-  });
+  const books = [...new Set(groups.map((g) => g.book))];
+
+  // Inside a book, chapters get headings only when it has notes in more than one.
+  const bookBody = (b: string, depth: number) => {
+    const gs = groups.filter((g) => g.book === b);
+    if (gs.length === 1) return gs[0].notes.map((n) => noteMd(n, depth)).join("\n");
+    return gs.map((g) => `${"#".repeat(depth)} ${chapterTitle(b, g.chapter)}\n\n${g.notes.map((n) => noteMd(n, depth + 1)).join("\n")}`).join("\n");
+  };
+
+  const intro = `# ${nb.title}\n\n${nb.description ? `${nb.description}\n\n` : ""}Translations: ${nb.translations.join(", ").toUpperCase()}\n\n`;
+  if (split === "one") return [{ path: `${fileSafe(nb.title)}.md`, body: intro + books.map((b) => `## ${bookTitle(b)}\n\n${bookBody(b, 3)}`).join("\n") }];
+  const files =
+    split === "book"
+      ? books.map((b) => ({ path: `${b}.md`, body: `# ${bookTitle(b)}\n\n${bookBody(b, 2)}` }))
+      : groups.map((g) => ({ path: `${g.book}.${g.chapter}.md`, body: `# ${bookTitle(g.book)} ${g.chapter}\n\n${g.notes.map((n) => noteMd(n, 2)).join("\n")}` }));
+  files.unshift({ path: "README.md", body: intro + files.map((f) => `- [[${f.path.replace(/\.md$/, "")}]]`).join("\n") + "\n" });
   return files;
 }

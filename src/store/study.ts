@@ -30,8 +30,10 @@ interface StudyState {
   devHero: string | null;
   /** Developer override for the sidebar vignette (a plate number). */
   devPlate: number | null;
-  /** The verse the verse panel is open on. */
+  /** The verse the verse panel is open on, and the anchor of a shift-click. */
   selected: Ref | null;
+  /** Verse numbers picked in the selected verse's chapter (ctrl and shift click); one when a single verse is open. */
+  selection: number[];
   history: Ref[];
   /** Reading with the Hebrew and Greek under each verse. */
   interlinear: boolean;
@@ -47,6 +49,8 @@ interface StudyState {
   go: (page: Page) => void;
   read: (ref: Ref, opts?: { select?: boolean }) => void;
   select: (ref: Ref | null) => void;
+  /** Click on a verse as in a file list: alone, ctrl toggles it, shift takes the run from the anchor, ctrl+shift adds that run. */
+  pick: (ref: Ref, how: { ctrl: boolean; shift: boolean }) => void;
   openTopic: (name: string) => void;
   openWalk: (ref: Ref) => void;
   searchFor: (q: string) => void;
@@ -95,6 +99,7 @@ function save(s: StudyState) {
 export const useStudy = create<StudyState>((set, get) => ({
   ...load(),
   selected: null,
+  selection: [],
   look: null,
   atlas: null,
   topic: null,
@@ -109,10 +114,25 @@ export const useStudy = create<StudyState>((set, get) => ({
   read: (ref, opts) => {
     const chapter = { book: ref.book, chapter: ref.chapter, verse: 0 };
     const history = [chapter, ...get().history.filter((h) => h.book !== ref.book || h.chapter !== ref.chapter)].slice(0, 12);
-    set({ page: "read", location: ref, history, selected: opts?.select && ref.verse ? ref : get().selected });
+    const pick = opts?.select && ref.verse;
+    set({ page: "read", location: ref, history, selected: pick ? ref : get().selected, selection: pick ? [ref.verse] : get().selection });
     save(get());
   },
-  select: (selected) => set({ selected }),
+  select: (selected) => set({ selected, selection: selected?.verse ? [selected.verse] : [] }),
+  pick: (ref, { ctrl, shift }) => {
+    const { selected, selection } = get();
+    const v = ref.verse;
+    if (!selected || selected.book !== ref.book || selected.chapter !== ref.chapter || (!ctrl && !shift)) return get().select(ref);
+    if (shift) {
+      // The anchor stays where it was, as in a file list.
+      const [lo, hi] = [Math.min(selected.verse, v), Math.max(selected.verse, v)];
+      const run = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+      return set({ selection: [...new Set([...(ctrl ? selection : []), ...run])].sort((a, b) => a - b) });
+    }
+    const next = selection.includes(v) ? selection.filter((x) => x !== v) : [...selection, v].sort((a, b) => a - b);
+    if (!next.length) return set({ selected: null, selection: [] });
+    set({ selected: { ...ref, verseEnd: undefined }, selection: next });
+  },
   set: (patch) => {
     set(patch);
     save(get());
