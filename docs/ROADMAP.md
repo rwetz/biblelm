@@ -162,6 +162,7 @@ M0 ─┬─ M1 ─┬─ M3 ─┬─ M5
 - [x] M15 Atlas, Daily and the interlinear (places, people, timeline, the Daily Office, plans, FSRS; STUDY.md)
 - [x] M16 The rest of IDEAS.md (words, links, echoes, lessons, suffix array, notes merge; IDEAS.md, As built)
 - [x] M17 Notes on several verses (ctrl and shift click in the reader, notes version 3) and export by book or chapter (STUDY.md)
+- [x] M18 Studies for young men (Topics, Studies; STUDY.md) and ornaments (ART.md)
 
 ## What changed from the plan
 

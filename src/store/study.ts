@@ -44,6 +44,8 @@ interface StudyState {
   /** A person or place to open in the Atlas. */
   atlas: { kind: "place" | "person"; id: string } | null;
   walk: Ref | null;
+  /** A struggle to open in Topics, Studies (src/lib/studies.ts). */
+  studies: string | null;
   query: string;
 
   go: (page: Page) => void;
@@ -53,6 +55,7 @@ interface StudyState {
   pick: (ref: Ref, how: { ctrl: boolean; shift: boolean }) => void;
   openTopic: (name: string) => void;
   openWalk: (ref: Ref) => void;
+  openStudies: (id?: string) => void;
   searchFor: (q: string) => void;
   openLook: (t: LookTarget | null) => void;
   openAtlas: (kind: "place" | "person", id: string) => void;
@@ -104,10 +107,12 @@ export const useStudy = create<StudyState>((set, get) => ({
   atlas: null,
   topic: null,
   walk: null,
+  studies: null,
   query: "",
   go: (page) => set({ page }),
-  openTopic: (topic) => set({ page: "topics", topic, walk: null }),
-  openWalk: (walk) => set({ page: "topics", walk, topic: null }),
+  openTopic: (topic) => set({ page: "topics", topic, walk: null, studies: null }),
+  openWalk: (walk) => set({ page: "topics", walk, topic: null, studies: null }),
+  openStudies: (id) => set({ page: "topics", studies: id ?? "", walk: null, topic: null }),
   searchFor: (query) => set({ page: "search", query }),
   openLook: (look) => set({ look }),
   openAtlas: (kind, id) => set({ page: "atlas", atlas: { kind, id } }),

@@ -8,6 +8,14 @@ All notable changes to BibleLM. Format based on
 
 ### Added
 
+- **Studies for young men** (Topics, Studies, or "Study:" in the command
+  palette): for men around 18 to 25 fighting temptation. Pick a struggle (lust
+  and pornography, anger, pride, laziness and screens, drink, loneliness,
+  fear, identity) for ideas with their verses and a question each, the
+  stories, the passages readers return to, a walk through the cross
+  references from the whole study, and passages written to young men. One
+  click turns it into a notebook with a note per question.
+
 - **Notes on several verses at once**: in the reader, ctrl-click (cmd on a
   Mac) adds or drops a verse, shift-click takes every verse from the last one
   clicked, ctrl+shift-click adds that run, as in a file list. The verse panel
@@ -16,6 +24,17 @@ All notable changes to BibleLM. Format based on
 - **Export, your way**: the whole notebook, one book or one chapter, as one
   Markdown file, a file per book or a file per chapter, with the verses quoted
   above each note; or printed (and saved as PDF) with the pictures.
+
+- **Ornaments**: twelve hand-drawn ornaments dithered live in the theme's
+  ink: a vine headpiece opens each book and an urn closes it, the fleuron is
+  now dotted, a sun and lamp mark Morning and Evening on Daily, a compass rose
+  sits on the Atlas, a quill in an empty notebook. All of them in Settings,
+  developer mode.
+- **The trinity mark** on Home, glowing slowly in rubric and gilt.
+- **The rose mark** in Settings, About: the rose window filled with moving
+  dithered waves that the pointer stirs.
+- **The lit rose** beside the Lab's title: the window in dark metal, two
+  lights, rubric and gilt, circling it.
 
 ### Changed
 

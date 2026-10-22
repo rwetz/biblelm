@@ -27,6 +27,7 @@ import { HomeView } from "@/features/home/HomeView";
 import { ReadView, chapterStep, toggleVersePanel } from "@/features/read/ReadView";
 import { SearchView } from "@/features/search/SearchView";
 import { TopicsView } from "@/features/topics/TopicsView";
+import { STRUGGLES } from "@/lib/studies";
 import { AtlasView } from "@/features/atlas/AtlasView";
 import { GalleryView } from "@/features/gallery/GalleryView";
 import { DailyView } from "@/features/daily/DailyView";
@@ -181,6 +182,8 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       run: () => study.go(i.id),
     }));
     const reading: PaletteCommand[] = [
+      { id: "studies", label: "Studies for young men", group: "Study", icon: "document", keywords: ["temptation", "struggle", "men's group", "bible study"], run: () => study.openStudies() },
+      ...STRUGGLES.map((s) => ({ id: `study-${s.id}`, label: `Study: ${s.title}`, group: "Study", icon: "document" as const, keywords: ["temptation", "young men", ...s.topics], run: () => study.openStudies(s.id) })),
       { id: "next-ch", label: "Next chapter", group: "Read", icon: "chevron-right", shortcut: "]", run: () => chapterStep(1) },
       { id: "prev-ch", label: "Previous chapter", group: "Read", icon: "chevron-left", shortcut: "[", run: () => chapterStep(-1) },
       { id: "verse-panel", label: study.selected ? "Hide the verse panel" : "Show the verse panel", group: "Read", icon: "info", shortcut: "P", keywords: ["notes", "cross references", "sidebar"], run: () => { if (study.page !== "read") study.go("read"); toggleVersePanel(); } },

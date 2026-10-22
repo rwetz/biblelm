@@ -106,6 +106,20 @@ tag(note, name)
 > book or a file per chapter, with the verses quoted in the notebook's main
 > translation, or sends the same choice to Print illustrated.
 
+> **As built (Studies for young men):** Topics, Studies (`src/lib/studies.ts`,
+> `src/features/topics/Studies.tsx`) is a study finder for men around 18 to 25
+> fighting temptation: eight struggles (lust and pornography, anger, pride
+> and comparison, laziness and screens, drink and escape, loneliness, fear
+> about the future, identity and purpose). Each has hand-written ideas with
+> their verses quoted and a question, the stories where Scripture shows it,
+> the passages OpenBible readers vote for across its topics (merged by
+> reciprocal rank), and a study walk seeded with every verse the study quotes.
+> Passages written to young men sit beside every study. "Work through it in a
+> notebook" makes a notebook with a note per question. The headings and
+> questions are editorial, chosen by hand, shown as study notes, never as
+> Scripture; every reference is checked by a test. Each struggle is also in the
+> command palette.
+
 ## Atlas, Daily and the interlinear
 
 > **As built:** three study pages beyond the plan.

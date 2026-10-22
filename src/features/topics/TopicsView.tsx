@@ -16,12 +16,13 @@ import { Structure } from "./Structure";
 import { Words } from "./Words";
 import { Links } from "./Links";
 import { Echoes } from "./Echoes";
+import { Studies } from "./Studies";
 
-type Tab = "topics" | "walk" | "map" | "structure" | "words" | "links" | "echoes";
+type Tab = "topics" | "studies" | "walk" | "map" | "structure" | "words" | "links" | "echoes";
 
 export function TopicsView() {
-  const { topic, walk, translation } = useStudy();
-  const [tab, setTab] = useState<Tab>(walk ? "walk" : "topics");
+  const { topic, walk, studies, translation } = useStudy();
+  const [tab, setTab] = useState<Tab>(walk ? "walk" : studies !== null ? "studies" : "topics");
   const [t, error] = useTranslation(translation);
   const [index] = useIndex();
   const plate = usePagePlate(PAGE_PLATES.topics);
@@ -29,8 +30,9 @@ export function TopicsView() {
   const mercy = usePaintings().find((p) => p.id === PAGE_PAINTINGS.topics);
   useEffect(() => {
     if (walk) setTab("walk");
+    else if (studies !== null) setTab("studies");
     else if (topic) setTab("topics");
-  }, [walk, topic]);
+  }, [walk, topic, studies]);
 
   if (error) return <DataMissing message={error} />;
   return (
@@ -49,6 +51,7 @@ export function TopicsView() {
           onChange={setTab}
           segments={[
             { id: "topics", label: "Index", icon: "list-bullet" },
+            { id: "studies", label: "Studies", icon: "document" },
             { id: "walk", label: "Walk", icon: "nodes" },
             { id: "map", label: "Map", icon: "map" },
             { id: "structure", label: "Structure", icon: "grid" },
@@ -63,6 +66,8 @@ export function TopicsView() {
         <div className="grid flex-1 place-items-center"><Spinner /></div>
       ) : tab === "topics" ? (
         <TopicIndex t={t} index={index} />
+      ) : tab === "studies" ? (
+        <Studies t={t} index={index} />
       ) : tab === "walk" ? (
         <Walk t={t} index={index} />
       ) : tab === "map" ? (
