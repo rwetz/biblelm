@@ -27,8 +27,8 @@ import {
   TooltipTrigger,
   cn,
 } from "@nexis/design";
-import { ArtSpot, Engraving, Ornament, Painting, paintingShadow, usePagePlate, usePaintings, usePlates } from "@/art/Art";
-import { PAGE_PAINTINGS, PAGE_PLATES, paintingCredit, paintingUrl, type Plate } from "@/lib/art";
+import { ArtSpot, Dither, Engraving, Ornament, Painting, paintingShadow, usePagePlate, usePaintings, usePlates } from "@/art/Art";
+import { PAGE_PAINTINGS, PAGE_PLATES, paintingCredit, paintingUrl, plateUrl, type Plate } from "@/lib/art";
 import { formatRef, parseOsis, SHELVES, type Shelf } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
 import { bibleOrder, noteSpans, spansLabel, useNotebooks, type Note, type Notebook } from "@/store/notebooks";
@@ -247,7 +247,7 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
         ))}
         {!mine.length && (
           <p className="flex items-start gap-3 text-sm text-muted-foreground">
-            <Ornament name="quill" className="h-12" />
+            <NotebookLion />
             Open the reader, tap a verse, and write in the panel that opens. Ctrl-click or shift-click to write on several verses at once. Notes land here.
           </p>
         )}
@@ -285,6 +285,14 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
       </AlertDialog>
     </div>
   );
+}
+
+/** An empty notebook: Jerome's lion asleep, from Dürer's St Jerome in His Study. */
+function NotebookLion() {
+  const lion = usePagePlate(PAGE_PLATES.notebookEmpty);
+  const off = useStudy((s) => s.illustrations) === "off";
+  if (!lion || off) return <Ornament name="quill" className="h-12" />;
+  return <Dither src={plateUrl(lion.full)} dot={1} label={`${lion.title}, after ${lion.artist}`} className="aspect-[2/1] w-40 shrink-0 text-foreground" />;
 }
 
 function NoteCard({ n, onOpen, onChange, onTags, onDelete }: { n: Note; onOpen: () => void; onChange: (b: string) => void; onTags: (t: string[]) => void; onDelete: () => void }) {

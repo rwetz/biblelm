@@ -17,8 +17,8 @@ import {
   TooltipTrigger,
   cn,
 } from "@nexis/design";
-import { DitherHero, Fleuron, Ornament, PlateFigure, usePaintings, usePlates } from "@/art/Art";
-import { paintingCredit, paintingsInChapter, platesInChapter, type Painting } from "@/lib/art";
+import { Dither, DitherHero, Engraving, Fleuron, Ornament, PlateFigure, usePaintings, usePlates } from "@/art/Art";
+import { evangelistFor, paintingCredit, paintingsInChapter, platesInBook, platesInChapter, plateCredit, plateUrl, type Painting } from "@/lib/art";
 import { loadTranslation, runs, type Run, type Translation, type Verse } from "@/lib/bible";
 import { isHebrew, loadInterlinear, type BookWords } from "@/lib/interlinear";
 import { BOOKS, book as bookOf, bookName, formatRef, SHELVES, type Ref } from "@/lib/canon";
@@ -127,7 +127,7 @@ export function ReadView() {
             style={{ maxWidth: ts!.length > 1 ? "none" : columns ? "68rem" : "42rem", ["--scripture-face" as string]: FACES[face], ["--scripture-size" as string]: `${textSize}px` }}
           >
             <header className="mb-8 text-center">
-              {firstChapter && <Ornament name="vine" className="mx-auto mb-5 w-full max-w-[26rem]" />}
+              {firstChapter && <BookHead bookId={bookId} plates={plates} />}
               {b && b.shelf !== "protestant" && (
                 <Badge variant="outline" className="mb-3">{SHELVES.find((s) => s.id === b.shelf)?.label}</Badge>
               )}
@@ -149,6 +149,7 @@ export function ReadView() {
                 picked={picked}
                 onPick={onPick}
                 onPlateRef={(r) => read(r, { select: true })}
+                capArt={platesInBook(plates, bookId)[0]?.thumb}
               />
             )}
 
@@ -167,6 +168,22 @@ export function ReadView() {
       </div>
       {selected && selection.length > 0 && <VersePanel refSel={selected} verses={selection} translations={ts!} onClose={() => select(null)} shelves={shelves} onNavigate={(r) => read(r, { select: true })} onSetParallel={(p) => set({ parallel: p })} />}
     </div>
+  );
+}
+
+/**
+ * A book's first chapter opens with a headpiece: the evangelist's portrait
+ * over a Gospel (a sixteenth-century woodcut, each with his symbol), else the
+ * vine.
+ */
+function BookHead({ bookId, plates }: { bookId: string; plates: ReturnType<typeof usePlates> }) {
+  const evangelist = evangelistFor(plates, bookId);
+  if (!evangelist) return <Ornament name="vine" className="mx-auto mb-5 w-full max-w-[26rem]" />;
+  return (
+    <figure className="mx-auto mb-5 w-36">
+      <Engraving plate={evangelist} size="thumb" className="mx-auto w-full" />
+      <figcaption className="mt-1 font-garamond text-xs italic text-muted-foreground">{evangelist.title}, {plateCredit(evangelist)}</figcaption>
+    </figure>
   );
 }
 
@@ -223,6 +240,7 @@ function Chapter({
   picked,
   onPick,
   onPlateRef,
+  capArt,
 }: {
   verses: Verse[];
   plates: ReturnType<typeof usePlates>;
@@ -230,6 +248,8 @@ function Chapter({
   picked: Set<number>;
   onPick: OnPick;
   onPlateRef: (r: Ref) => void;
+  /** A plate of this book, dithered small under the chapter's initial. */
+  capArt?: { file: string; dir?: string; width: number; height: number };
 }) {
   const notebook = useNotebooks((s) => s.active);
   const notes = useNotebooks((s) => s.notes);
@@ -276,7 +296,7 @@ function Chapter({
                   className="cursor-pointer"
                 >
                   {!first && <sup className="vnum">{v.verse}</sup>}
-                  <VerseText raw={v.raw} dropcap={first} />
+                  <VerseText raw={v.raw} dropcap={first} capArt={first && capArt ? plateUrl(capArt) : undefined} />
                   {hasNote && <Icon name="note" size="xs" className="mx-0.5 inline align-baseline text-brand" />}{" "}
                 </span>
               );
@@ -347,13 +367,17 @@ function RunText({ r }: { r: Run }) {
  * Printed text: the KJV's supplied words in italics, the words of Christ
  * marked (red when red letter is on), an optional drop cap.
  */
-export function VerseText({ raw, dropcap = false }: { raw: string; dropcap?: boolean }) {
+export function VerseText({ raw, dropcap = false, capArt }: { raw: string; dropcap?: boolean; capArt?: string }) {
   const parts = runs(raw);
   if (dropcap && parts[0] && !parts[0].supplied && parts[0].text) {
     const [head, ...rest] = parts;
     return (
       <>
-        <span className="dropcap" aria-hidden>{head.text[0]}</span>
+        <span className={cn("dropcap", capArt && "relative isolate")} aria-hidden>
+          {/* A drop cap over a tiny cut of the book's art, as early printers set them. */}
+          {capArt && <Dither inline src={capArt} dot={1} reveal={false} focusY={35} className="absolute inset-x-[-0.05em] inset-y-[0.02em] -z-10 text-muted-foreground opacity-35" />}
+          {head.text[0]}
+        </span>
         <span className="sr-only">{head.text[0]}</span>
         <RunText r={{ ...head, text: head.text.slice(1) }} />
         {rest.map((r, i) => <RunText key={i} r={r} />)}

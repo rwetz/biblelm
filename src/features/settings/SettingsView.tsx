@@ -52,7 +52,7 @@ export function SettingsView() {
                 <Switch checked={theme.mode === "system"} onCheckedChange={(on) => theme.setMode(on ? "system" : theme.resolvedMode)} />
               </Field>
             )}
-            <Field label="Illustrations" hint="Doré's engravings beside the passages, the paintings that open their chapters, and the scenes on each page." inline>
+            <Field label="Illustrations" hint="Engravings and woodcuts beside the passages, the paintings that open their chapters, and the scenes on each page." inline>
               <Segmented
                 label="Illustrations"
                 size="sm"
@@ -175,6 +175,7 @@ export function SettingsView() {
               <li>Texts: public domain, from eBible.org.</li>
               <li>Cross references and topics: OpenBible.info, CC-BY.</li>
               <li>Illustrations: Gustave Doré, La Grande Bible de Tours (1866), public domain, via Wikimedia Commons.</li>
+              <li>Woodcuts and engravings: Albrecht Dürer (the Met, CC0), Julius Schnorr von Carolsfeld, William Blake (Yale Center for British Art, CC0), the Nuremberg Chronicle, the 1534 Luther Bible and the four evangelists (Rijksmuseum, CC0); public domain, via Wikimedia Commons.</li>
               <li>Paintings: Caravaggio, Rembrandt, Honthorst and Georges de La Tour, public domain (Wikimedia Commons; the Met and the Rijksmuseum, CC0).</li>
               <li>Places: OpenBible.info Bible Geocoding Data, CC BY 4.0. Coastlines and rivers: Natural Earth, public domain.</li>
               <li>People and the Hebrew and Greek interlinear: STEPBible (Tyndale House), TIPNR, TAHOT and TAGNT, CC BY 4.0.</li>

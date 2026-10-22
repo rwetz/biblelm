@@ -1,4 +1,6 @@
-// The Doré plates (scripts/art/dore.mjs) and the dithered heroes
+// The Doré plates (scripts/art/dore.mjs), the woodcuts and engravings of
+// other masters (scripts/art/woodcuts.mjs: Dürer, Schnorr, Blake, the
+// Nuremberg Chronicle, numbered from 1001) and the dithered heroes
 // (scripts/art/heroes.mjs). A plate knows the passage it depicts, so the
 // reader can set it beside that verse and every page can pick art that fits
 // what the page is for (docs/ART.md).
@@ -9,6 +11,8 @@ export interface PlateImage {
   file: string;
   width: number;
   height: number;
+  /** Folder under public/art: "dore" when unset, "woodcuts" for the others. */
+  dir?: string;
 }
 
 export interface Plate {
@@ -22,6 +26,14 @@ export interface Plate {
   source: string;
   full: PlateImage;
   thumb: PlateImage;
+  /** Set for every plate not by Doré. */
+  artist?: string;
+  year?: string;
+  licence?: string;
+  /** An evangelist's portrait: the Gospel it heads. */
+  book?: string;
+  /** Where the app uses a woodcut (woodcuts.mjs). */
+  role?: string;
 }
 
 export interface Hero {
@@ -42,7 +54,13 @@ export interface Hero {
 }
 
 const BASE = `${import.meta.env.BASE_URL}art`;
-export const plateUrl = (img: PlateImage) => `${BASE}/dore/${img.file}`;
+export const plateUrl = (img: PlateImage) => `${BASE}/${img.dir ?? "dore"}/${img.file}`;
+/** Who made a plate, for its caption. */
+export const plateCredit = (p: Plate) => (p.artist ? `${p.artist}, ${p.year}` : "Gustave Doré, 1866");
+const json = <T,>(url: string): Promise<T[]> =>
+  fetch(url)
+    .then((r) => (r.ok ? (r.json() as Promise<T[]>) : []))
+    .catch(() => []);
 export const heroUrl = (h: Hero) => `${BASE}/heroes/${h.tone ?? h.file}`;
 /** The untouched engraving behind a hero, falling back to the levelled tone. */
 export const heroSrcUrl = (h: Hero) => `${BASE}/heroes/${h.src ?? h.tone ?? h.file}`;
@@ -51,9 +69,7 @@ let plates: Promise<Plate[]> | null = null;
 let heroes: Promise<Hero[]> | null = null;
 
 export function loadPlates(): Promise<Plate[]> {
-  plates ??= fetch(`${BASE}/dore/plates.json`)
-    .then((r) => (r.ok ? (r.json() as Promise<Plate[]>) : []))
-    .catch(() => []);
+  plates ??= Promise.all([json<Plate>(`${BASE}/dore/plates.json`), json<Plate>(`${BASE}/woodcuts/woodcuts.json`)]).then(([d, w]) => [...d, ...w]);
   return plates;
 }
 
@@ -79,6 +95,9 @@ export function rotation(n: number, ms: number, now = Date.now()): number {
   return n ? Math.floor(now / ms) % n : 0;
 }
 
+/** The evangelist's portrait that heads a Gospel. */
+export const evangelistFor = (all: Plate[], book: string) => all.find((p) => p.role === "Gospel head" && p.book === book);
+
 export function platesInChapter(all: Plate[], book: string, chapter: number): Plate[] {
   return all.filter((p) => p.ref?.book === book && p.ref.chapter === chapter).sort((a, b) => (a.ref!.verse ?? 0) - (b.ref!.verse ?? 0));
 }
@@ -94,16 +113,18 @@ export function platesInBook(all: Plate[], book: string): Plate[] {
 
 /** Tier 2: the corner plate for each page (docs/ART.md, Placement). */
 export const PAGE_PLATES: Record<string, number> = {
-  search: 21, // Jacob's Dream: searching between heaven and earth
-  topics: 236, // St. John at Patmos
-  notebooks: 126, // Baruch writing Jeremiah's prophecies: the scribe at work
+  search: 1001, // Schnorr, Jacob's Dream: searching between heaven and earth
+  topics: 1006, // Dürer, St John before God and the Elders
+  notebooks: 1004, // Dürer, St Jerome in His Study: the scholar translating
   apocrypha: 140, // Tobias and the Angel
   translations: 10, // The Confusion of Tongues
   training: 128, // Ezekiel Prophesying
-  model: 40, // Moses coming down from Sinai with the tablets
-  settings: 241, // The New Jerusalem
+  model: 1003, // Schnorr, Moses receives the tablets: the artifact you carry down
+  settings: 1009, // The Nuremberg Chronicle's creation of the world
   empty: 93, // Elijah nourished by an angel
-  error: 124, // The Destruction of Leviathan
+  noResults: 1002, // Schnorr, Abraham told to count the stars
+  notebookEmpty: 1005, // Dürer, Jerome's lion asleep
+  error: 1007, // Dürer, St Michael fighting the dragon
 };
 
 /** The sidebar vignette on pages that already carry a corner plate, so the two never repeat. */
@@ -112,7 +133,7 @@ export const SIDEBAR_PLATES: Record<string, number> = {
   topics: 225, // The Apostles Preaching the Gospel
   notebooks: 157, // Baruch
   lab: 128, // Ezekiel Prophesying: wheels within wheels, the machine
-  settings: 112, // The Rebuilding of the Temple
+  settings: 1010, // The 1534 Luther Bible's title page, Cranach's workshop
 };
 
 export const plateNumber =(all: Plate[], n: number) => all.find((p) => p.n === n);

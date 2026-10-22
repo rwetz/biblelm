@@ -186,7 +186,28 @@ top-right, masked with a soft radial edge. Static, low contrast.
 > ink densities, flipped for dark schemes so Dither's lit dots still draw the
 > figure. Developer mode in Settings shows them all. The evangelist symbols,
 > the sleeping lion and the dragon are figures, not ornament: they will be
-> cut from public-domain Dürer woodcuts instead.
+> cut from public-domain woodcuts instead (below).
+>
+> **As built (woodcuts, M19):** the other masters arrive through
+> `scripts/art/woodcuts.mjs`, which takes only Wikimedia Commons files tagged
+> public domain or museum scans released as CC0 (the Met, the Rijksmuseum, the
+> Yale Center for British Art), checks each file's licence when it fetches it,
+> and refuses anything else; credits in [woodcut-credits.md](woodcut-credits.md).
+> They load as plates numbered from 1001 (`loadPlates`), so captions name the
+> real artist (`plateCredit`) and the reader sets the Apocalypse woodcuts in
+> Revelation 4 and 12 and Blake's morning stars in Job 38. Placement now
+> follows the plan: Schnorr's Jacob's Dream on Search and Moses receiving the
+> tablets on Model; Dürer's St Jerome on Notebooks and St John before the
+> Elders on Topics; the Nuremberg Chronicle's creation roundel on Settings
+> with the 1534 Luther Bible's title page (Cranach's workshop) beside it. Tier 3:
+> each Gospel opens with its evangelist and his symbol (a sixteenth-century
+> set at the Rijksmuseum; the Book of Kells page was passed over because a
+> dithered illumination turns to mud); every chapter's initial sits over a
+> tiny dither of its book's first plate (`VerseText` `capArt`); an empty
+> notebook shows Jerome's lion asleep, cut from Dürer's engraving; a search
+> with no results shows Schnorr's Abraham counting the stars; a page that
+> crashes shows Dürer's St Michael and the dragon. Cranach's initials were
+> not needed: the drop caps take their art from each book's own plates.
 >
 > **The trinity mark** on Home (`src/art/TrinityMark.tsx`) is the one piece
 > of live colour: the knot's distance field lit by a WebGL2 glow in the

@@ -45,6 +45,8 @@ export function TopicsView() {
           <p className="mt-1 text-sm text-muted-foreground">Themes across Scripture, the paths cross references draw, and the shape of a passage.</p>
         </div>
         <span className="flex-1" />
+        {/* Eight views: on a narrow window the strip scrolls rather than running off the edge. */}
+        <div className="-mb-1 min-w-0 shrink overflow-x-auto pb-1">
         <Segmented
           label="View"
           value={tab}
@@ -60,6 +62,7 @@ export function TopicsView() {
             { id: "echoes", label: "Echoes", icon: "quote" },
           ]}
         />
+        </div>
       </div>
       </DitherHero>
       {!t || !index ? (

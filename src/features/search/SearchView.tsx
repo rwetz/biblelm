@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, Icon, Input, ResultArrival, SectionLabel, Spinner, Stat, cn } from "@nexis/design";
-import { PlatePage, usePagePlate } from "@/art/Art";
+import { ArtSpot, PlatePage, usePagePlate } from "@/art/Art";
 import { PAGE_PLATES } from "@/lib/art";
 import type { Translation, Verse, VerseIndex } from "@/lib/bible";
 import { bookName, formatRef, type Ref } from "@/lib/canon";
@@ -287,8 +287,18 @@ function Exact({ r, t, onOpen }: { r: SearchResult; t: Translation; onOpen: (r: 
       );
     case "not_found":
     case "no_results":
-      return <p className="text-sm text-muted-foreground">{r.message}</p>;
+      return <NoResults message={r.message} />;
   }
+}
+
+/** Nothing found: Abraham told to look toward heaven and count the stars (Schnorr). */
+function NoResults({ message }: { message: string }) {
+  const plate = usePagePlate(PAGE_PLATES.noResults);
+  return (
+    <ArtSpot plate={plate} title={<span className="text-xl">Nothing here</span>} className="mx-0 items-start text-left">
+      <p className="mt-1 text-sm">{message}</p>
+    </ArtSpot>
+  );
 }
 
 function Meaning({ query, t, index, onOpen }: { query: string; t: Translation; index: VerseIndex; onOpen: (r: Ref) => void }) {

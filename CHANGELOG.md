@@ -8,6 +8,18 @@ All notable changes to BibleLM. Format based on
 
 ### Added
 
+- **Woodcuts and engravings beyond Doré**, only from public-domain or CC0
+  sources and checked file by file (`scripts/art/woodcuts.mjs`): Dürer's
+  Apocalypse and St Jerome, Schnorr von Carolsfeld, Blake's Job, the
+  Nuremberg Chronicle, the 1534 Luther Bible. Each Gospel opens with its
+  evangelist, chapter initials sit over a tiny dither of the book's art, and
+  the empty notebook (Jerome's lion), empty search (Abraham and the stars) and
+  error page (St Michael and the dragon) have their pictures.
+- **The Lab on Axon**: with Axon 0.11 or newer installed, Training can run on
+  Axon (no PyTorch) and Generate streams from it.
+- **Jev's shadow evaluation** (docs/evals/shadow.md): on 30 study questions,
+  reranking search lifts nDCG@10 from 0.33 to 0.55.
+
 - **Studies for young men** (Topics, Studies, or "Study:" in the command
   palette): for men around 18 to 25 fighting temptation. Pick a struggle (lust
   and pornography, anger, pride, laziness and screens, drink, loneliness,
@@ -37,6 +49,8 @@ All notable changes to BibleLM. Format based on
   lights, rubric and gilt, circling it.
 
 ### Changed
+
+- The Topics view strip scrolls on a narrow window instead of running off it.
 
 - Notes file version 3: a note can cover several separate runs of verses in
   one chapter (`more`). Older files load unchanged.
