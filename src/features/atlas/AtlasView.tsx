@@ -5,7 +5,10 @@
 //   Timeline  the eras, with conventional dates (approximate, and said so).
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Input, SectionLabel, Segmented, Spinner, cn } from "@nexis/design";
+import { Button, SectionLabel,Spinner, cn, useReducedMotion } from "@nexis/design";
+import { m } from "motion/react";
+import type { OrnamentName } from "@/art/ornaments";
+import { Ornament } from "@/art/Art";
 import { ERAS, loadLand, personName, project, yearLabel, type Land, type Person, type Place } from "@/lib/atlas";
 import type { Translation, VerseIndex } from "@/lib/bible";
 import { BOOKS, formatRef } from "@/lib/canon";
@@ -13,6 +16,9 @@ import { useIndex, useTranslation } from "@/lib/hooks";
 import { useStudy } from "@/store/study";
 import { DataMissing } from "@/features/read/ReadView";
 import { useAtlas } from "./VerseAtlas";
+import { Choice, SearchField } from "@/app/controls";
+import { PageMark } from "@/art/SidebarArt";
+import { Sections } from "@/app/Sections";
 
 type Tab = "places" | "people" | "timeline";
 
@@ -31,20 +37,18 @@ export function AtlasView() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="border-b border-border/60">
-        <div className="mx-auto flex w-full max-w-6xl items-end gap-4 px-8 pb-3 pt-8">
-          <div>
-            <h1 className="font-blackletter text-4xl">Atlas</h1>
-            <p className="mt-1 text-sm text-muted-foreground">The places Scripture names, the people in it, and the ages they lived in.</p>
-          </div>
-          <span className="flex-1" />
-          <Segmented
-            label="View"
+        <div className="mx-auto w-full max-w-6xl px-8 pb-3 pt-8">
+          <h1 className="flex items-center gap-3 font-blackletter text-4xl"><PageMark page="atlas" />Atlas</h1>
+          <p className="mt-1 text-sm text-muted-foreground">The places Scripture names, the people in it, and the ages they lived in.</p>
+          <Sections
+            label="Atlas"
             value={tab}
             onChange={setTab}
-            segments={[
-              { id: "places", label: "Places", icon: "map" },
-              { id: "people", label: "People", icon: "users" },
-              { id: "timeline", label: "Timeline", icon: "clock" },
+            className="mt-4"
+            sections={[
+              { id: "places", name: "Places", gist: "the engraved map", mark: "compass" },
+              { id: "people", name: "People", gist: "families and verses", mark: "angel" },
+              { id: "timeline", name: "Timeline", gist: "the ages, in order", mark: "sun" },
             ]}
           />
         </div>
@@ -118,19 +122,17 @@ function Places({ t, index, places, initial }: { t: Translation; index: VerseInd
       <div className="relative min-w-0 flex-1">
         {land ? <EngravedMap land={land} places={shown} selected={place} onSelect={(p) => setSel(p.id)} /> : <div className="grid h-full place-items-center"><Spinner /></div>}
         <div className="absolute left-4 top-4 flex gap-2">
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find a place" className="h-8 w-48 bg-card/90" />
-          <select
+          <SearchField size="sm" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find a place" className="w-52 bg-card/90 backdrop-blur-sm" />
+          <Choice
+            size="sm"
+            label="Places named in a book"
             value={bookFilter}
-            onChange={(e) => setBookFilter(e.target.value)}
-            className="h-8 rounded-md border border-input bg-card/90 px-2 text-sm"
-            aria-label="Places named in a book"
-          >
-            <option value="">Every book</option>
-            {books.map((b) => (
-              <option key={b.osis} value={b.osis}>{b.name}</option>
-            ))}
-          </select>
+            onChange={setBookFilter}
+            options={[{ value: "", label: "Every book" }, ...books.map((b) => ({ value: b.osis, label: b.name }))]}
+            className="w-40 bg-card/90 backdrop-blur-sm"
+          />
         </div>
+        {land && <Ornament name="compass" className="pointer-events-none absolute bottom-10 right-6 w-24 text-muted-foreground opacity-80" />}
         <p className="pointer-events-none absolute bottom-3 left-4 text-[11px] text-muted-foreground">
           Locations from OpenBible.info; many ancient sites are uncertain. Coastlines from Natural Earth.
         </p>
@@ -172,6 +174,40 @@ function Places({ t, index, places, initial }: { t: Translation; index: VerseInd
  * with fine horizontal lines, rivers in ink, places as dots. Drag to pan,
  * wheel to zoom.
  */
+/** Seas and lakes named in the old maps' italic, larger for the larger waters. */
+const SEAS = [
+  { name: "The Great Sea", lon: 32.4, lat: 33.4, size: 11 },
+  { name: "Salt Sea", lon: 35.5, lat: 31.45, size: 4 },
+  { name: "Sea of Galilee", lon: 35.95, lat: 32.95, size: 3.4 },
+  { name: "Red Sea", lon: 36.4, lat: 24.5, size: 9 },
+  { name: "Persian Gulf", lon: 50.5, lat: 27.6, size: 8 },
+];
+
+/**
+ * The map's furniture, outside the zoomable map: a cartouche naming it, and a
+ * scale bar that follows the zoom (the projection is near enough equirectangular
+ * here that one bar serves the whole view).
+ */
+function MapFurniture({ milesPer100px }: { milesPer100px: number }) {
+  const nice = [5, 10, 25, 50, 100, 250, 500].find((n) => n >= milesPer100px * 0.6) ?? 500;
+  const px = (nice / milesPer100px) * 100;
+  return (
+    <div className="pointer-events-none absolute bottom-10 left-4 flex flex-col items-start gap-3">
+      <div className="relative rounded-sm border border-foreground/40 bg-background/85 px-5 py-2 text-center shadow-sm backdrop-blur-[1px]">
+        <span className="absolute inset-1 rounded-[1px] border border-foreground/20" />
+        <p className="font-blackletter text-2xl leading-none">Terra Sancta</p>
+        <p className="mt-0.5 font-garamond text-[11px] italic text-muted-foreground">and the lands about it</p>
+      </div>
+      <div className="flex flex-col gap-1">
+        <div className="flex" style={{ width: px }}>
+          {[0, 1, 2, 3].map((i) => <span key={i} className={cn("h-1.5 flex-1 border border-foreground/60", i % 2 ? "bg-background" : "bg-foreground/70")} />)}
+        </div>
+        <span className="font-garamond text-[11px] italic text-muted-foreground">{nice} miles</span>
+      </div>
+    </div>
+  );
+}
+
 function EngravedMap({ land, places, selected, onSelect }: { land: Land; places: Place[]; selected?: Place; onSelect: (p: Place) => void }) {
   const W = 1000, H = 640;
   const at = useMemo(() => project(land, W, H), [land]);
@@ -183,14 +219,43 @@ function EngravedMap({ land, places, selected, onSelect }: { land: Land; places:
   });
   const drag = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null);
   const svg = useRef<SVGSVGElement>(null);
+  // Choosing a place glides the map there (and closer in, if it is far out)
+  // rather than jumping: half a second, eased.
+  const reduced = useReducedMotion();
   useEffect(() => {
     if (!selected) return;
     const [x, y] = at(selected.lon, selected.lat);
-    setView((v) => ({ ...v, x: x - v.w / 2, y: y - v.h / 2 }));
-  }, [selected, at]);
+    let raf = 0;
+    setView((from) => {
+      const w = Math.min(from.w, 260), h = (w * H) / W;
+      const to = { x: x - w / 2, y: y - h / 2, w, h };
+      if (reduced) return to;
+      const t0 = performance.now();
+      const step = (now: number) => {
+        const k = Math.min(1, (now - t0) / 520);
+        const e = 1 - Math.pow(1 - k, 3);
+        setView({ x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e, w: from.w + (to.w - from.w) * e, h: from.h + (to.h - from.h) * e });
+        if (k < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+      return from;
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [selected, at, reduced]);
   const path = (ring: [number, number][]) => ring.map(([lon, lat], i) => `${i ? "L" : "M"}${at(lon, lat).map((n) => n.toFixed(1)).join(",")}`).join("") + "Z";
   const line = (pts: [number, number][]) => pts.map(([lon, lat], i) => `${i ? "L" : "M"}${at(lon, lat).map((n) => n.toFixed(1)).join(",")}`).join("");
   const zoom = view.w / W;
+  // About 69 miles a degree of latitude; the projection's y scale, measured once.
+  const pxPerDeg = useMemo(() => Math.abs(at(35, 31)[1] - at(35, 32)[1]), [at]);
+  const [boxW, setBoxW] = useState(1000);
+  useEffect(() => {
+    const el = svg.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setBoxW(el.clientWidth || 1000));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const milesPer100px = ((100 * view.w) / boxW / pxPerDeg) * 69;
   const max = places.reduce((m, p) => Math.max(m, p.verses.length), 1);
   // Label the most named places first, skipping any label that would overlap one already placed.
   const labelled = useMemo(() => {
@@ -218,6 +283,8 @@ function EngravedMap({ land, places, selected, onSelect }: { land: Land; places:
     });
   };
   return (
+    <>
+    <MapFurniture milesPer100px={milesPer100px} />
     <svg
       ref={svg}
       viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
@@ -243,21 +310,42 @@ function EngravedMap({ land, places, selected, onSelect }: { land: Land; places:
         </pattern>
       </defs>
       <rect x={-W} y={-H} width={W * 3} height={H * 3} fill="url(#sea-rule)" />
+      {/* Engraved water-lines: the coast drawn again, wider and fainter, as the old maps rippled their shores. */}
+      {[7, 4.2, 2.2].map((wdt, k) => (
+        <g key={wdt} fill="none" stroke="var(--background)" strokeWidth={wdt * zoom} strokeOpacity={0.55 - k * 0.12} strokeLinejoin="round">
+          {land.land.map((r, i) => <path key={i} d={path(r)} />)}
+        </g>
+      ))}
       {land.land.map((r, i) => (
         <path key={i} d={path(r)} fill="var(--background)" stroke="var(--foreground)" strokeWidth={0.9 * zoom} strokeOpacity="0.7" />
       ))}
+      {SEAS.map((sea) => {
+        const [x, y] = at(sea.lon, sea.lat);
+        return (
+          <text key={sea.name} x={x} y={y} textAnchor="middle" fontSize={sea.size * zoom} letterSpacing={sea.size * 0.35 * zoom} className="font-garamond" fill="var(--muted-foreground)" style={{ fontStyle: "italic" }} opacity="0.85">
+            {sea.name}
+          </text>
+        );
+      })}
       {land.lakes.map((r, i) => (
         <path key={i} d={path(r)} fill="url(#sea-rule)" stroke="var(--foreground)" strokeWidth={0.6 * zoom} strokeOpacity="0.6" />
       ))}
       {land.rivers.map((r, i) => (
         <path key={i} d={line(r.line)} fill="none" stroke="var(--foreground)" strokeWidth={0.8 * zoom} strokeOpacity="0.55" />
       ))}
-      {places.map((p) => {
+      {places.map((p, rank) => {
         const [x, y] = at(p.lon, p.lat);
         const s = (0.9 + 3.2 * Math.sqrt(p.verses.length / max)) * zoom;
         const on = selected?.id === p.id;
         return (
-          <g key={p.id} onClick={(e) => { e.stopPropagation(); onSelect(p); }} className="cursor-pointer">
+          // The most named places appear first, the rest after them (atlas-pop in styles.css).
+          <g key={p.id} onClick={(e) => { e.stopPropagation(); onSelect(p); }} className="atlas-pop cursor-pointer" style={{ animationDelay: `${Math.min(rank, 300) * 4}ms` }}>
+            {on && (
+              <circle cx={x} cy={y} r={s * 1.6} fill="none" stroke="var(--brand)" strokeWidth={0.6 * zoom}>
+                <animate attributeName="r" from={s * 1.6} to={s * 5} dur="1.8s" repeatCount="indefinite" />
+                <animate attributeName="opacity" from="0.9" to="0" dur="1.8s" repeatCount="indefinite" />
+              </circle>
+            )}
             <circle cx={x} cy={y} r={on ? s * 1.6 : s} fill={on ? "var(--brand)" : "var(--foreground)"} fillOpacity={p.sure >= 0.5 ? 0.85 : 0.4} />
             {(labelled.has(p.id) || on) && (
               <text x={x + s * 1.6} y={y + s * 0.6} fontSize={11 * zoom} className="font-garamond" fill={on ? "var(--brand)" : "var(--foreground)"} style={{ fontStyle: "italic" }}>
@@ -268,6 +356,7 @@ function EngravedMap({ land, places, selected, onSelect }: { land: Land; places:
         );
       })}
     </svg>
+    </>
   );
 }
 
@@ -288,7 +377,7 @@ function People({ t, index, people, initial }: { t: Translation; index: VerseInd
     <div className="flex min-h-0 flex-1">
       <aside className="flex w-72 shrink-0 flex-col border-r border-border/60">
         <div className="p-3">
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Find among ${people.length} people`} className="h-8" />
+          <SearchField size="sm" value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Find among ${people.length} people`} />
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4">
           {shown.slice(0, 200).map((p) => (
@@ -380,37 +469,63 @@ function FamilyTree({ person, byId, onSelect }: { person: Person; byId: Map<stri
 
 // ── timeline ────────────────────────────────────────────────────────────────
 
+/** An ornament for each era, in order: creation's sun, the patriarchs' wanderings, Egypt's lamp, and on. */
+const ERA_ORNAMENTS: OrnamentName[] = ["sun", "compass", "lamp", "fleuron", "urn", "wheels", "tetragrammaton", "ihs", "chi-rho", "cross"];
+
 function Timeline({ people, onPerson }: { people: Person[]; onPerson: (id: string) => void }) {
+  const [hover, setHover] = useState<string | null>(null);
+  const reduced = useReducedMotion();
   const dated = ERAS.filter((e) => !Number.isNaN(e.from));
   const start = -2100, end = 120;
   const pct = (y: number) => ((y - start) / (end - start)) * 100;
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto max-w-6xl px-8 py-8">
-        <div className="relative h-16">
-          <div className="absolute inset-x-0 top-8 h-px bg-border" />
+        <div className="relative h-20">
+          <div className="absolute inset-x-0 top-9 h-px bg-border" />
           {dated.map((e, i) => (
-            <div
+            <button
               key={e.name}
-              className={cn("absolute top-5 h-6 rounded-sm border border-foreground/20", i % 2 ? "bg-muted" : "bg-muted/50")}
-              style={{ left: `${pct(e.from)}%`, width: `${pct(e.to) - pct(e.from)}%` }}
+              type="button"
+              onClick={() => document.getElementById(`era-${i + 1}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              onMouseEnter={() => setHover(e.name)}
+              onMouseLeave={() => setHover(null)}
+              className={cn(
+                "era-band absolute top-5 h-8 rounded-sm border transition-[transform,border-color] duration-200",
+                hover === e.name ? "-translate-y-0.5 border-foreground/70" : "border-foreground/25",
+                i % 2 ? "era-hatch" : "era-hatch-fine",
+              )}
+              style={{ left: `${pct(e.from)}%`, width: `${pct(e.to) - pct(e.from)}%`, animationDelay: `${i * 70}ms` }}
               title={`${e.name}: ${yearLabel(e.from)} to ${yearLabel(e.to)}`}
+              aria-label={e.name}
             />
           ))}
           {[-2000, -1500, -1000, -500, 1].map((y) => (
-            <span key={y} className="absolute top-12 -translate-x-1/2 text-[10px] text-muted-foreground" style={{ left: `${pct(y)}%` }}>
+            <span key={y} className="absolute top-[3.75rem] -translate-x-1/2 text-[10px] text-muted-foreground" style={{ left: `${pct(y)}%` }}>
               {yearLabel(y === 1 ? 1 : y)}
             </span>
           ))}
+          {[-2000, -1500, -1000, -500, 1].map((y) => <span key={`t${y}`} className="absolute top-[3.25rem] h-1.5 w-px bg-foreground/40" style={{ left: `${pct(y)}%` }} />)}
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
           Conventional dates, as most study Bibles print them. They are approximate, and for the early periods scholars differ widely.
         </p>
         <div className="mt-6 space-y-6">
-          {ERAS.map((e) => {
+          {ERAS.map((e, ei) => {
             const here = people.filter((p) => p.era === e.name).slice(0, 16);
             return (
-              <section key={e.name} className="grid grid-cols-[12rem_1fr] gap-6 border-t border-border/60 pt-4">
+              <m.section
+                key={e.name}
+                id={`era-${ei}`}
+                onMouseEnter={() => setHover(e.name)}
+                onMouseLeave={() => setHover(null)}
+                className={cn("grid scroll-mt-4 grid-cols-[3rem_12rem_1fr] gap-6 border-t pt-4 transition-colors", hover === e.name ? "border-foreground/40" : "border-border/60")}
+                initial={reduced ? false : { opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              >
+                <Ornament name={ERA_ORNAMENTS[ei % ERA_ORNAMENTS.length]} reveal={false} level={hover === e.name ? 1 : 0.55} className="mt-1 w-10 text-muted-foreground" />
                 <div>
                   <h3 className="font-garamond text-xl">{e.name}</h3>
                   <p className="text-xs text-muted-foreground">{Number.isNaN(e.from) ? "Undated" : `c. ${yearLabel(e.from)} to ${yearLabel(e.to)}`}</p>
@@ -428,7 +543,7 @@ function Timeline({ people, onPerson }: { people: Person[]; onPerson: (id: strin
                     </div>
                   )}
                 </div>
-              </section>
+              </m.section>
             );
           })}
         </div>

@@ -4,7 +4,8 @@
 
 import { useMemo } from "react";
 import { Button, Field, Icon, Panel, Slider, Switch, cn } from "@nexis/design";
-import { Dither, Engraving, useHeroes, usePlates } from "@/art/Art";
+import { Dither, Engraving, Ornament, useHeroes, usePlates } from "@/art/Art";
+import { ORNAMENTS, type OrnamentName } from "@/art/ornaments";
 import { heroUrl, plateUrl, seasonalHero } from "@/lib/art";
 import { formatRef } from "@/lib/canon";
 import { useStudy } from "@/store/study";
@@ -107,6 +108,20 @@ export function DeveloperPanel() {
                   </div>
                 </div>
               )}
+            </section>
+
+            <section>
+              <p className="mb-2 text-sm font-medium">Ornaments</p>
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                {(Object.keys(ORNAMENTS) as OrnamentName[]).map((name) => (
+                  <div key={name} className="flex flex-col items-center gap-1 rounded-lg p-2 ring-1 ring-foreground/10">
+                    <div className="grid h-20 w-full place-items-center">
+                      <Ornament name={name} className={ORNAMENTS[name].w > ORNAMENTS[name].h * 1.5 ? "w-full" : "h-20"} />
+                    </div>
+                    <span className="text-[11px] text-muted-foreground">{ORNAMENTS[name].title}</span>
+                  </div>
+                ))}
+              </div>
             </section>
           </>
         )}

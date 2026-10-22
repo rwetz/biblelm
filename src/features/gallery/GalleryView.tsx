@@ -3,11 +3,13 @@
 // dots); Doré's plates as engravings.
 
 import { useMemo, useState } from "react";
-import { Segmented, cn } from "@nexis/design";
+import {cn } from "@nexis/design";
 import { DitherHero, Engraving, usePaintings, usePlates } from "@/art/Art";
-import { byBibleOrder, PAGE_PAINTINGS, paintingCredit, paintingUrl, type Painting, type Plate } from "@/lib/art";
+import { byBibleOrder, PAGE_PAINTINGS, paintingCredit, paintingUrl, plateCredit, type Painting, type Plate } from "@/lib/art";
 import { bookName, formatRef } from "@/lib/canon";
 import { useStudy } from "@/store/study";
+import { PageMark } from "@/art/SidebarArt";
+import { Sections } from "@/app/Sections";
 
 type Show = "paintings" | "plates";
 
@@ -18,7 +20,9 @@ export function GalleryView() {
   const [show, setShow] = useState<Show>("paintings");
   const hero = paintings.find((p) => p.id === PAGE_PAINTINGS.gallery);
   const groups = useMemo(() => {
-    const items: (Painting | Plate)[] = show === "paintings" ? [...paintings].sort(byBibleOrder) : plates;
+    // A detail cut from a plate already shown (Jerome's lion, Merian's wheel) is not a picture of its own.
+    const DETAILS = new Set(["empty notebook", "ophan", "living creature"]);
+    const items: (Painting | Plate)[] = show === "paintings" ? [...paintings].sort(byBibleOrder) : plates.filter((p) => !DETAILS.has(p.role ?? ""));
     const out: [string, (Painting | Plate)[]][] = [];
     for (const it of items) {
       const key = it.ref ? it.ref.book : "";
@@ -33,30 +37,31 @@ export function GalleryView() {
       <DitherHero hero={hero} height="15rem" clearLeft fadeFrom={45} caption={false}>
         <div className="mx-auto flex w-full max-w-6xl flex-1 items-end gap-4 px-8 pb-4">
           <div>
-            <h1 className="font-blackletter text-5xl">Gallery</h1>
+            <h1 className="flex items-center gap-3 font-blackletter text-5xl"><PageMark page="gallery" />Gallery</h1>
             <p className="mt-1 max-w-md text-sm text-muted-foreground">
-              Caravaggio, Rembrandt and their followers in oil, and Doré's engravings. Each opens beside the passage it shows.
+              Caravaggio, Rembrandt and their followers in oil; Doré, Dürer, Schnorr and Blake in engraving and woodcut. Each opens beside the passage it shows.
             </p>
           </div>
-          <span className="flex-1" />
-          <Segmented
-            label="Show"
-            value={show}
-            onChange={setShow}
-            segments={[
-              { id: "paintings", label: `Paintings (${paintings.length})`, icon: "image" },
-              { id: "plates", label: `Doré (${plates.length})`, icon: "document" },
-            ]}
-          />
         </div>
       </DitherHero>
+      <div className="mx-auto w-full max-w-6xl px-8 pt-2">
+        <Sections
+          label="Gallery"
+          value={show}
+          onChange={setShow}
+          sections={[
+            { id: "paintings", name: "Paintings", gist: `${paintings.length} in oil, in colour`, mark: "lamp" },
+            { id: "plates", name: "Engravings", gist: `${plates.length} plates and woodcuts`, mark: "fleuron" },
+          ]}
+        />
+      </div>
       <div className="mx-auto w-full max-w-6xl px-8 pb-20">
         {groups.map(([book, items]) => (
           <section key={book || "none"} className="mt-8">
             <h2 className="font-blackletter text-2xl">{book ? bookName(book) : "Beside the Scriptures"}</h2>
             <div className={cn("mt-3 grid gap-x-5 gap-y-6", show === "paintings" ? "grid-cols-[repeat(auto-fill,minmax(14rem,1fr))]" : "grid-cols-[repeat(auto-fill,minmax(9rem,1fr))]")}>
               {items.map((it) => {
-                const painting = "artist" in it ? it : null;
+                const painting = "medium" in it ? it : null;
                 return (
                   <button
                     key={it.id}
@@ -79,7 +84,7 @@ export function GalleryView() {
                     </div>
                     <p className="mt-2 font-garamond text-[15px] leading-snug group-hover:underline">{it.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {painting ? paintingCredit(painting) : "Doré, 1866"}
+                      {painting ? paintingCredit(painting) : plateCredit(it as Plate)}
                       {it.ref && <> · {formatRef(it.ref)}</>}
                     </p>
                   </button>

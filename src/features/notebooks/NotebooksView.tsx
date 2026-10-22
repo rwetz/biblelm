@@ -25,17 +25,18 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  IN_TAURI,
   cn,
 } from "@nexis/design";
-import { ArtSpot, Engraving, Painting, paintingShadow, usePagePlate, usePaintings, usePlates } from "@/art/Art";
-import { PAGE_PAINTINGS, PAGE_PLATES, paintingCredit, paintingUrl, type Plate } from "@/lib/art";
-import { backend } from "@/lib/backend";
+import { ArtSpot, Dither, Engraving, Ornament, Painting, paintingShadow, usePagePlate, usePaintings, usePlates } from "@/art/Art";
+import { PAGE_PAINTINGS, PAGE_PLATES, paintingCredit, paintingUrl, plateUrl, type Plate } from "@/lib/art";
 import { formatRef, parseOsis, SHELVES, type Shelf } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
-import { toMarkdown, useNotebooks, type Note, type Notebook } from "@/store/notebooks";
+import { bibleOrder, noteSpans, spansLabel, useNotebooks, type Note, type Notebook } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
+import { ExportDialog, type PrintScope } from "./ExportDialog";
 import { PrintNotebook } from "./PrintNotebook";
+import { SearchField } from "@/app/controls";
+import { PageMark } from "@/art/SidebarArt";
 
 const label = (osis: string) => {
   const r = parseOsis(osis);
@@ -57,7 +58,7 @@ export function NotebooksView() {
     <div className="relative flex min-h-0 flex-1">
       <aside className="flex w-72 shrink-0 flex-col border-r border-border/60 bg-sidebar/40">
         <div className="flex items-center gap-2 px-4 pb-2 pt-6">
-          <h1 className="font-blackletter text-3xl">Notebooks</h1>
+          <h1 className="flex items-center gap-3 font-blackletter text-3xl"><PageMark page="notebooks" />Notebooks</h1>
           <span className="flex-1" />
           <MergeButton />
           <Button variant="ghost" size="icon-sm" aria-label="New notebook" onClick={() => setCreating(true)}>
@@ -184,15 +185,16 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
   const study = useStudy();
   const plates = usePlates();
   const [editing, setEditing] = useState(false);
-  const [printing, setPrinting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [printing, setPrinting] = useState<PrintScope | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [filter, setFilter] = useState("");
   const mine = useMemo(
     () =>
       notes
         .filter((n) => n.notebook === nb.id)
-        .filter((n) => !filter || n.body.toLowerCase().includes(filter.toLowerCase()) || n.tags.some((t) => t.includes(filter.toLowerCase())) || label(n.start).toLowerCase().includes(filter.toLowerCase()))
-        .sort((a, b) => a.start.localeCompare(b.start, undefined, { numeric: true })),
+        .filter((n) => !filter || n.body.toLowerCase().includes(filter.toLowerCase()) || n.tags.some((t) => t.includes(filter.toLowerCase())) || spansLabel(noteSpans(n), label).toLowerCase().includes(filter.toLowerCase()))
+        .sort(bibleOrder),
     [notes, nb.id, filter],
   );
   const hls = highlights.filter((h) => h.notebook === nb.id);
@@ -205,20 +207,6 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
     else study.go("read");
   };
 
-  const exportMd = async () => {
-    const files = toMarkdown(useNotebooks.getState(), nb.id, label);
-    if (IN_TAURI) {
-      const dir = await backend.exportMarkdown(files.map((f) => ({ path: `${nb.title.replace(/[^\p{L}\p{N} -]/gu, "").trim() || "notebook"}/${f.path}`, body: f.body })));
-      toast.success("Exported to Markdown", { description: dir ?? undefined });
-    } else {
-      const blob = new Blob([files.map((f) => `<!-- ${f.path} -->\n${f.body}`).join("\n\n")], { type: "text/markdown" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `${nb.title || "notebook"}.md`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
-  };
 
   return (
     <div className="mx-auto max-w-3xl px-8 pb-24 pt-8">
@@ -235,10 +223,10 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
             <Button variant="brand" size="sm" onClick={() => openInReader()}>
               <Icon name="document" /> Open in reader
             </Button>
-            <Button variant="outline" size="sm" onClick={exportMd}>
-              <Icon name="download" /> Export Markdown
+            <Button variant="outline" size="sm" onClick={() => setExporting(true)}>
+              <Icon name="download" /> Export
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setPrinting(true)}>
+            <Button variant="outline" size="sm" onClick={() => setPrinting({ keep: () => true })}>
               <Icon name="file-pdf" /> Print illustrated
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
@@ -253,13 +241,18 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
 
       <div className="mt-8 flex items-center gap-3">
         <SectionLabel className="flex-1">{mine.length} notes</SectionLabel>
-        <Input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter notes" className="h-8 w-56" />
+        <SearchField size="sm" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter notes" className="w-56" />
       </div>
       <div className="mt-3 space-y-3">
         {mine.map((n) => (
           <NoteCard key={n.id} n={n} onOpen={() => openInReader(n.start)} onChange={(body) => updateNote(n.id, { body })} onTags={(tags) => updateNote(n.id, { tags })} onDelete={() => deleteNote(n.id)} />
         ))}
-        {!mine.length && <p className="text-sm text-muted-foreground">Open the reader, tap a verse, and write in the panel that opens. Notes land here.</p>}
+        {!mine.length && (
+          <p className="flex items-start gap-3 text-sm text-muted-foreground">
+            <NotebookLion />
+            Open the reader, tap a verse, and write in the panel that opens. Ctrl-click or shift-click to write on several verses at once. Notes land here.
+          </p>
+        )}
       </div>
 
       {hls.length > 0 && (
@@ -275,7 +268,8 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
         </>
       )}
 
-      {printing && <PrintNotebook nb={nb} onDone={() => setPrinting(false)} />}
+      {printing && <PrintNotebook nb={nb} keep={printing.keep} subtitle={printing.subtitle} onDone={() => setPrinting(null)} />}
+      <ExportDialog nb={nb} open={exporting} onOpenChange={setExporting} onPrint={setPrinting} />
       <NotebookDialog open={editing} onOpenChange={setEditing} editing={nb} onSave={(patch) => updateNotebook(nb.id, patch)} />
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
@@ -295,13 +289,21 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
   );
 }
 
+/** An empty notebook: Jerome's lion asleep, from Dürer's St Jerome in His Study. */
+function NotebookLion() {
+  const lion = usePagePlate(PAGE_PLATES.notebookEmpty);
+  const off = useStudy((s) => s.illustrations) === "off";
+  if (!lion || off) return <Ornament name="quill" className="h-12" />;
+  return <Dither src={plateUrl(lion.full)} dot={1} label={`${lion.title}, after ${lion.artist}`} className="aspect-[2/1] w-40 shrink-0 text-foreground" />;
+}
+
 function NoteCard({ n, onOpen, onChange, onTags, onDelete }: { n: Note; onOpen: () => void; onChange: (b: string) => void; onTags: (t: string[]) => void; onDelete: () => void }) {
   const [tagDraft, setTagDraft] = useState("");
   return (
     <article className="group rounded-xl bg-card p-4 ring-1 ring-foreground/6">
       <div className="flex items-center gap-2">
         <button type="button" onClick={onOpen} className="font-garamond text-lg text-brand hover:underline">
-          {label(n.start)}{n.end ? `–${n.end.split(".")[2]}` : ""}
+          {spansLabel(noteSpans(n), label)}
         </button>
         {n.translation && <Badge variant="outline">{n.translation.toUpperCase()} wording</Badge>}
         <span className="flex-1" />

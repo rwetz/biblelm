@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Icon, ScrollArea, SectionLabel, Spinner, Textarea, toast, Tooltip, TooltipContent, TooltipTrigger, cn } from "@nexis/design";
 import { listTranslations, loadTranslation, type Translation, type VerseIndex } from "@/lib/bible";
-import { formatRef, osisOf, type Ref, type Shelf } from "@/lib/canon";
+import { formatRef, osisOf, parseOsis, type Ref, type Shelf } from "@/lib/canon";
 import { useCatalog, useGraph, useIndex } from "@/lib/hooks";
 import { useFlip } from "@/lib/flip";
 import { rankXrefs, XREF_LEVELS, type XrefRanking } from "@/lib/jev";
 import { moreLikeThis, type Hit } from "@/lib/semantic";
 import { topicsForVerse, type Topic } from "@/lib/topics";
-import { noteCovers, useNotebooks } from "@/store/notebooks";
+import { noteCovers, noteSpans, spanFields, spansLabel, spansOf, useNotebooks, type Span } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
 import { VerseText } from "./ReadView";
 import { wordDiff } from "./diff";
@@ -17,22 +17,111 @@ import { usePaintings, usePlates } from "@/art/Art";
 import { depicts, paintingCredit, paintingUrl, plateUrl } from "@/lib/art";
 import { PlacesAndPeople } from "@/features/atlas/VerseAtlas";
 
-/** Everything about one verse: other translations, cross references, topics, similar verses, your notes. */
-export function VersePanel({
-  refSel,
-  translations,
-  shelves,
-  onClose,
-  onNavigate,
-}: {
+const label = (osis: string) => {
+  const r = parseOsis(osis);
+  return r ? formatRef(r) : osis;
+};
+
+type PanelProps = {
   refSel: Ref;
   translations: Translation[];
   shelves: Shelf[];
   onClose: () => void;
   onNavigate: (r: Ref) => void;
   onSetParallel: (ids: string[]) => void;
-}) {
+};
+
+/** The verse panel: one verse in full, or the passage of several picked verses with their notes. */
+export function VersePanel({ verses, ...props }: PanelProps & { verses: number[] }) {
+  const { book, chapter } = props.refSel;
+  if (verses.length > 1) return <PassagePanel book={book} chapter={chapter} verses={verses} translations={props.translations} onClose={props.onClose} />;
+  return <OneVerse {...props} refSel={{ book, chapter, verse: verses[0] ?? props.refSel.verse }} />;
+}
+
+/**
+ * Several verses picked with ctrl and shift click (Romans 8:2-5, 9-11): the
+ * passage as one reading, and notes that cover all of it.
+ */
+function PassagePanel({ book, chapter, verses, translations, onClose }: { book: string; chapter: number; verses: number[]; translations: Translation[]; onClose: () => void }) {
+  const main = translations[0];
+  const spans = useMemo(() => spansOf(book, chapter, verses), [book, chapter, verses]);
+  const osisList = useMemo(() => verses.map((v) => `${book}.${chapter}.${v}`), [book, chapter, verses]);
+  const title = spansLabel(spans, label);
+  const ranges = spans.map((s) => ({ book, chapter, verse: +s.start.split(".")[2], verseEnd: s.end ? +s.end.split(".")[2] : undefined }));
+  const { active, highlights, toggleHighlight } = useNotebooks();
+  const lit = new Set(highlights.filter((h) => h.notebook === active).map((h) => h.ref));
+  const allLit = !!active && osisList.every((o) => lit.has(o));
+  const copy = () => {
+    const text = ranges.map((r) => main.range(r).map((v) => v.text).join(" ")).join(" ... ");
+    navigator.clipboard?.writeText(`${text} (${title}, ${main.meta.abbr})`);
+    toast.success("Copied");
+  };
+
+  return (
+    <aside className="flex w-[25rem] shrink-0 flex-col border-l border-border/60 bg-card/60">
+      <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border/60 px-4">
+        <h2 className="min-w-0 truncate font-garamond text-xl" title={title}>{title}</h2>
+        <span className="flex-1" />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={allLit ? "secondary" : "ghost"}
+              size="icon-sm"
+              aria-label="Highlight these verses"
+              aria-pressed={allLit}
+              disabled={!active}
+              onClick={() => active && osisList.filter((o) => lit.has(o) === allLit).forEach((o) => toggleHighlight(active, o))}
+            >
+              <Icon name="format-highlight" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{active ? (allLit ? "Remove the highlights" : "Highlight these verses in this notebook") : "Open a notebook to highlight"}</TooltipContent>
+        </Tooltip>
+        {spans.length === 1 && <MemoryButton osis={spans[0].start} end={spans[0].end} />}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon-sm" aria-label="Copy passage" onClick={copy}>
+              <Icon name="copy" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Copy with reference</TooltipContent>
+        </Tooltip>
+        <Button variant="ghost" size="icon-sm" aria-label="Close" onClick={onClose}>
+          <Icon name="close" />
+        </Button>
+      </header>
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="space-y-6 p-4">
+          <section>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{main.meta.abbr} · {verses.length} verses</p>
+            <div className="scripture mt-1 space-y-2 !text-base !leading-7">
+              {ranges.map((r, i) => (
+                <p key={r.verse}>
+                  {i > 0 && <span className="mr-1 text-muted-foreground">…</span>}
+                  {main.range(r).map((v) => (
+                    <span key={v.verse}>
+                      <sup className="vnum">{v.verse}</sup>
+                      <VerseText raw={v.raw} />{" "}
+                    </span>
+                  ))}
+                </p>
+              ))}
+            </div>
+          </section>
+          <Notes spans={spans} verses={osisList} />
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Ctrl-click a verse to add or drop it, shift-click to take every verse from the last one clicked. Click one verse alone for its cross references and words.
+          </p>
+        </div>
+      </ScrollArea>
+    </aside>
+  );
+}
+
+/** Everything about one verse: other translations, cross references, topics, similar verses, your notes. */
+function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelProps) {
   const osis = osisOf(refSel);
+  const one = useMemo(() => [osis], [osis]);
   const [index] = useIndex();
   const vi = index?.of(osis);
   const main = translations[0];
@@ -101,7 +190,7 @@ export function VersePanel({
             </div>
           )}
 
-          <Notes osis={osis} />
+          <Notes spans={[{ start: osis }]} verses={one} />
 
           {vi !== undefined && index && (
             <>
@@ -149,15 +238,15 @@ function SeenInArt({ refSel }: { refSel: Ref }) {
 }
 
 /** Learn this verse by heart (Daily, By heart); again stops. */
-function MemoryButton({ osis }: { osis: string }) {
+function MemoryButton({ osis, end }: { osis: string; end?: string }) {
   // `?? []`: a store loaded before notes version 2 (a dev window left open) has none.
   const memory = useNotebooks((s) => s.memory) ?? [];
   const toggleMemory = useNotebooks((s) => s.toggleMemory);
-  const on = memory.some((c) => c.ref === osis && !c.end);
+  const on = memory.some((c) => c.ref === osis && c.end === end);
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button variant={on ? "secondary" : "ghost"} size="icon-sm" aria-label="Learn by heart" aria-pressed={on} onClick={() => toggleMemory(osis)}>
+        <Button variant={on ? "secondary" : "ghost"} size="icon-sm" aria-label="Learn by heart" aria-pressed={on} onClick={() => toggleMemory(osis, end)}>
           <Icon name="star" />
         </Button>
       </TooltipTrigger>
@@ -235,15 +324,22 @@ function CompareAll({ refSel, base }: { refSel: Ref; base: Translation }) {
   );
 }
 
-function Notes({ osis }: { osis: string }) {
+/** Notes on the open verse or passage: those touching any of its verses, and a new one on all of it. */
+function Notes({ spans, verses }: { spans: Span[]; verses: string[] }) {
   const { active, notebooks, notes, addNote, updateNote, deleteNote, createNotebook } = useNotebooks();
   const study = useStudy();
   const [catalog] = useCatalog();
   // Content addresses: which exact edition of each translation a note was written against.
   const hashOf = (id?: string) => catalog?.find((m) => m.id === id)?.hash;
   const [draft, setDraft] = useState("");
-  const mine = useMemo(() => notes.filter((n) => n.notebook === active && noteCovers(n, osis)), [notes, active, osis]);
+  const mine = useMemo(() => notes.filter((n) => n.notebook === active && verses.some((o) => noteCovers(n, o))), [notes, active, verses]);
   const nb = notebooks.find((b) => b.id === active);
+  const many = verses.length > 1;
+  const add = (extra: { translation?: string; textHash?: string } = {}) => {
+    if (!nb || !draft.trim()) return;
+    addNote({ notebook: nb.id, ...spanFields(spans), body: draft.trim(), ...extra });
+    setDraft("");
+  };
 
   if (!nb)
     return (
@@ -271,6 +367,7 @@ function Notes({ osis }: { osis: string }) {
             className="min-h-16 resize-y rounded-none border-none bg-transparent p-1 font-garamond text-[15px] leading-relaxed shadow-none focus-visible:border-none focus-visible:ring-0"
           />
           <div className="flex items-center gap-2 px-1 text-[11px] text-muted-foreground">
+            {(many || n.end || n.more) && <span className="font-garamond text-xs text-brand">{spansLabel(noteSpans(n), label)}</span>}
             {n.translation && <Badge variant="outline">{n.translation.toUpperCase()} wording</Badge>}
             {n.textHash && hashOf(n.translation) && n.textHash !== hashOf(n.translation) && (
               <span title={`Written against edition ${n.textHash}; this one is ${hashOf(n.translation)}`}>the text has changed since</span>
@@ -285,24 +382,21 @@ function Notes({ osis }: { osis: string }) {
       <Textarea
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        placeholder="Write a note on this verse. Markdown is fine."
+        placeholder={many ? "Write a note on these verses. Markdown is fine." : "Write a note on this verse. Markdown is fine."}
         className="min-h-20 font-garamond text-[15px] focus-visible:border-foreground/30 focus-visible:ring-0"
         onKeyDown={(e) => {
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && draft.trim()) {
-            addNote({ notebook: nb.id, start: osis, body: draft.trim() });
-            setDraft("");
-          }
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) add();
         }}
       />
       <div className="flex gap-2">
-        <Button size="sm" variant="brand" disabled={!draft.trim()} onClick={() => { addNote({ notebook: nb.id, start: osis, body: draft.trim() }); setDraft(""); }}>
+        <Button size="sm" variant="brand" disabled={!draft.trim()} onClick={() => add()}>
           Add note
         </Button>
         <Button
           size="sm"
           variant="ghost"
           disabled={!draft.trim()}
-          onClick={() => { addNote({ notebook: nb.id, start: osis, body: draft.trim(), translation: study.translation, textHash: hashOf(study.translation) }); setDraft(""); }}
+          onClick={() => add({ translation: study.translation, textHash: hashOf(study.translation) })}
         >
           About the {study.translation.toUpperCase()} wording
         </Button>

@@ -45,6 +45,9 @@ pub struct TrainConfig {
     pub epochs: usize,
     pub eval_interval: usize,
     pub tokenizer_type: String,
+    /// "python" (the default) or "axon": who trains the model.
+    #[serde(default)]
+    pub engine: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -180,6 +183,203 @@ fn py_command(root: &Path, module: &str, args: &[String]) -> Command {
 
 fn event_type(v: &serde_json::Value) -> Option<&str> {
     v.get("type").and_then(|t| t.as_str())
+}
+
+// ── Axon (the Rust engine, nexis-ml-rs) ─────────────────────────────────
+//
+// Axon 0.11 trains the same character-level GPT as python/biblelm/model.py
+// (`[data] path` a .txt file) and streams protocol v1 NDJSON ("ev": ...).
+// The Lab drives it when it is installed, with no PyTorch: train.toml is
+// written from the Lab's settings, Axon's events are mapped onto the Lab's
+// own, and `axon serve` streams generated characters.
+
+/// The `axon` binary: `BIBLELM_AXON`, else `axon` on PATH.
+fn axon_exe() -> Option<PathBuf> {
+    if let Ok(p) = std::env::var("BIBLELM_AXON") {
+        let p = PathBuf::from(p);
+        return p.is_file().then_some(p);
+    }
+    let name = if cfg!(windows) { "axon.exe" } else { "axon" };
+    std::env::var_os("PATH").and_then(|paths| std::env::split_paths(&paths).map(|d| d.join(name)).find(|p| p.is_file()))
+}
+
+fn axon_dir(root: &Path) -> PathBuf {
+    root.join("runs").join("axon")
+}
+
+/// The run id of the last Axon training, recorded when it starts.
+fn axon_latest(root: &Path) -> Option<String> {
+    std::fs::read_to_string(axon_dir(root).join("latest-run")).ok().map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
+}
+
+fn axon_command(exe: &Path, args: &[&str]) -> Command {
+    let mut cmd = Command::new(exe);
+    cmd.args(args).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::inherit());
+    #[cfg(windows)]
+    {
+        const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW);
+    }
+    cmd
+}
+
+/// A TOML basic string: forward slashes and escaped quotes, so Windows paths survive.
+fn toml_str(s: &str) -> String {
+    format!("\"{}\"", s.replace('\\', "/").replace('"', "\\\""))
+}
+
+/// train.toml for the Lab's settings. One Axon "epoch" is `eval_interval`
+/// optimizer steps followed by a validation pass, the Lab's eval rhythm.
+fn axon_toml(config: &TrainConfig, corpus: &Path) -> String {
+    format!(
+        "# Written by BibleLM's Lab; edited here it is overwritten next run.\n\
+         [train]\nepochs = {}\nbatch_size = {}\nlr = {}\nval_split = 0.1\nseed = 42\ndevice = \"auto\"\n\n\
+         [data]\npath = {}\n\n\
+         [gpt]\nd_model = {}\nn_layers = {}\nn_heads = {}\ncontext_len = {}\nsteps_per_epoch = {}\neval_batches = 8\nsample_chars = 200\nsample_prompt = \"And God said\"\n",
+        config.epochs,
+        config.batch_size,
+        config.learning_rate,
+        toml_str(&corpus.to_string_lossy()),
+        config.d_model,
+        config.n_layers,
+        config.n_heads,
+        config.context_len,
+        config.eval_interval.max(1),
+    )
+}
+
+/// Which engines the Lab can use: Axon's version when it is installed.
+#[tauri::command]
+async fn lab_engines() -> Result<serde_json::Value, String> {
+    let axon = match axon_exe() {
+        Some(exe) => Command::new(&exe)
+            .arg("--version")
+            .output()
+            .await
+            .ok()
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string()),
+        None => None,
+    };
+    // Axon 0.11 is the first with the text template.
+    let text = axon.as_deref().and_then(|v| v.split_whitespace().last()).and_then(|v| {
+        let mut p = v.split('.').map(|x| x.parse::<u32>().unwrap_or(0));
+        Some((p.next()?, p.next()?))
+    });
+    Ok(serde_json::json!({ "axon": axon, "axonText": matches!(text, Some((maj, min)) if maj > 0 || min >= 11) }))
+}
+
+async fn axon_train(config: TrainConfig, corpus: PathBuf, training: Arc<Mutex<TrainingState>>, window: Window) -> Result<(), String> {
+    let exe = axon_exe().ok_or("Axon is not installed: put axon on PATH or set BIBLELM_AXON.")?;
+    let root = project_root();
+    let dir = axon_dir(&root);
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    std::fs::write(dir.join("train.toml"), axon_toml(&config, &corpus)).map_err(|e| e.to_string())?;
+    let dir_s = dir.to_string_lossy().into_owned();
+    let mut child = axon_command(&exe, &["--nexis-protocol", "train", &dir_s])
+        .spawn()
+        .map_err(|e| format!("failed to start axon: {e}"))?;
+    {
+        let mut t = training.lock().map_err(|e| e.to_string())?;
+        t.running = true;
+        t.pid = child.id();
+    }
+    let stdout = child.stdout.take().ok_or("no stdout")?;
+    let steps = config.eval_interval.max(1);
+    tokio::spawn(async move {
+        let mut lines = BufReader::new(stdout).lines();
+        let mut errored = false;
+        // Axon reports each metric on its own line; the Lab wants one row per epoch.
+        let (mut train, mut val, mut tps) = (None::<f64>, None::<f64>, None::<f64>);
+        while let Ok(Some(line)) = lines.next_line().await {
+            let Ok(v) = serde_json::from_str::<serde_json::Value>(&line) else { continue };
+            match v.get("ev").and_then(|e| e.as_str()) {
+                Some("run.started") => {
+                    if let Some(id) = v["run"].as_str() {
+                        let _ = std::fs::write(axon_dir(&project_root()).join("latest-run"), id);
+                    }
+                    let _ = window.emit("train:status", serde_json::json!({ "phase": "start", "device": v["device"], "engine": "axon" }));
+                }
+                Some("metric") => {
+                    let x = v["value"].as_f64();
+                    match v["name"].as_str() {
+                        Some("loss/train") => train = x,
+                        Some("loss/val") => val = x,
+                        Some("tokens/sec") => tps = x,
+                        _ => {}
+                    }
+                }
+                Some("epoch") => {
+                    let epoch = v["epoch"].as_u64().unwrap_or(0);
+                    let _ = window.emit(
+                        "train:metric",
+                        serde_json::json!({ "step": epoch as usize * steps, "epoch": epoch, "trainLoss": train, "valLoss": val, "tokensPerSec": tps }),
+                    );
+                    (train, val, tps) = (None, None, None);
+                }
+                Some("error") => {
+                    errored = true;
+                    let msg = v.get("message").or_else(|| v.get("msg")).cloned().unwrap_or_else(|| "Axon failed".into());
+                    let _ = window.emit("train:error", serde_json::json!({ "message": msg }));
+                }
+                Some("run.finished") if v["status"].as_str() == Some("error") => {
+                    errored = true;
+                    let _ = window.emit("train:error", serde_json::json!({ "message": "Axon stopped with an error; see its run folder." }));
+                }
+                _ => {}
+            }
+        }
+        let status = child.wait().await;
+        if !errored && status.map(|s| !s.success()).unwrap_or(true) {
+            errored = true;
+            let _ = window.emit("train:error", serde_json::json!({ "message": "Axon exited with an error (is it 0.11 or newer?)." }));
+        }
+        let was_stopped = if let Ok(mut t) = training.lock() {
+            t.running = false;
+            t.pid = None;
+            std::mem::take(&mut t.stopping)
+        } else {
+            false
+        };
+        if !errored && !was_stopped {
+            let _ = window.emit("train:complete", serde_json::json!({ "ended": true, "engine": "axon" }));
+        }
+    });
+    Ok(())
+}
+
+/// Generate from the last Axon run through `axon serve`, streaming characters.
+async fn axon_generate(run: String, prompt: String, temperature: f64, max_tokens: usize, top_k: usize, window: &Window) -> Result<(), String> {
+    use tokio::io::AsyncWriteExt;
+    let exe = axon_exe().ok_or("Axon is not installed: put axon on PATH or set BIBLELM_AXON.")?;
+    let dir = axon_dir(&project_root()).to_string_lossy().into_owned();
+    let mut child = axon_command(&exe, &["serve", "--run", &run, &dir]).spawn().map_err(|e| format!("failed to start axon: {e}"))?;
+    let mut stdin = child.stdin.take().ok_or("no stdin")?;
+    let stdout = child.stdout.take().ok_or("no stdout")?;
+    let req = serde_json::json!({ "prompt": prompt, "max_tokens": max_tokens, "temperature": temperature, "top_k": top_k });
+    stdin.write_all(format!("{req}\n").as_bytes()).await.map_err(|e| e.to_string())?;
+    stdin.flush().await.map_err(|e| e.to_string())?;
+    let mut lines = BufReader::new(stdout).lines();
+    let mut err = None;
+    while let Some(line) = lines.next_line().await.map_err(|e| e.to_string())? {
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(&line) else { continue };
+        match v.get("ev").and_then(|e| e.as_str()) {
+            Some("token") => {
+                let _ = window.emit("inference:token", serde_json::json!({ "token": v["text"] }));
+            }
+            Some("generation") => break,
+            Some("error") => {
+                err = v.get("message").or_else(|| v.get("msg")).and_then(|m| m.as_str()).map(str::to_string);
+                break;
+            }
+            _ => {}
+        }
+    }
+    // Closing stdin ends the serve loop.
+    drop(stdin);
+    let _ = child.kill().await;
+    let _ = window.emit("inference:complete", serde_json::json!({}));
+    err.map_or(Ok(()), Err)
 }
 
 // ── commands ────────────────────────────────────────────────────────────
@@ -451,6 +651,9 @@ async fn train_start(
     if !corpus.exists() {
         return Err("Selected corpus isn't downloaded — download it on the Corpus tab first.".into());
     }
+    if config.engine.as_deref() == Some("axon") {
+        return axon_train(config, corpus, training, window).await;
+    }
     let run = run_dir(&root);
     let args = vec![
         "--corpus".into(),
@@ -567,7 +770,16 @@ async fn inference_generate(
 ) -> Result<(), String> {
     let root = project_root();
     let run = run_dir(&root);
-    if !run.join("ckpt.pt").exists() {
+    // Generate from whichever engine trained most recently.
+    let modified = |p: PathBuf| std::fs::metadata(p).and_then(|m| m.modified()).ok();
+    let py_at = modified(run.join("ckpt.pt"));
+    let axon_at = modified(axon_dir(&root).join("latest-run"));
+    if let Some(id) = axon_latest(&root) {
+        if axon_at.is_some() && (py_at.is_none() || axon_at > py_at) {
+            return axon_generate(id, prompt, temperature, max_tokens, top_k, &window).await;
+        }
+    }
+    if py_at.is_none() {
         return Err("No trained model — train a model first.".into());
     }
     let args = vec![
@@ -750,6 +962,7 @@ pub fn run() {
             corpus_alphabet,
             train_start,
             train_stop,
+            lab_engines,
             inference_generate,
             export_onnx,
             lab_inspect,

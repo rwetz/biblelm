@@ -23,7 +23,11 @@ interface Translation {
   vocabSize?: number;
 }
 
-export function CorpusView() {
+/**
+ * `front`: only the translations and the alphabet, set under the Lab's title
+ * on its front page; the Corpus tab below then shows the rest.
+ */
+export function CorpusView({ front = false }: { front?: boolean } = {}) {
   const activeCorpus = useAppStore((s) => s.activeCorpus);
   const setActiveCorpus = useAppStore((s) => s.setActiveCorpus);
   const setCorpus = useAppStore((s) => s.setCorpus);
@@ -146,20 +150,7 @@ export function CorpusView() {
   }, {});
   const languages = Object.keys(byLang).sort();
 
-  return (
-    <LabSection
-      title="The text it learns from"
-      lede="The model knows nothing but the one translation you give it: its words, its spelling, its rhythm. Pick one to train on, or add your own."
-      actions={
-        <Button size="sm" variant="ghost" onClick={() => setShowAdd((v) => !v)} className="gap-1.5 text-muted-foreground">
-          <Icon name={showAdd ? "close" : "add"} size="sm" />
-          {showAdd ? "Cancel" : "Add a translation"}
-        </Button>
-      }
-    >
-      {active?.downloaded && <Reading t={active} />}
-      <div className={cn("grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]", active?.downloaded && "mt-6")}>
-        <div className="space-y-6">
+  const translationsPanel = (
           <Panel
             title="Translations"
             meta={translations.length ? `${translations.filter((t) => t.downloaded).length} of ${translations.length} downloaded` : undefined}
@@ -197,31 +188,45 @@ export function CorpusView() {
               ))
             )}
           </Panel>
+  );
+  const addButton = (
+    <Button size="sm" variant="ghost" onClick={() => setShowAdd((v) => !v)} className="gap-1.5 text-muted-foreground">
+      <Icon name={showAdd ? "close" : "add"} size="sm" />
+      {showAdd ? "Cancel" : "Add a translation"}
+    </Button>
+  );
 
-          {/* The opening of the selected translation, exactly as the model reads it. */}
-          <Panel title="As the model sees it" meta={active?.name}>
-            {sample ? (
-              <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground/80">{sample}</pre>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {active?.downloaded ? "Loading the opening lines…" : "Download a translation to see how its text looks."}
-              </p>
-            )}
-            <p className="mt-4 border-t border-border/60 pt-3 text-xs leading-relaxed text-muted-foreground">
-              Every distinct character is one token, so the vocabulary stays tiny
-              {active?.vocabSize ? ` (${active.vocabSize} symbols in the ${active.name})` : " (about 75 symbols for English)"} and any script
-              works. The vocabulary is rebuilt from whichever translation you train on.
-            </p>
-          </Panel>
-        </div>
-
-        <div className="space-y-6">
-
-
-          {active?.downloaded && <TypeCase t={active} />}
-        </div>
+  if (front)
+    return (
+      <div className="space-y-6">
+        {translationsPanel}
+        <div className="-mt-3 flex justify-end">{addButton}</div>
+        {active?.downloaded && <TypeCase t={active} />}
       </div>
-      <div className="mt-6">
+    );
+
+  return (
+    <LabSection
+      title="The text it learns from"
+      lede="The model knows nothing but the one translation you give it: its words, its spelling, its rhythm. Choose it above, or add your own."
+    >
+      {active?.downloaded && <Reading t={active} />}
+      <div className={cn("grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]", active?.downloaded && "mt-6")}>
+        {/* The opening of the selected translation, exactly as the model reads it. */}
+        <Panel title="As the model sees it" meta={active?.name}>
+          {sample ? (
+            <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground/80">{sample}</pre>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {active?.downloaded ? "Loading the opening lines…" : "Download a translation to see how its text looks."}
+            </p>
+          )}
+          <p className="mt-4 border-t border-border/60 pt-3 text-xs leading-relaxed text-muted-foreground">
+            Every distinct character is one token, so the vocabulary stays tiny
+            {active?.vocabSize ? ` (${active.vocabSize} symbols in the ${active.name})` : " (about 75 symbols for English)"} and any script
+            works. The vocabulary is rebuilt from whichever translation you train on.
+          </p>
+        </Panel>
         <ScaleField
           dataMb={active?.downloaded ? (active.sizeBytes ?? 0) / 1_048_576 : 4.4}
           vocabSize={active?.downloaded ? active.vocabSize : undefined}
@@ -230,7 +235,6 @@ export function CorpusView() {
     </LabSection>
   );
 }
-
 
 function TranslationRow({
   t,

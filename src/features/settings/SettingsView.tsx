@@ -5,6 +5,7 @@ import {
   Field,
   Icon,
   IN_TAURI,
+  Input,
   Panel,
   Segmented,
   Slider,
@@ -12,6 +13,7 @@ import {
   useTheme,
 } from "@nexis/design";
 import { PlatePage, usePagePlate } from "@/art/Art";
+import { RoseMark } from "@/art/RoseMark";
 import { PAGE_PLATES } from "@/lib/art";
 import { backend } from "@/lib/backend";
 import { SHELVES } from "@/lib/canon";
@@ -21,6 +23,7 @@ import { useStudy } from "@/store/study";
 import { DeveloperPanel } from "./DeveloperPanel";
 import { useScheme } from "@/app/scheme";
 import { SCHEMES } from "@/app/theme";
+import { PageMark } from "@/art/SidebarArt";
 
 export function SettingsView() {
   const study = useStudy();
@@ -35,11 +38,29 @@ export function SettingsView() {
     jevAvailable().then(setJev);
     backend.dataDir().then(setDataDir).catch(() => {});
   }, []);
+  // The command palette jumps to a setting by its label: scroll to it and flash it once.
+  useEffect(() => {
+    const jump = (e: Event) => {
+      const want = (e as CustomEvent<string>).detail.toLowerCase();
+      requestAnimationFrame(() => {
+        const els = [...document.querySelectorAll<HTMLElement>("main label, main [data-slot=panel] h2, main h2, main h3")];
+        const hit = els.find((el) => el.textContent?.trim().toLowerCase().startsWith(want));
+        const box = hit?.closest<HTMLElement>("[data-slot=field]") ?? hit?.parentElement;
+        if (!box) return;
+        box.scrollIntoView({ block: "center", behavior: "smooth" });
+        box.classList.remove("setting-flash");
+        void box.offsetWidth;
+        box.classList.add("setting-flash");
+      });
+    };
+    window.addEventListener("biblelm:setting", jump);
+    return () => window.removeEventListener("biblelm:setting", jump);
+  }, []);
 
   return (
     <PlatePage plate={plate} corner="tr">
       <div className="relative mx-auto w-full max-w-3xl space-y-6 px-8 pb-24 pt-10">
-        <h1 className="font-blackletter text-4xl">Settings</h1>
+        <h1 className="flex items-center gap-3 font-blackletter text-4xl"><PageMark page="settings" />Settings</h1>
 
         <Panel title="Appearance">
           <div className="space-y-5">
@@ -51,7 +72,7 @@ export function SettingsView() {
                 <Switch checked={theme.mode === "system"} onCheckedChange={(on) => theme.setMode(on ? "system" : theme.resolvedMode)} />
               </Field>
             )}
-            <Field label="Illustrations" hint="Doré's engravings beside the passages, the paintings that open their chapters, and the scenes on each page." inline>
+            <Field label="Illustrations" hint="Engravings and woodcuts beside the passages, the paintings that open their chapters, and the scenes on each page." inline>
               <Segmented
                 label="Illustrations"
                 size="sm"
@@ -85,6 +106,12 @@ export function SettingsView() {
             </Field>
             <Field label="Two columns, like a printed Bible" inline>
               <Switch checked={study.columns} onCheckedChange={(columns) => study.set({ columns })} />
+            </Field>
+            <Field label="Ornaments" hint="The small dithered devices: headpieces, the evangelists' emblems, the mark beside each page in the sidebar." inline>
+              <Switch checked={study.ornaments} onCheckedChange={(ornaments) => study.set({ ornaments })} />
+            </Field>
+            <Field label="Your name" hint="Printed on the title page of a notebook. Stays on this computer." inline>
+              <Input value={study.name} onChange={(e) => study.set({ name: e.target.value })} placeholder="Optional" className="h-8 w-56" />
             </Field>
           </div>
         </Panel>
@@ -165,6 +192,7 @@ export function SettingsView() {
 
         <Panel title="About">
           <div className="space-y-2 text-sm">
+            <RoseMark label="BibleLM" className="float-right mb-2 ml-6 size-44" />
             <p>
               <span className="font-blackletter text-lg">BibleLM</span> is a study tool and a programming project: a small language model trained from
               scratch on Scripture, inside an illustrated Bible. The machine finds; Scripture speaks.
@@ -173,6 +201,7 @@ export function SettingsView() {
               <li>Texts: public domain, from eBible.org.</li>
               <li>Cross references and topics: OpenBible.info, CC-BY.</li>
               <li>Illustrations: Gustave Doré, La Grande Bible de Tours (1866), public domain, via Wikimedia Commons.</li>
+              <li>Woodcuts and engravings: Albrecht Dürer (the Met, CC0), Julius Schnorr von Carolsfeld, William Blake (Yale Center for British Art, CC0), the Nuremberg Chronicle, the 1534 Luther Bible and the four evangelists (Rijksmuseum, CC0); public domain, via Wikimedia Commons.</li>
               <li>Paintings: Caravaggio, Rembrandt, Honthorst and Georges de La Tour, public domain (Wikimedia Commons; the Met and the Rijksmuseum, CC0).</li>
               <li>Places: OpenBible.info Bible Geocoding Data, CC BY 4.0. Coastlines and rivers: Natural Earth, public domain.</li>
               <li>People and the Hebrew and Greek interlinear: STEPBible (Tyndale House), TIPNR, TAHOT and TAGNT, CC BY 4.0.</li>

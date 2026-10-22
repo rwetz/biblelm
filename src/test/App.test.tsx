@@ -4,11 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider, TooltipProvider } from "@nexis/design";
 import App from "@/app/App";
 import { SCRIPTORIUM_ID, scriptorium } from "@/app/theme";
+import { useStudy } from "@/store/study";
 
 // The study pages fetch static data from /data; serve nothing so they take
 // their "data not built" paths, which must render rather than crash.
 beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn(async () => new Response("not found", { status: 404 })));
+  // A returning reader: the first-start welcome (a modal) has been seen.
+  useStudy.setState({ welcomed: true });
 });
 afterEach(() => {
   cleanup();
@@ -35,6 +38,19 @@ describe("App", () => {
       mount();
     });
     expect(screen.getByRole("navigation", { name: "BibleLM" })).toBeTruthy();
+  });
+
+  it("welcomes a first-time reader and keeps their name", async () => {
+    useStudy.setState({ welcomed: false, name: "" });
+    await act(async () => {
+      mount();
+    });
+    const field = screen.getByPlaceholderText("Your name (optional)");
+    await act(async () => {
+      fireEvent.change(field, { target: { value: "  Ryan " } });
+      fireEvent.click(screen.getByRole("button", { name: "Begin" }));
+    });
+    expect(useStudy.getState()).toMatchObject({ welcomed: true, name: "Ryan" });
   });
 
   it.each(PAGES)("opens %s without crashing", async (label) => {

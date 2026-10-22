@@ -10,10 +10,18 @@ import { paintingCredit, paintingUrl, paintingsInChapter, platesInChapter } from
 import { bookName, formatRef, parseOsis } from "@/lib/canon";
 import { useTranslation } from "@/lib/hooks";
 import { VerseText } from "@/features/read/ReadView";
-import { useNotebooks, type Notebook } from "@/store/notebooks";
+import { bibleOrder, noteSpans, spansLabel, useNotebooks, type Note, type Notebook } from "@/store/notebooks";
+import { useStudy } from "@/store/study";
 
-export function PrintNotebook({ nb, onDone }: { nb: Notebook; onDone: () => void }) {
-  const notes = useNotebooks((s) => s.notes).filter((n) => n.notebook === nb.id).sort((a, b) => a.start.localeCompare(b.start, undefined, { numeric: true }));
+const label = (osis: string) => {
+  const r = parseOsis(osis);
+  return r ? formatRef(r) : osis;
+};
+
+/** `keep` picks the notes (one book or chapter, from Export); `subtitle` names them on the title page. */
+export function PrintNotebook({ nb, keep, subtitle, onDone }: { nb: Notebook; keep?: (n: Note) => boolean; subtitle?: string; onDone: () => void }) {
+  const name = useStudy((s) => s.name.trim());
+  const notes = useNotebooks((s) => s.notes).filter((n) => n.notebook === nb.id && (keep?.(n) ?? true)).sort(bibleOrder);
   const [t] = useTranslation(nb.translations[0] ?? "kjv");
   const plates = usePlates();
   const paintings = usePaintings();
@@ -36,6 +44,8 @@ export function PrintNotebook({ nb, onDone }: { nb: Notebook; onDone: () => void
     <div className="print-sheet">
       <section className="print-title">
         <h1 className="font-blackletter text-6xl">{nb.title}</h1>
+        {name && <p className="mt-3 font-garamond text-lg italic">kept by {name}</p>}
+        {subtitle && <p className="mt-3 font-garamond text-2xl">{subtitle}</p>}
         {nb.description && <p className="mt-4 font-garamond text-xl italic">{nb.description}</p>}
         {cover && <Engraving plate={cover} loading="eager" className="mx-auto mt-10 max-h-[60vh] w-auto" />}
         <p className="mt-8 font-garamond text-sm">{notes.length} notes · {(nb.translations[0] ?? "kjv").toUpperCase()}</p>
@@ -44,8 +54,8 @@ export function PrintNotebook({ nb, onDone }: { nb: Notebook; onDone: () => void
         notes.map((n) => {
           const r = parseOsis(n.start);
           if (!r) return null;
-          const end = n.end ? parseOsis(n.end) : undefined;
-          const ref = end ? { ...r, verseEnd: end.verse } : r;
+          const spans = noteSpans(n);
+          const ranges = spans.map((s) => ({ ...r, verse: parseOsis(s.start)?.verse ?? r.verse, verseEnd: s.end ? parseOsis(s.end)?.verse : undefined }));
           const book = r.book;
           const newBook = book !== lastBook;
           lastBook = book;
@@ -69,11 +79,17 @@ export function PrintNotebook({ nb, onDone }: { nb: Notebook; onDone: () => void
                   <figcaption className="mt-1 font-garamond text-xs italic">{p.title}, Gustave Doré</figcaption>
                 </figure>
               ))}
-              <h3 className="mt-6 font-garamond text-lg font-semibold">{formatRef(ref)}</h3>
+              <h3 className="mt-6 font-garamond text-lg font-semibold">{spansLabel(spans, label)}</h3>
               <blockquote className="scripture my-2 border-l-2 pl-4 !text-[15px] !leading-7">
-                {t.range(ref).map((v) => (
-                  <span key={v.verse}>
-                    <VerseText raw={v.raw} />{" "}
+                {ranges.map((rg, i) => (
+                  <span key={rg.verse}>
+                    {i > 0 && <span className="mx-1">…</span>}
+                    {t.range(rg).map((v) => (
+                      <span key={v.verse}>
+                        {ranges.length > 1 || rg.verseEnd ? <sup className="vnum">{v.verse}</sup> : null}
+                        <VerseText raw={v.raw} />{" "}
+                      </span>
+                    ))}
                   </span>
                 ))}
               </blockquote>

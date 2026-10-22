@@ -6,6 +6,94 @@ All notable changes to BibleLM. Format based on
 
 ## Unreleased
 
+### Added
+
+- **Seraphim and ophanim**: Merian's engraving of Ezekiel's vision (1630,
+  public domain) beside Ezekiel 1, its wheel full of eyes and its four-faced
+  creature as spots; hand-drawn ornaments of a six-winged seraph, the winged
+  eye and an ophan, used across the Lab.
+- **Numbered sections** in place of icon tabs on the Lab, Topics, the Atlas and
+  the Gallery: a numeral, a name, a line on what is there, a dithered ornament.
+- The Lab's front page shows the translations and the whole alphabet under its
+  title, beside the dithered rose.
+
+- **A new command palette** for the app only (pages, every setting, the
+  Lab's rooms; Scripture stays in Search): the placeholder types out things to
+  try, a dithered compass resolves as matches narrow, each group has its
+  ornament, and a settings command opens Settings on that row and flashes it.
+- **Search fields and dropdowns of one family** (`src/app/controls.tsx`): no
+  glow ring on focus, a line of ink dots that drifts while you type; the
+  browser's native dropdowns are gone.
+- **Ornaments everywhere, and a switch for them**: the current page's
+  ornament in the sidebar (re-dithered on each move), marks beside page
+  titles, hand-drawn emblems of the four evangelists beside every Gospel
+  chapter; Settings, Ornaments turns them all off.
+- **The Lab's front page**: a much larger title and lit rose, the model's
+  vital numbers, and the six rooms as a numbered table of contents.
+- **The Atlas**: the map glides to a chosen place, ripples its coasts like an
+  engraved map, names the seas, carries a cartouche and a scale bar, and
+  brings the places in most-named first; the timeline's eras are hatched,
+  each has its ornament, and the rows arrive as you scroll.
+- **Your name**: asked once on first start (optional), printed on a
+  notebook's title page; Settings, Your name.
+
+- **Woodcuts and engravings beyond Doré**, only from public-domain or CC0
+  sources and checked file by file (`scripts/art/woodcuts.mjs`): Dürer's
+  Apocalypse and St Jerome, Schnorr von Carolsfeld, Blake's Job, the
+  Nuremberg Chronicle, the 1534 Luther Bible. Each Gospel opens with its
+  evangelist, chapter initials sit over a tiny dither of the book's art, and
+  the empty notebook (Jerome's lion), empty search (Abraham and the stars) and
+  error page (St Michael and the dragon) have their pictures.
+- **The Lab on Axon**: with Axon 0.11 or newer installed, Training can run on
+  Axon (no PyTorch) and Generate streams from it.
+- **Jev's shadow evaluation** (docs/evals/shadow.md): on 30 study questions,
+  reranking search lifts nDCG@10 from 0.33 to 0.55.
+
+- **Studies for young men** (Topics, Studies, or "Study:" in the command
+  palette): for men around 18 to 25 fighting temptation. Pick a struggle (lust
+  and pornography, anger, pride, laziness and screens, drink, loneliness,
+  fear, identity) for ideas with their verses and a question each, the
+  stories, the passages readers return to, a walk through the cross
+  references from the whole study, and passages written to young men. One
+  click turns it into a notebook with a note per question.
+
+- **Notes on several verses at once**: in the reader, ctrl-click (cmd on a
+  Mac) adds or drops a verse, shift-click takes every verse from the last one
+  clicked, ctrl+shift-click adds that run, as in a file list. The verse panel
+  then shows the passage ("Romans 8:2–5, 9–11") and a note written there
+  covers all of it. Highlight, copy and learn by heart work on the passage too.
+- **Export, your way**: the whole notebook, one book or one chapter, as one
+  Markdown file, a file per book or a file per chapter, with the verses quoted
+  above each note; or printed (and saved as PDF) with the pictures.
+
+- **Ornaments**: twelve hand-drawn ornaments dithered live in the theme's
+  ink: a vine headpiece opens each book and an urn closes it, the fleuron is
+  now dotted, a sun and lamp mark Morning and Evening on Daily, a compass rose
+  sits on the Atlas, a quill in an empty notebook. All of them in Settings,
+  developer mode.
+- **The trinity mark** on Home, glowing slowly in rubric and gilt.
+- **The rose mark** in Settings, About: the rose window filled with moving
+  dithered waves that the pointer stirs.
+- **The lit rose** beside the Lab's title: the window in dark metal, two
+  lights, rubric and gilt, circling it.
+
+### Changed
+
+- Home's hero follows the church year in every scheme (the day's painting
+  stays in Look at today).
+- Printing leaves out the browser's own header and footer (date, address,
+  page count) and sets everything in the book faces.
+- A hero's credit sits under the picture's own edge, and a windowed hero
+  dissolves at the top as well.
+
+- The Topics view strip scrolls on a narrow window instead of running off it.
+
+- Notes file version 3: a note can cover several separate runs of verses in
+  one chapter (`more`). Older files load unchanged.
+- Notes are listed and exported in Bible order (Genesis before Exodus), not by
+  the letters of the book's abbreviation.
+- The reader marks a note once, where each of its runs ends, not on every verse.
+
 ## [2.0.0] — 2026-10-21
 
 BibleLM becomes an illustrated Bible study tool with the ML lab inside it.

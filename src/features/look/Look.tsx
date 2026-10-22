@@ -6,7 +6,7 @@
 import { useEffect, useMemo } from "react";
 import { Button, Icon, Tooltip, TooltipContent, TooltipTrigger } from "@nexis/design";
 import { Engraving, Painting, paintingShadow, usePaintings, usePlates } from "@/art/Art";
-import { byBibleOrder, paintingCredit, paintingUrl, type Painting as PaintingData, type Plate } from "@/lib/art";
+import { byBibleOrder, paintingCredit, paintingUrl, plateCredit, type Painting as PaintingData, type Plate } from "@/lib/art";
 import { formatRef, type Ref } from "@/lib/canon";
 import { useTranslation } from "@/lib/hooks";
 import { VerseText } from "@/features/read/ReadView";
@@ -121,7 +121,7 @@ export function Look() {
                 <span className="block">{painting.place}</span>
               </>
             ) : (
-              "Gustave Doré, wood engraving, 1866"
+              plate ? `${plateCredit(plate)}${plate.artist ? "" : ", wood engraving"}` : ""
             )}
           </p>
           <p className="mt-6 font-garamond text-sm italic text-muted-foreground">Look first. Then read. Then look again.</p>

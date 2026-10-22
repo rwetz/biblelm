@@ -152,7 +152,109 @@
   .print-sheet blockquote {
     border-color: var(--brand);
   }
+  /* No page margin: the browser then has nowhere to print its own header and
+     footer (date, title, URL, page count, all in Arial). The sheet keeps its
+     margins as padding, and everything on it is set in the book faces. */
   @page {
-    margin: 16mm 14mm;
+    margin: 0;
   }
+  .print-sheet {
+    padding: 16mm 22mm;
+    font-family: var(--font-garamond), serif;
+  }
+  .print-sheet * {
+    font-family: inherit;
+  }
+  .print-sheet .font-blackletter,
+  .print-sheet .dropcap {
+    font-family: var(--font-blackletter) !important;
+  }
+}
+
+/* ── Seeking: a line of dots that runs while you type into a search ───── */
+/* The palette's underline and every SearchField share it: no glow ring, just
+   ink dots that drift while the box has focus or a query (motion is the cue). */
+.palette-seek,
+.search-field::after {
+  color: var(--muted-foreground);
+  background-image: radial-gradient(circle, currentColor 0.7px, transparent 0.9px);
+  background-size: 5px 2px;
+  background-repeat: repeat-x;
+  opacity: 0.35;
+  transition: opacity 0.25s;
+}
+.palette-seek.is-seeking,
+.search-field:focus-within::after {
+  opacity: 0.9;
+  animation: seek-dots 0.9s linear infinite;
+}
+@keyframes seek-dots {
+  to { background-position: 10px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .palette-seek.is-seeking,
+  .search-field:focus-within::after { animation: none; }
+}
+
+/* A setting the palette jumped to: it glows once, then settles. */
+.setting-flash {
+  animation: setting-flash 1.6s ease-out;
+  border-radius: 0.5rem;
+}
+@keyframes setting-flash {
+  0%, 30% { background: color-mix(in oklab, var(--brand) 12%, transparent); }
+  100% { background: transparent; }
+}
+.search-field::after {
+  content: "";
+  position: absolute;
+  left: 0.85rem;
+  right: 0.85rem;
+  bottom: 3px;
+  height: 2px;
+  pointer-events: none;
+}
+
+/* ── Atlas ───────────────────────────────────────────────────────────── */
+/* Places arrive most-named first, each a dot that swells into place. */
+.atlas-pop {
+  animation: atlas-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes atlas-pop {
+  from { opacity: 0; transform: scale(0.2); }
+}
+/* Era bands on the timeline: ruled like the map's sea, drawn in from the left. */
+.era-hatch,
+.era-hatch-fine {
+  background-color: var(--background);
+  background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--foreground) 32%, transparent) 0 1px, transparent 1px 4px);
+}
+.era-hatch-fine {
+  background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--foreground) 22%, transparent) 0 1px, transparent 1px 6px);
+}
+.era-band {
+  animation: era-in 0.6s ease-out both;
+  transform-origin: left center;
+}
+@keyframes era-in {
+  from { opacity: 0; clip-path: inset(0 100% 0 0); }
+  to { opacity: 1; clip-path: inset(0 0 0 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-pop, .era-band { animation: none; }
+}
+
+/* ── Quiet focus on every field ─────────────────────────────────────────── */
+/* The design system rings a focused input in the accent. Here the accent is
+   kept for the current verse, the selection and the primary action, so a
+   field in focus only brightens a little and gains a hairline in the ink;
+   a field with an error still shows it. */
+[data-slot="input"]:focus-visible:not([aria-invalid="true"]),
+[data-slot="textarea"]:focus-visible:not([aria-invalid="true"]),
+[data-slot="select-trigger"]:focus-visible:not([aria-invalid="true"]) {
+  border-color: color-mix(in oklab, var(--foreground) 18%, transparent) !important;
+  box-shadow: none !important;
+  background-color: color-mix(in oklab, var(--input) 75%, transparent);
 }

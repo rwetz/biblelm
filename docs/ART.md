@@ -177,6 +177,78 @@ top-right, masked with a soft radial edge. Static, low contrast.
 - **Errors** (training crashed, file corrupt): a small Dürer dragon. This is
   the one place the demonic is playful.
 
+> **As built (ornaments):** twelve ornaments are drawn by hand as SVG in
+> shades of gray (`src/art/ornaments.ts`) and dithered live by `Dither` at
+> their drawn size, through `<Ornament name>`: fleuron, vine headpiece (a
+> book's first chapter), urn tailpiece (its last), Chi-Rho, IHS, the divine
+> name, a budded cross, compass rose (Atlas), Ezekiel's wheels, sun and lamp
+> (Morning and Evening on Daily), quill (an empty notebook). Each is drawn in
+> ink densities, flipped for dark schemes so Dither's lit dots still draw the
+> figure. Developer mode in Settings shows them all. The evangelist symbols,
+> the sleeping lion and the dragon are figures, not ornament: they will be
+> cut from public-domain woodcuts instead (below).
+>
+> **As built (woodcuts, M19):** the other masters arrive through
+> `scripts/art/woodcuts.mjs`, which takes only Wikimedia Commons files tagged
+> public domain or museum scans released as CC0 (the Met, the Rijksmuseum, the
+> Yale Center for British Art), checks each file's licence when it fetches it,
+> and refuses anything else; credits in [woodcut-credits.md](woodcut-credits.md).
+> They load as plates numbered from 1001 (`loadPlates`), so captions name the
+> real artist (`plateCredit`) and the reader sets the Apocalypse woodcuts in
+> Revelation 4 and 12 and Blake's morning stars in Job 38. Placement now
+> follows the plan: Schnorr's Jacob's Dream on Search and Moses receiving the
+> tablets on Model; Dürer's St Jerome on Notebooks and St John before the
+> Elders on Topics; the Nuremberg Chronicle's creation roundel on Settings
+> with the 1534 Luther Bible's title page (Cranach's workshop) beside it. Tier 3:
+> each Gospel opens with its evangelist and his symbol (a sixteenth-century
+> set at the Rijksmuseum; the Book of Kells page was passed over because a
+> dithered illumination turns to mud); every chapter's initial sits over a
+> tiny dither of its book's first plate (`VerseText` `capArt`); an empty
+> notebook shows Jerome's lion asleep, cut from Dürer's engraving; a search
+> with no results shows Schnorr's Abraham counting the stars; a page that
+> crashes shows Dürer's St Michael and the dragon. Cranach's initials were
+> not needed: the drop caps take their art from each book's own plates.
+>
+> **The trinity mark** on Home (`src/art/TrinityMark.tsx`) is the one piece
+> of live colour: the knot's distance field lit by a WebGL2 glow in the
+> scheme's paper, rubric and gilt. Material adapted from Shaders.com by Shader
+> Effects Inc., MIT License, https://github.com/shader-effects-inc/shaders.
+> It holds still when motion is reduced and stops drawing off screen.
+>
+> **The rose mark** in Settings, About (`src/art/RoseMark.tsx`): the rose
+> window and heptagram cut as a CSS mask over slow waves of ordered dither in
+> the scheme's accent, stirred by the pointer. A 2D canvas, so no WebGL or
+> three.js; the same reduced-motion and off-screen rules.
+>
+> **The lit rose** beside the Lab's title (`src/art/LitRose.tsx`): the rose
+> window as dark metal, with a rubric and a gilt light circling it, glinting on
+> the bevels and casting a glow the tracery shadows. Same shader source and
+> licence as the trinity mark; both share the distance field and WebGL loop in
+> `src/art/sdfMark.ts`.
+
+> **As built (ornaments, round two):** the four evangelists' emblems (the
+> winged man, the lion, the ox, the eagle) are drawn by hand like the rest and
+> stand beside every Gospel chapter's number; the woodcut roundels still head
+> chapter 1. Each page has an ornament (`PAGE_ORNAMENT` in `SidebarArt.tsx`),
+> shown beside its title and large in the sidebar between the nav and the
+> vignette, where each change of page dissolves one and resolves the next.
+> The palette's groups, the Lab's rooms and the timeline's eras carry them
+> too. Settings, Ornaments turns every ornament off (study preference
+> `ornaments`).
+
+> **As built (angels):** the seraphim and ophanim, from public-domain sources
+> and drawn by hand. Woodcuts: Matthäus Merian's *Vision of Ezekiel* (1630) as
+> a plate in Ezekiel 1 and the Lab's sidebar picture, with its wheel full of
+> eyes and its four-faced living creature cut out as spots; a winged-heads
+> roundel after a fifteenth-century Italian woodcut (Didron). Ornaments: a
+> six-winged seraph (Isaiah 6:2), the winged eye (Revelation 4:6-8) and an
+> ophan, rings within rings full of eyes (Ezekiel 1:16-18). The Lab's rooms
+> take them: Training the ophan, Generate the seraph, Inside the winged eye.
+> The Lab's mark beside its title is now the dithered rose (`RoseMark`), and
+> its front page shows the translations and the alphabet under the title.
+> A page's views are numbered sections everywhere (`src/app/Sections.tsx`):
+> the Lab, Topics, the Atlas, the Gallery.
+
 ## Dithering pipeline
 
 Offline, scripted, reproducible: `scripts/art/dither.py` (or a small Rust

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Button,
-  CommandPalette,
   fmtShortcut,
   Icon,
   MOD_KEY,
@@ -19,7 +18,9 @@ import {
   type SidebarNavSection,
 } from "@nexis/design";
 import { Heptagram } from "@/art/Art";
-import { SidebarArt } from "@/art/SidebarArt";
+import { Palette } from "./Palette";
+import { Welcome } from "./Welcome";
+import { SidebarArt, SidebarOrnament } from "@/art/SidebarArt";
 import { formatRef, SHELVES } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
 import { refreshGpuInfo } from "@/lib/gpu";
@@ -27,6 +28,7 @@ import { HomeView } from "@/features/home/HomeView";
 import { ReadView, chapterStep, toggleVersePanel } from "@/features/read/ReadView";
 import { SearchView } from "@/features/search/SearchView";
 import { TopicsView } from "@/features/topics/TopicsView";
+import { STRUGGLES } from "@/lib/studies";
 import { AtlasView } from "@/features/atlas/AtlasView";
 import { GalleryView } from "@/features/gallery/GalleryView";
 import { DailyView } from "@/features/daily/DailyView";
@@ -100,10 +102,10 @@ export default function App() {
           <button
             type="button"
             onClick={() => setPalette(true)}
-            className="flex h-7 w-72 items-center gap-2 rounded-md bg-muted/60 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+            className="group flex h-7 w-80 items-center gap-2 rounded-md bg-muted/60 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
           >
             <Icon name="search" size="xs" />
-            <span className="flex-1 text-left">Go to a passage or command</span>
+            <span className="flex-1 truncate text-left transition-colors group-hover:text-foreground">Find a page, setting or command</span>
             <kbd className="font-mono text-[10px] opacity-70">{fmtShortcut(MOD_KEY, "Shift", "P")}</kbd>
           </button>
         }
@@ -112,6 +114,7 @@ export default function App() {
       <div className="nexis-shell-body flex min-h-0 flex-1">
         <div className="relative flex shrink-0">
           <SidebarNav sections={NAV} value={page} onChange={go} label="BibleLM" />
+          <SidebarOrnament />
           <SidebarArt />
         </div>
         <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -122,7 +125,8 @@ export default function App() {
       </div>
       <Status />
       <Look />
-      <CommandPalette open={palette} onOpenChange={setPalette} commands={commands} placeholder="Type a command, a book, or a page" />
+      <Palette open={palette} onOpenChange={setPalette} commands={commands} />
+      <Welcome />
     </div>
   );
 }
@@ -181,6 +185,8 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       run: () => study.go(i.id),
     }));
     const reading: PaletteCommand[] = [
+      { id: "studies", label: "Studies for young men", group: "Study", icon: "document", keywords: ["temptation", "struggle", "men's group", "bible study"], run: () => study.openStudies() },
+      ...STRUGGLES.map((s) => ({ id: `study-${s.id}`, label: `Study: ${s.title}`, group: "Study", icon: "document" as const, keywords: ["temptation", "young men", ...s.topics], run: () => study.openStudies(s.id) })),
       { id: "next-ch", label: "Next chapter", group: "Read", icon: "chevron-right", shortcut: "]", run: () => chapterStep(1) },
       { id: "prev-ch", label: "Previous chapter", group: "Read", icon: "chevron-left", shortcut: "[", run: () => chapterStep(-1) },
       { id: "verse-panel", label: study.selected ? "Hide the verse panel" : "Show the verse panel", group: "Read", icon: "info", shortcut: "P", keywords: ["notes", "cross references", "sidebar"], run: () => { if (study.page !== "read") study.go("read"); toggleVersePanel(); } },
@@ -226,16 +232,52 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
     const appearance: PaletteCommand[] = [
       ...art,
       { id: "dev", label: study.devMode ? "Turn developer mode off" : "Turn developer mode on", group: "Appearance", icon: "code", keywords: ["debug", "art", "hero", "plates"], run: () => { study.set({ devMode: !study.devMode }); if (!study.devMode) study.go("settings"); } },
-      ...SCHEMES.map((sc) => ({ id: `scheme-${sc.id}`, label: `Scheme: ${sc.label}`, group: "Appearance", icon: "contrast" as const, keywords: ["theme", "light", "dark", sc.blurb], run: () => setScheme(sc.id) })),
+      ...SCHEMES.map((sc) => ({ id: `scheme-${sc.id}`, label: `Scheme: ${sc.label}`, group: "Appearance", icon: "contrast" as const, keywords: ["theme", sc.id === "vellum" ? "light mode" : "dark mode", sc.blurb], run: () => setScheme(sc.id) })),
     ];
     const nbs: PaletteCommand[] = [
       { id: "nb-new", label: "New notebook", group: "Notebooks", icon: "add", run: () => { study.go("notebooks"); window.dispatchEvent(new CustomEvent("biblelm:new-notebook")); } },
       ...notebooks.map((b) => ({ id: `nb-${b.id}`, label: `Open notebook: ${b.title}`, group: "Notebooks", icon: "note" as const, run: () => { setActive(b.id); study.go("notebooks"); } })),
     ];
-    const books: PaletteCommand[] = [
-      { id: "goto", label: "Go to a passage…", group: "Read", icon: "search", keywords: ["reference", "verse"], run: () => { study.go("search"); window.dispatchEvent(new CustomEvent("biblelm:focus-search")); } },
+    // Every setting, by its label on the Settings page: the palette opens the
+    // page there and the row flashes (SettingsView listens for biblelm:setting).
+    const setting = (label: string, keywords: string[] = []): PaletteCommand => ({
+      id: `set-${label}`,
+      label: `Settings: ${label}`,
+      group: "Settings",
+      icon: "settings",
+      keywords,
+      run: () => {
+        study.go("settings");
+        setTimeout(() => window.dispatchEvent(new CustomEvent("biblelm:setting", { detail: label })), 120);
+      },
+    });
+    const settings: PaletteCommand[] = [
+      setting("Scheme", ["theme", "dark mode", "light mode", "vellum", "nocturne", "tenebrae", "colours"]),
+      setting("Follow the system's light and dark", ["dark mode", "auto", "system theme"]),
+      setting("Illustrations", ["art", "pictures", "engravings", "paintings", "off"]),
+      setting("Reading face", ["font", "typeface", "garamond", "fell", "gothic", "blackletter"]),
+      setting("Text size", ["font size", "bigger", "smaller", "zoom"]),
+      setting("Red letter", ["words of christ", "jesus", "red"]),
+      setting("Two columns", ["columns", "layout", "printed bible"]),
+      setting("Ornaments", ["decorations", "flair", "dither", "emblems", "turn off"]),
+      setting("Your name", ["name", "print", "title page", "profile"]),
+      ...SHELVES.map((s) => setting(s.label, ["canon", "shelf", "apocrypha", "deuterocanon", "books"])),
+      setting("Translations", ["kjv", "web", "asv", "version", "bible"]),
+      setting("Semantic search", ["meaning", "embedding", "machine"]),
+      setting("Jev", ["typesafe", "rerank", "api key", "machine help", "bypass"]),
+      setting("Developer mode", ["debug", "hero", "plates", "art", "ornaments sheet"]),
+      setting("About", ["credits", "licence", "version", "sources"]),
     ];
+    const lab: PaletteCommand[] = ([["corpus", "Corpus"], ["train", "Training"], ["generate", "Generate"], ["model", "Model"], ["inside", "Inside the model"], ["lessons", "Lessons"]] as const).map(([t, name]) => ({
+      id: `lab-${t}`,
+      label: `Lab: ${name}`,
+      group: "Lab",
+      icon: "brain" as const,
+      keywords: ["gpt", "model", "machine", "train"],
+      run: () => { study.go("lab"); setTimeout(() => window.dispatchEvent(new CustomEvent("biblelm:lab-tab", { detail: t })), 60); },
+    }));
+    const welcome: PaletteCommand = { id: "welcome", label: "Show the welcome again", group: "Settings", icon: "info", keywords: ["name", "first start", "intro"], run: () => study.set({ welcomed: false }) };
     void openPalette;
-    return [...books, ...nav, ...reading, ...translations, ...shelves, ...nbs, ...appearance];
+    return [...nav, ...reading, ...settings, welcome, ...lab, ...translations, ...shelves, ...nbs, ...appearance];
   }, [study, setScheme, catalog, notebooks, setActive, openPalette]);
 }

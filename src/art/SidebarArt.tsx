@@ -10,7 +10,9 @@ import { PAGE_PLATES, plateUrl, SIDEBAR_PLATES, type Plate } from "@/lib/art";
 import { useNotebooks } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
 import { verseOfTheDay } from "@/features/home/HomeView";
-import { Dither, usePlates } from "./Art";
+import { cn } from "@nexis/design";
+import { Dither, Ornament, usePlates } from "./Art";
+import type { OrnamentName } from "./ornaments";
 
 const ORDER = new Map(BOOKS.map((b, i) => [b.osis, i]));
 
@@ -78,4 +80,41 @@ export function SidebarArt() {
       </span>
     </button>
   );
+}
+
+/** Each page's ornament: the mark beside its title and in the sidebar. */
+export const PAGE_ORNAMENT: Record<string, OrnamentName> = {
+  home: "ihs",
+  read: "cross",
+  search: "compass",
+  topics: "chi-rho",
+  atlas: "compass",
+  gallery: "fleuron",
+  daily: "sun",
+  notebooks: "quill",
+  lab: "ophan",
+  settings: "urn",
+};
+
+/** Daily is the sun by day and the lamp after five. */
+const pageOrnament = (page: string): OrnamentName => (page === "daily" && new Date().getHours() >= 17 ? "lamp" : PAGE_ORNAMENT[page] ?? "fleuron");
+
+/**
+ * The sidebar's ornament: the current page's mark, dithered large in the open
+ * space between the nav and the vignette. Each move to another page dissolves
+ * it and resolves the next, dot by dot.
+ */
+export function SidebarOrnament() {
+  const page = useStudy((s) => s.page);
+  return (
+    // Centred in the gap between the nav (about 23rem tall) and the vignette (about 18.5rem); hidden when there is no gap.
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center [@media(max-height:820px)]:hidden" style={{ top: "calc(23rem + (100% - 41.5rem) / 2)" }}>
+      <Ornament key={page} name={pageOrnament(page)} className="w-20 text-sidebar-foreground opacity-70" />
+    </div>
+  );
+}
+
+/** A page title's ornament, set before the blackletter. */
+export function PageMark({ page, className }: { page: string; className?: string }) {
+  return <Ornament name={pageOrnament(page)} className={cn("h-9 text-muted-foreground", className)} />;
 }

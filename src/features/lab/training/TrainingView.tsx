@@ -1,5 +1,5 @@
 import { invoke, listen } from "@/lib/backend";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { InfoTip } from "@/features/lab/InfoTip";
 import { LossChart } from "@/features/lab/training/LossChart";
@@ -11,7 +11,7 @@ import {
 } from "@/store/appStore";
 import { refreshGpuInfo } from "@/lib/gpu";
 import { cn } from "@/lib/utils";
-import { Button, Icon, Progress } from "@nexis/design";
+import { Button, Icon, Progress, Segmented } from "@nexis/design";
 import { CrossLoader } from "@/art/Art";
 import { LabSection } from "@/features/lab/LabSection";
 
@@ -27,6 +27,12 @@ export function TrainingView() {
   const activeCorpus = useAppStore((s) => s.activeCorpus);
   const trainDevice = useAppStore((s) => s.trainDevice);
   const setTrainDevice = useAppStore((s) => s.setTrainDevice);
+  // Axon (the Rust engine) trains the same model with no PyTorch, when it is installed.
+  const [axon, setAxon] = useState(false);
+  const [engine, setEngine] = useState<"python" | "axon">("python");
+  useEffect(() => {
+    invoke<{ axon: string | null; axonText: boolean }>("lab_engines").then((e) => setAxon(e.axonText), () => setAxon(false));
+  }, []);
   const gpuInfo = useAppStore((s) => s.gpuInfo);
   const gpuError = useAppStore((s) => s.gpuError);
   const corpus = useAppStore((s) => s.corpus);
@@ -76,6 +82,7 @@ export function TrainingView() {
           epochs: config.epochs,
           eval_interval: config.evalInterval,
           tokenizer_type: config.tokenizerType,
+          engine: axon ? engine : "python",
         },
       });
     } catch (err) {
@@ -115,6 +122,18 @@ export function TrainingView() {
       }
       actions={
         <>
+          {axon && (
+            <Segmented
+              label="Engine"
+              size="sm"
+              value={engine}
+              onChange={setEngine}
+              segments={[
+                { id: "python", label: "PyTorch", title: "python/biblelm: the reference trainer" },
+                { id: "axon", label: "Axon", title: "Axon, in Rust: the same model with no Python. One reported epoch is one eval interval of steps." },
+              ]}
+            />
+          )}
           <StatusBadge status={status} />
           {status === "running" ? (
             <Button size="sm" variant="destructive" onClick={handleStop} className="gap-1.5">

@@ -23,6 +23,12 @@ interface StudyState {
   columns: boolean;
   /** Words of Christ in red, where the translation marks them. */
   redLetter: boolean;
+  /** The hand-drawn dithered ornaments (headpieces, page marks, the sidebar's). */
+  ornaments: boolean;
+  /** Your name, for the title page of a printed notebook. Empty: not given. */
+  name: string;
+  /** Whether the first-start welcome (which asks the name) has been seen. */
+  welcomed: boolean;
   location: Ref;
   /** Developer mode: preview any hero or plate to hunt for art bugs (Settings). */
   devMode: boolean;
@@ -30,8 +36,10 @@ interface StudyState {
   devHero: string | null;
   /** Developer override for the sidebar vignette (a plate number). */
   devPlate: number | null;
-  /** The verse the verse panel is open on. */
+  /** The verse the verse panel is open on, and the anchor of a shift-click. */
   selected: Ref | null;
+  /** Verse numbers picked in the selected verse's chapter (ctrl and shift click); one when a single verse is open. */
+  selection: number[];
   history: Ref[];
   /** Reading with the Hebrew and Greek under each verse. */
   interlinear: boolean;
@@ -42,17 +50,22 @@ interface StudyState {
   /** A person or place to open in the Atlas. */
   atlas: { kind: "place" | "person"; id: string } | null;
   walk: Ref | null;
+  /** A struggle to open in Topics, Studies (src/lib/studies.ts). */
+  studies: string | null;
   query: string;
 
   go: (page: Page) => void;
   read: (ref: Ref, opts?: { select?: boolean }) => void;
   select: (ref: Ref | null) => void;
+  /** Click on a verse as in a file list: alone, ctrl toggles it, shift takes the run from the anchor, ctrl+shift adds that run. */
+  pick: (ref: Ref, how: { ctrl: boolean; shift: boolean }) => void;
   openTopic: (name: string) => void;
   openWalk: (ref: Ref) => void;
+  openStudies: (id?: string) => void;
   searchFor: (q: string) => void;
   openLook: (t: LookTarget | null) => void;
   openAtlas: (kind: "place" | "person", id: string) => void;
-  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
+  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "ornaments" | "name" | "welcomed" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
 }
 
 const KEY = "biblelm:study";
@@ -66,6 +79,9 @@ const DEFAULTS = {
   textSize: 18,
   columns: false,
   redLetter: true,
+  ornaments: true,
+  name: "",
+  welcomed: false,
   interlinear: false,
   location: { book: "John", chapter: 1, verse: 0 } as Ref,
   history: [] as Ref[],
@@ -85,8 +101,8 @@ function load(): typeof DEFAULTS {
 
 function save(s: StudyState) {
   try {
-    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, interlinear, location, history, devMode, devHero, devPlate } = s;
-    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, interlinear, location, history, devMode, devHero, devPlate }));
+    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, name, welcomed, interlinear, location, history, devMode, devHero, devPlate } = s;
+    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, name, welcomed, interlinear, location, history, devMode, devHero, devPlate }));
   } catch {
     // Storage blocked: preferences just won't persist.
   }
@@ -95,24 +111,42 @@ function save(s: StudyState) {
 export const useStudy = create<StudyState>((set, get) => ({
   ...load(),
   selected: null,
+  selection: [],
   look: null,
   atlas: null,
   topic: null,
   walk: null,
+  studies: null,
   query: "",
   go: (page) => set({ page }),
-  openTopic: (topic) => set({ page: "topics", topic, walk: null }),
-  openWalk: (walk) => set({ page: "topics", walk, topic: null }),
+  openTopic: (topic) => set({ page: "topics", topic, walk: null, studies: null }),
+  openWalk: (walk) => set({ page: "topics", walk, topic: null, studies: null }),
+  openStudies: (id) => set({ page: "topics", studies: id ?? "", walk: null, topic: null }),
   searchFor: (query) => set({ page: "search", query }),
   openLook: (look) => set({ look }),
   openAtlas: (kind, id) => set({ page: "atlas", atlas: { kind, id } }),
   read: (ref, opts) => {
     const chapter = { book: ref.book, chapter: ref.chapter, verse: 0 };
     const history = [chapter, ...get().history.filter((h) => h.book !== ref.book || h.chapter !== ref.chapter)].slice(0, 12);
-    set({ page: "read", location: ref, history, selected: opts?.select && ref.verse ? ref : get().selected });
+    const pick = opts?.select && ref.verse;
+    set({ page: "read", location: ref, history, selected: pick ? ref : get().selected, selection: pick ? [ref.verse] : get().selection });
     save(get());
   },
-  select: (selected) => set({ selected }),
+  select: (selected) => set({ selected, selection: selected?.verse ? [selected.verse] : [] }),
+  pick: (ref, { ctrl, shift }) => {
+    const { selected, selection } = get();
+    const v = ref.verse;
+    if (!selected || selected.book !== ref.book || selected.chapter !== ref.chapter || (!ctrl && !shift)) return get().select(ref);
+    if (shift) {
+      // The anchor stays where it was, as in a file list.
+      const [lo, hi] = [Math.min(selected.verse, v), Math.max(selected.verse, v)];
+      const run = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+      return set({ selection: [...new Set([...(ctrl ? selection : []), ...run])].sort((a, b) => a - b) });
+    }
+    const next = selection.includes(v) ? selection.filter((x) => x !== v) : [...selection, v].sort((a, b) => a - b);
+    if (!next.length) return set({ selected: null, selection: [] });
+    set({ selected: { ...ref, verseEnd: undefined }, selection: next });
+  },
   set: (patch) => {
     set(patch);
     save(get());

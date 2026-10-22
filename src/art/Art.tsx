@@ -6,10 +6,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn, useReducedMotion, useTheme } from "@nexis/design";
 import { formatRef } from "@/lib/canon";
-import { heroSrcUrl, heroUrl, loadHeroes, loadLiterary, loadPaintings, loadPlates, paintingCredit, paintingUrl, plateUrl, rotation, type Hero, type Painting as PaintingData, type Plate } from "@/lib/art";
+import { heroSrcUrl, heroUrl, loadHeroes, loadLiterary, loadPaintings, loadPlates, paintingCredit, paintingUrl, plateCredit, plateUrl, rotation, type Hero, type Painting as PaintingData, type Plate } from "@/lib/art";
 import { useStudy } from "@/store/study";
 import { compose, cssColor, revealCells, type Composed, type PaintingLook } from "./painting";
 import { BAYER8, paintScattered, scatterSeeds, dither, fadeEdges, inkColor, loadImage, paint, toneGrid, type DitherAlgo, type Edges } from "./dither";
+import { ORNAMENTS, ornamentSrc, type OrnamentName } from "./ornaments";
 
 export function usePlates(): Plate[] {
   const [plates, setPlates] = useState<Plate[]>([]);
@@ -67,7 +68,7 @@ export function useRotatingHero(ms = 30_000): Hero | undefined {
   return list[rotation(list.length, ms, now)];
 }
 
-/** A Doré engraving, blended into the page (see .engraving in styles.css). */
+/** An engraving or woodcut, blended into the page (see .engraving in styles.css). */
 export function Engraving({
   plate,
   size = "full",
@@ -94,7 +95,7 @@ export function Engraving({
       loading={loading}
       decoding="async"
       draggable={false}
-      alt={`${plate.title}, Gustave Doré, 1866`}
+      alt={`${plate.title}, ${plateCredit(plate)}`}
       className={cn("engraving h-auto max-w-full", ghost && "ghost", className)}
       style={style}
     />
@@ -117,7 +118,7 @@ export function PlateFigure({ plate, onOpenRef, className }: { plate: Plate; onO
             </button>
           </>
         )}
-        <span className="block opacity-70">Gustave Doré, 1866</span>
+        <span className="block opacity-70">{plateCredit(plate)}</span>
       </figcaption>
     </figure>
   );
@@ -141,6 +142,7 @@ export function Dither({
   className,
   style,
   scatter,
+  inline = false,
 }: {
   src: string;
   algo?: DitherAlgo;
@@ -162,8 +164,10 @@ export function Dither({
   style?: React.CSSProperties;
   /** A scrolling element: when it scrolls, the dots blow loose with it and gather again. */
   scatter?: HTMLElement | null;
+  /** Inside running text (a drop cap): a block span, since a div cannot sit in a paragraph. */
+  inline?: boolean;
 }) {
-  const box = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const reduced = useReducedMotion();
   const { paletteEpoch, resolvedMode } = useTheme();
@@ -177,6 +181,7 @@ export function Dither({
   const levelRef = useRef(level);
   levelRef.current = level;
   const edgeKey = JSON.stringify(edges ?? null);
+  const Box = inline ? "span" : "div";
 
   useEffect(() => {
     const el = box.current;
@@ -289,7 +294,7 @@ export function Dither({
   }, [scatter, reduced, dark]);
 
   return (
-    <div ref={box} className={cn("relative overflow-hidden", className)} style={style}>
+    <Box ref={box as React.Ref<HTMLDivElement & HTMLSpanElement>} className={cn("relative overflow-hidden", inline && "block", className)} style={style}>
       <canvas
         ref={canvas}
         role={label ? "img" : undefined}
@@ -298,7 +303,7 @@ export function Dither({
         className="absolute left-0 top-0"
         style={{ imageRendering: "pixelated" }}
       />
-    </div>
+    </Box>
   );
 }
 
@@ -376,14 +381,14 @@ export function ArtSpot({ plate, title, children, className }: { plate?: Plate; 
           algo="blue"
           dot={1}
           focusY={35}
-          label={`${plate.title}, after Gustave Doré`}
+          label={`${plate.title}, after ${plate.artist ?? "Gustave Doré"}`}
           edges={{ top: 0.08, right: 0.08, bottom: 0.08, left: 0.08 }}
           className="mb-4 aspect-[4/5] w-48 text-foreground/85"
         />
       )}
       <p className="font-garamond text-xl text-foreground">{title}</p>
       {children && <div className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{children}</div>}
-      {art && <p className="mt-3 font-garamond text-xs italic text-muted-foreground/70">{plate.title}, after Doré</p>}
+      {art && <p className="mt-3 font-garamond text-xs italic text-muted-foreground/70">{plate.title}, after {plate.artist ?? "Doré"}</p>}
     </div>
   );
 }
@@ -502,7 +507,7 @@ export const paintingShadow = (p: PaintingData) => Math.min(0.45, Math.max(0, ((
 
 /** What a hero band can show: a Doré hero (an engraving) or a painting. */
 export type HeroArt = Hero | PaintingData;
-export const isPainting = (a: HeroArt): a is PaintingData => "artist" in a;
+export const isPainting = (a: HeroArt): a is PaintingData => "medium" in a;
 
 /** The source, look and credit of a hero band's art. */
 export function heroArt(a: HeroArt) {
@@ -569,7 +574,8 @@ export function DitherHero({
   const art = hero ? heroArt(hero) : null;
   const painted = !!hero && isPainting(hero);
   const side = width ? (painted ? 0.24 : 0.1) : 0;
-  const edges: Edges = { bottom: 1 - fadeFrom / 100, right: side, left: clearLeft ? 0.85 : side };
+  // A windowed picture dissolves on every side, the top a little too, so no edge reads as a cut.
+  const edges: Edges = { top: width ? 0.05 : 0, bottom: 1 - fadeFrom / 100, right: side, left: clearLeft ? 0.85 : side };
   return (
     <div className={cn("relative w-full shrink-0 overflow-hidden", className)} style={{ height }}>
       {show && art && !painted && (
@@ -598,7 +604,10 @@ export function DitherHero({
         />
       )}
       {show && art && caption && (
-        <span className="pointer-events-none absolute bottom-2 right-6 z-20 font-garamond text-xs italic text-muted-foreground">{art.credit}</span>
+        // The credit hangs under the picture's own right edge, not the band's.
+        <div className="pointer-events-none absolute inset-x-0 bottom-2 z-20 mx-auto flex justify-end px-6" style={{ maxWidth: width }}>
+          <span className="font-garamond text-xs italic text-muted-foreground">{art.credit}</span>
+        </div>
       )}
       {children && <div className="relative z-10 flex h-full flex-col">{children}</div>}
     </div>
@@ -682,18 +691,43 @@ export function Heptagram({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Tier 3: a hand-drawn ornament (src/art/ornaments.ts), dithered in the
+ * theme's ink at the size it is drawn. Size it by width or height; the other
+ * follows the drawing. `label` only when it means something (Morning, Evening).
+ */
+export function Ornament({
+  name,
+  algo = "atkinson",
+  dot = 1,
+  label,
+  level,
+  reveal,
+  className,
+}: {
+  name: OrnamentName;
+  algo?: DitherAlgo;
+  dot?: number;
+  label?: string;
+  /** How much of it is resolved, 0 to 1 (see Dither). */
+  level?: number;
+  reveal?: boolean;
+  className?: string;
+}) {
+  const dark = useTheme().resolvedMode === "dark";
+  const off = useStudy((s) => s.illustrations === "off" || !s.ornaments);
+  const src = useMemo(() => ornamentSrc(name, dark), [name, dark]);
+  if (off) return null;
+  const o = ORNAMENTS[name];
+  return <Dither src={src} algo={algo} dot={dot} focusY={50} label={label} level={level} reveal={reveal} className={cn("shrink-0 text-foreground", className)} style={{ aspectRatio: `${o.w} / ${o.h}` }} />;
+}
+
 /** A fleuron between sections. */
 export function Fleuron({ className }: { className?: string }) {
   return (
     <div aria-hidden className={cn("my-8 flex items-center justify-center gap-3 text-muted-foreground/60", className)}>
       <span className="h-px w-16 bg-current" />
-      <svg viewBox="0 0 40 16" className="h-4 w-10" fill="currentColor">
-        <path d="M20 1 L24 8 L20 15 L16 8 Z" />
-        <circle cx="9" cy="8" r="1.6" />
-        <circle cx="31" cy="8" r="1.6" />
-        <circle cx="3" cy="8" r="0.9" />
-        <circle cx="37" cy="8" r="0.9" />
-      </svg>
+      <Ornament name="fleuron" className="h-5 text-muted-foreground" />
       <span className="h-px w-16 bg-current" />
     </div>
   );

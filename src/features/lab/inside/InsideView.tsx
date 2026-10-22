@@ -157,7 +157,7 @@ function SurprisePanel() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const read = useStudy((s) => s.read);
-  const ezra = usePagePlate(116); // Ezra Reading the Law in the Hearing of the People
+  const ezra = usePagePlate(1016); // Merian's wheel within a wheel, its rims full of eyes
   const openRef = (r: string) => {
     const ref = parseRef(r);
     if (ref) read(ref, { select: true });

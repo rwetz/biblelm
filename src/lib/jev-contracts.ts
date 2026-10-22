@@ -129,3 +129,37 @@ export function answerQuestions(question: string, passages: { ref: string; text:
   });
   return q;
 }
+
+// 6. How directly each search result speaks to a study question (rerank).
+export function rerankQuestions(question: string, verses: { ref: string; text: string }[]) {
+  return Object.fromEntries(
+    verses.map((v, i) => [
+      `v${i}`,
+      {
+        type: "score",
+        instructions: `How directly does ${v.ref} speak to this study question: "${question}"? Judge only this verse: "${v.text}"`,
+        criteria: [
+          "Not about the question at all",
+          "Touches it in passing",
+          "Clearly relevant",
+          "Speaks to it directly and centrally",
+        ],
+      },
+    ]),
+  );
+}
+
+/**
+ * Pure: reorder candidates by Jev's relevance level, breaking ties by the
+ * original (embedding) order. Low-confidence judgments keep their position.
+ */
+export function decideRerank<T>(items: T[], r: { answers: Record<string, unknown> }, minConfidence = 0.55): { item: T; level: number | null }[] {
+  return items
+    .map((item, i) => {
+      const a = r.answers[`v${i}`] as { score: number; confidence: number } | undefined;
+      const level = a && a.confidence >= minConfidence ? a.score : null;
+      return { item, level, i };
+    })
+    .sort((x, y) => (y.level ?? 1.5) - (x.level ?? 1.5) || x.i - y.i)
+    .map(({ item, level }) => ({ item, level }));
+}

@@ -7,8 +7,8 @@
 
 import { backend } from "./backend";
 
-export { MODEL, ROUTE_QUESTIONS, VERSE_QUESTIONS, XREF_LEVELS, xrefQuestions, JUDGE_QUESTIONS, ANSWER_LEVELS, answerQuestions, clauses } from "./jev-contracts";
-import { MODEL, ROUTE_QUESTIONS, VERSE_QUESTIONS, xrefQuestions, JUDGE_QUESTIONS, answerQuestions } from "./jev-contracts";
+export { MODEL, ROUTE_QUESTIONS, VERSE_QUESTIONS, XREF_LEVELS, xrefQuestions, JUDGE_QUESTIONS, ANSWER_LEVELS, answerQuestions, clauses, rerankQuestions, decideRerank } from "./jev-contracts";
+import { MODEL, ROUTE_QUESTIONS, VERSE_QUESTIONS, xrefQuestions, JUDGE_QUESTIONS, answerQuestions, rerankQuestions, decideRerank } from "./jev-contracts";
 
 type Choice = { choice: string; confidence: number; probabilities?: Record<string, number> };
 type Score = { score: number; confidence: number; legend: string[] };
@@ -88,39 +88,6 @@ export function readVerse(ref: string, text: string, translation: string): Promi
 }
 
 // ── contract 2: rerank candidates for a study question ────────────────────
-
-export function rerankQuestions(question: string, verses: { ref: string; text: string }[]) {
-  return Object.fromEntries(
-    verses.map((v, i) => [
-      `v${i}`,
-      {
-        type: "score",
-        instructions: `How directly does ${v.ref} speak to this study question: "${question}"? Judge only this verse: "${v.text}"`,
-        criteria: [
-          "Not about the question at all",
-          "Touches it in passing",
-          "Clearly relevant",
-          "Speaks to it directly and centrally",
-        ],
-      },
-    ]),
-  );
-}
-
-/**
- * Pure: reorder candidates by Jev's relevance level, breaking ties by the
- * original (embedding) order. Low-confidence judgments keep their position.
- */
-export function decideRerank<T>(items: T[], r: JevResponse, minConfidence = 0.55): { item: T; level: number | null }[] {
-  return items
-    .map((item, i) => {
-      const a = r.answers[`v${i}`] as Score | undefined;
-      const level = a && a.confidence >= minConfidence ? a.score : null;
-      return { item, level, i };
-    })
-    .sort((x, y) => (y.level ?? 1.5) - (x.level ?? 1.5) || x.i - y.i)
-    .map(({ item, level }) => ({ item, level }));
-}
 
 export async function rerank<T>(question: string, items: T[], toVerse: (t: T) => { ref: string; text: string }) {
   if (bypass || !(await jevAvailable()) || !items.length) return null;

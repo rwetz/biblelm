@@ -153,14 +153,17 @@ M0 ─┬─ M1 ─┬─ M3 ─┬─ M5
 - [x] M6 Notebooks
 - [x] M7 Semantic search and topics
 - [x] M8 Cross-reference graph
-- [~] M9 Jev (built and unit-tested; the live shadow eval waits on TYPESAFE_API_KEY)
+- [x] M9 Jev (shadow evaluation in docs/evals/shadow.md: reranking lifts nDCG@10 from 0.33 to 0.55 on 30 study questions)
 - [x] M10 Map and structure
-- [~] M11 Lab 2.0 (inspection tools done; Axon's transformer is built on its text-gpt branch; the Lab is not wired to it yet)
+- [x] M11 Lab 2.0 (inspection tools; the Lab trains and generates through Axon when an Axon with the text template is installed, PyTorch otherwise; ML.md)
 - [-] M12 Grounded commentary (dropped: no large hosted model, see ML.md)
 - [x] M13 Release 2.0 (tagged v2.0.0; Windows and macOS installers built by CI, `.github/workflows/release.yml`)
 - [x] M14 Paintings and partial dithering (Caravaggio and his followers, the Tenebrae scheme, Look and the Gallery; ART.md)
 - [x] M15 Atlas, Daily and the interlinear (places, people, timeline, the Daily Office, plans, FSRS; STUDY.md)
 - [x] M16 The rest of IDEAS.md (words, links, echoes, lessons, suffix array, notes merge; IDEAS.md, As built)
+- [x] M17 Notes on several verses (ctrl and shift click in the reader, notes version 3) and export by book or chapter (STUDY.md)
+- [x] M18 Studies for young men (Topics, Studies; STUDY.md) and ornaments (ART.md)
+- [x] M19 Woodcuts and the rest of ART.md's Tier 3 (Dürer, Schnorr, Blake, Nuremberg, Luther 1534, evangelists; ART.md)
 
 ## What changed from the plan
 
@@ -172,5 +175,5 @@ transformers.js instead of `ort` (M7), engraved rather than dithered plates
 (M12). Added after: Strong's word study and red-letter text, from eBible's USFM.
 Added after 2.0's plan: paintings with partial dithering and a third scheme,
 Tenebrae (M14); the Atlas, the Daily page and the interlinear (M15); every
-remaining idea in IDEAS.md (M16). Not built yet: the Lab running on Axon
-(Axon's text model exists, unreleased).
+remaining idea in IDEAS.md (M16). The Lab drives Axon's text model when it is
+installed (M11); Axon 0.11 itself is still on its `text-gpt` branch, unreleased.

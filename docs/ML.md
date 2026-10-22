@@ -12,7 +12,23 @@ the text of the Bible. Generated text is always labelled.
 > Lab's inspection tools (attention, logit lens, surprise) are in
 > `python/biblelm/inspect_model.py`. Axon now has the transformer (branch
 > `text-gpt`, v0.11.0: `axon new text`, same shape as `model.py`, `serve`
-> streams characters); wiring the Lab's Training and Generate tabs to it is next.
+> streams characters).
+>
+> **As built (M11):** the Lab drives Axon when it finds an `axon` binary
+> (`BIBLELM_AXON`, else PATH) that is 0.11 or newer (`lab_engines` in
+> `src-tauri/src/lib.rs`). Training: the Lab writes `runs/axon/train.toml` from
+> its own settings (one Axon epoch is one eval interval of steps), runs
+> `axon --nexis-protocol train`, and folds Axon's per-metric protocol events
+> into the Lab's `train:metric` rows at each epoch. Generate uses whichever
+> engine trained last, streaming characters from `axon serve`. PyTorch stays
+> the default and the only engine for the inspection tools.
+>
+> **As built (M9):** the shadow evaluation (`scripts/bench/shadow.ts`,
+> [evals/shadow.md](evals/shadow.md)) scores search's semantic top 20 against
+> hand-labelled passages for 30 study questions, with and without Jev's
+> rerank: MRR@10 0.32 to 0.55, nDCG@10 0.33 to 0.55, better on 16 questions
+> and worse on 1. The rerank's request and decision live in
+> `jev-contracts.ts`, so the benchmark runs exactly what the app does.
 
 ## Which model for which job
 

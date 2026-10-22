@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Icon, SectionLabel, Spinner, cn } from "@nexis/design";
-import { DitherHero, usePaintings } from "@/art/Art";
+import { DitherHero, Ornament, usePaintings } from "@/art/Art";
 import { paintingCredit, paintingForDay, paintingUrl } from "@/lib/art";
 import type { Translation } from "@/lib/bible";
 import { formatRef, parseOsis, type Ref } from "@/lib/canon";
@@ -14,7 +14,8 @@ import { PLANS, planDay, planDays, portionLabel, todayISO } from "@/lib/plans";
 import { useTranslation } from "@/lib/hooks";
 import { useNotebooks } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
-import { VerseText } from "@/features/read/ReadView";
+import { VerseText } from "@/features/read/ReadView";
+import { PageMark } from "@/art/SidebarArt";
 
 export function DailyView() {
   const translation = useStudy((s) => s.translation);
@@ -35,7 +36,7 @@ export function DailyView() {
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <DitherHero hero={band} height="17rem" clearLeft fadeFrom={42} caption={false}>
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-end px-8 pb-5">
-          <h1 className="font-blackletter text-5xl">Daily</h1>
+          <h1 className="flex items-center gap-3 font-blackletter text-5xl"><PageMark page="daily" />Daily</h1>
           <p className="mt-1 font-garamond text-lg italic text-muted-foreground">
             {date}
             {office?.label ? ` · ${office.label}` : ""}
@@ -81,9 +82,9 @@ function Office({ lect }: { lect: Lectionary | null | undefined }) {
       {e.title && <p className="mt-1 font-garamond text-lg italic">{e.title}</p>}
       <div className="mt-4 grid gap-6 sm:grid-cols-2">
         <div>
-          <SectionLabel>Morning psalms</SectionLabel>
+          <SectionLabel className="flex items-center gap-2"><Ornament name="sun" className="h-5" /> Morning psalms</SectionLabel>
           <div className="mt-1 flex flex-wrap gap-1">{e.psalms.morning.map((p) => <RefButton key={p} label={`Psalm ${p}`} r={psalmRef(p)} />)}</div>
-          <SectionLabel className="mt-4">Evening psalms</SectionLabel>
+          <SectionLabel className="mt-4 flex items-center gap-2"><Ornament name="lamp" className="h-5" /> Evening psalms</SectionLabel>
           <div className="mt-1 flex flex-wrap gap-1">{e.psalms.evening.map((p) => <RefButton key={p} label={`Psalm ${p}`} r={psalmRef(p)} />)}</div>
         </div>
         <div>
