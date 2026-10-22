@@ -107,6 +107,7 @@ async function demoJev(req: { task: string; input: unknown }): Promise<unknown> 
 const labDemo: Record<string, (args?: Record<string, unknown>) => Promise<unknown>> = {
   corpus_list: async () => [DEMO_KJV, { id: "web", name: "World English Bible", language: "English", license: "Public domain", verified: true, hasUrl: true, downloaded: false }],
   corpus_status: async () => DEMO_KJV,
+  lab_engines: async () => ({ axon: null, axonText: false }),
   corpus_alphabet: async () =>
     [..." etaohnsirdl\nufm,wycgb:pv1.k2AI3;L4ODTR56JG789S0B?HMEjWFz'NPCxqZYK!U()V-Q*"].map((c, i) => [c, Math.round(746_784 * 0.86 ** i)]),
   corpus_preview: async () => "The Old Testament of the King James Version of the Bible\nThe First Book of Moses: Called Genesis\n\n1:1 In the beginning God created the heaven and the earth.",
