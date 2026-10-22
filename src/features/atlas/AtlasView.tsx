@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Input, SectionLabel, Segmented, Spinner, cn } from "@nexis/design";
+import { Ornament } from "@/art/Art";
 import { ERAS, loadLand, personName, project, yearLabel, type Land, type Person, type Place } from "@/lib/atlas";
 import type { Translation, VerseIndex } from "@/lib/bible";
 import { BOOKS, formatRef } from "@/lib/canon";
@@ -131,6 +132,7 @@ function Places({ t, index, places, initial }: { t: Translation; index: VerseInd
             ))}
           </select>
         </div>
+        {land && <Ornament name="compass" className="pointer-events-none absolute bottom-10 right-6 w-24 text-muted-foreground opacity-80" />}
         <p className="pointer-events-none absolute bottom-3 left-4 text-[11px] text-muted-foreground">
           Locations from OpenBible.info; many ancient sites are uncertain. Coastlines from Natural Earth.
         </p>

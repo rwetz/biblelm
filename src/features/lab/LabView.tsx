@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle, cn, Icon, IN_TAURI, Segmented } from "@nexis/design";
 import { Dither, DitherHero, useRotatingHero } from "@/art/Art";
+import { LitRose } from "@/art/LitRose";
 import { heroUrl, type Hero } from "@/lib/art";
 import { useStudy } from "@/store/study";
 import { LAB_NEEDS_DESKTOP } from "@/lib/backend";
@@ -26,7 +27,10 @@ function Frontispiece({ hero }: { hero?: Hero }) {
   return (
     <div className={cn(LAB_COLUMN, "grid shrink-0 items-end gap-x-10 gap-y-6 pt-6 md:grid-cols-[minmax(20rem,1fr)_minmax(0,auto)]")}>
       <div className="pb-8">
-        <h1 className="whitespace-nowrap font-blackletter text-7xl leading-none">The Lab</h1>
+        <div className="flex items-center gap-5">
+          <LitRose className="size-24 shrink-0" />
+          <h1 className="whitespace-nowrap font-blackletter text-7xl leading-none">The Lab</h1>
+        </div>
         <p className="mt-4 max-w-md text-[15px] leading-relaxed text-muted-foreground">{LEDE}</p>
         {show && (
           <p className="mt-6 font-garamond text-sm italic text-muted-foreground/80">

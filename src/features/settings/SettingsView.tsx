@@ -12,6 +12,7 @@ import {
   useTheme,
 } from "@nexis/design";
 import { PlatePage, usePagePlate } from "@/art/Art";
+import { RoseMark } from "@/art/RoseMark";
 import { PAGE_PLATES } from "@/lib/art";
 import { backend } from "@/lib/backend";
 import { SHELVES } from "@/lib/canon";
@@ -165,6 +166,7 @@ export function SettingsView() {
 
         <Panel title="About">
           <div className="space-y-2 text-sm">
+            <RoseMark label="BibleLM" className="float-right mb-2 ml-6 size-44" />
             <p>
               <span className="font-blackletter text-lg">BibleLM</span> is a study tool and a programming project: a small language model trained from
               scratch on Scripture, inside an illustrated Bible. The machine finds; Scripture speaks.

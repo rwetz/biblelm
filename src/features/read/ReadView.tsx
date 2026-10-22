@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
   cn,
 } from "@nexis/design";
-import { DitherHero, Fleuron, PlateFigure, usePaintings, usePlates } from "@/art/Art";
+import { DitherHero, Fleuron, Ornament, PlateFigure, usePaintings, usePlates } from "@/art/Art";
 import { paintingCredit, paintingsInChapter, platesInChapter, type Painting } from "@/lib/art";
 import { loadTranslation, runs, type Run, type Translation, type Verse } from "@/lib/bible";
 import { isHebrew, loadInterlinear, type BookWords } from "@/lib/interlinear";
@@ -111,6 +111,10 @@ export function ReadView() {
   const chapterPlates = platesInChapter(plates, bookId, location.chapter);
   const chapterPaintings = paintingsInChapter(paintings, bookId, location.chapter);
   const b = bookOf(bookId);
+  const chapters = main.chapters(bookId);
+  // A headpiece opens a book and a tailpiece closes it, as in a printed Bible.
+  const firstChapter = location.chapter === chapters[0];
+  const lastChapter = location.chapter === chapters[chapters.length - 1];
 
   return (
     <div className="flex min-h-0 flex-1">
@@ -123,6 +127,7 @@ export function ReadView() {
             style={{ maxWidth: ts!.length > 1 ? "none" : columns ? "68rem" : "42rem", ["--scripture-face" as string]: FACES[face], ["--scripture-size" as string]: `${textSize}px` }}
           >
             <header className="mb-8 text-center">
+              {firstChapter && <Ornament name="vine" className="mx-auto mb-5 w-full max-w-[26rem]" />}
               {b && b.shelf !== "protestant" && (
                 <Badge variant="outline" className="mb-3">{SHELVES.find((s) => s.id === b.shelf)?.label}</Badge>
               )}
@@ -147,7 +152,7 @@ export function ReadView() {
               />
             )}
 
-            <Fleuron />
+            {lastChapter ? <Ornament name="urn" className="mx-auto my-10 h-20 text-muted-foreground" /> : <Fleuron />}
             <nav className="flex items-center justify-between text-sm">
               <Button variant="ghost" size="sm" onClick={() => chapterStep(-1)}>
                 <Icon name="chevron-left" /> Previous

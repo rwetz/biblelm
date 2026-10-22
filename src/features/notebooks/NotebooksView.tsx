@@ -27,7 +27,7 @@ import {
   TooltipTrigger,
   cn,
 } from "@nexis/design";
-import { ArtSpot, Engraving, Painting, paintingShadow, usePagePlate, usePaintings, usePlates } from "@/art/Art";
+import { ArtSpot, Engraving, Ornament, Painting, paintingShadow, usePagePlate, usePaintings, usePlates } from "@/art/Art";
 import { PAGE_PAINTINGS, PAGE_PLATES, paintingCredit, paintingUrl, type Plate } from "@/lib/art";
 import { formatRef, parseOsis, SHELVES, type Shelf } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
@@ -246,7 +246,8 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
           <NoteCard key={n.id} n={n} onOpen={() => openInReader(n.start)} onChange={(body) => updateNote(n.id, { body })} onTags={(tags) => updateNote(n.id, { tags })} onDelete={() => deleteNote(n.id)} />
         ))}
         {!mine.length && (
-          <p className="text-sm text-muted-foreground">
+          <p className="flex items-start gap-3 text-sm text-muted-foreground">
+            <Ornament name="quill" className="h-12" />
             Open the reader, tap a verse, and write in the panel that opens. Ctrl-click or shift-click to write on several verses at once. Notes land here.
           </p>
         )}

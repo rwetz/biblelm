@@ -10,6 +10,7 @@ import { heroSrcUrl, heroUrl, loadHeroes, loadLiterary, loadPaintings, loadPlate
 import { useStudy } from "@/store/study";
 import { compose, cssColor, revealCells, type Composed, type PaintingLook } from "./painting";
 import { BAYER8, paintScattered, scatterSeeds, dither, fadeEdges, inkColor, loadImage, paint, toneGrid, type DitherAlgo, type Edges } from "./dither";
+import { ORNAMENTS, ornamentSrc, type OrnamentName } from "./ornaments";
 
 export function usePlates(): Plate[] {
   const [plates, setPlates] = useState<Plate[]>([]);
@@ -682,18 +683,26 @@ export function Heptagram({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Tier 3: a hand-drawn ornament (src/art/ornaments.ts), dithered in the
+ * theme's ink at the size it is drawn. Size it by width or height; the other
+ * follows the drawing. `label` only when it means something (Morning, Evening).
+ */
+export function Ornament({ name, algo = "atkinson", dot = 1, label, className }: { name: OrnamentName; algo?: DitherAlgo; dot?: number; label?: string; className?: string }) {
+  const dark = useTheme().resolvedMode === "dark";
+  const mode = useStudy((s) => s.illustrations);
+  const src = useMemo(() => ornamentSrc(name, dark), [name, dark]);
+  if (mode === "off") return null;
+  const o = ORNAMENTS[name];
+  return <Dither src={src} algo={algo} dot={dot} focusY={50} label={label} className={cn("shrink-0 text-foreground", className)} style={{ aspectRatio: `${o.w} / ${o.h}` }} />;
+}
+
 /** A fleuron between sections. */
 export function Fleuron({ className }: { className?: string }) {
   return (
     <div aria-hidden className={cn("my-8 flex items-center justify-center gap-3 text-muted-foreground/60", className)}>
       <span className="h-px w-16 bg-current" />
-      <svg viewBox="0 0 40 16" className="h-4 w-10" fill="currentColor">
-        <path d="M20 1 L24 8 L20 15 L16 8 Z" />
-        <circle cx="9" cy="8" r="1.6" />
-        <circle cx="31" cy="8" r="1.6" />
-        <circle cx="3" cy="8" r="0.9" />
-        <circle cx="37" cy="8" r="0.9" />
-      </svg>
+      <Ornament name="fleuron" className="h-5 text-muted-foreground" />
       <span className="h-px w-16 bg-current" />
     </div>
   );

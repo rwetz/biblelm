@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Icon, SectionLabel, Spinner, cn } from "@nexis/design";
-import { DitherHero, usePaintings } from "@/art/Art";
+import { DitherHero, Ornament, usePaintings } from "@/art/Art";
 import { paintingCredit, paintingForDay, paintingUrl } from "@/lib/art";
 import type { Translation } from "@/lib/bible";
 import { formatRef, parseOsis, type Ref } from "@/lib/canon";
@@ -81,9 +81,9 @@ function Office({ lect }: { lect: Lectionary | null | undefined }) {
       {e.title && <p className="mt-1 font-garamond text-lg italic">{e.title}</p>}
       <div className="mt-4 grid gap-6 sm:grid-cols-2">
         <div>
-          <SectionLabel>Morning psalms</SectionLabel>
+          <SectionLabel className="flex items-center gap-2"><Ornament name="sun" className="h-5" /> Morning psalms</SectionLabel>
           <div className="mt-1 flex flex-wrap gap-1">{e.psalms.morning.map((p) => <RefButton key={p} label={`Psalm ${p}`} r={psalmRef(p)} />)}</div>
-          <SectionLabel className="mt-4">Evening psalms</SectionLabel>
+          <SectionLabel className="mt-4 flex items-center gap-2"><Ornament name="lamp" className="h-5" /> Evening psalms</SectionLabel>
           <div className="mt-1 flex flex-wrap gap-1">{e.psalms.evening.map((p) => <RefButton key={p} label={`Psalm ${p}`} r={psalmRef(p)} />)}</div>
         </div>
         <div>

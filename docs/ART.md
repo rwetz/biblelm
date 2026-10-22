@@ -177,6 +177,34 @@ top-right, masked with a soft radial edge. Static, low contrast.
 - **Errors** (training crashed, file corrupt): a small Dürer dragon. This is
   the one place the demonic is playful.
 
+> **As built (ornaments):** twelve ornaments are drawn by hand as SVG in
+> shades of gray (`src/art/ornaments.ts`) and dithered live by `Dither` at
+> their drawn size, through `<Ornament name>`: fleuron, vine headpiece (a
+> book's first chapter), urn tailpiece (its last), Chi-Rho, IHS, the divine
+> name, a budded cross, compass rose (Atlas), Ezekiel's wheels, sun and lamp
+> (Morning and Evening on Daily), quill (an empty notebook). Each is drawn in
+> ink densities, flipped for dark schemes so Dither's lit dots still draw the
+> figure. Developer mode in Settings shows them all. The evangelist symbols,
+> the sleeping lion and the dragon are figures, not ornament: they will be
+> cut from public-domain Dürer woodcuts instead.
+>
+> **The trinity mark** on Home (`src/art/TrinityMark.tsx`) is the one piece
+> of live colour: the knot's distance field lit by a WebGL2 glow in the
+> scheme's paper, rubric and gilt. Material adapted from Shaders.com by Shader
+> Effects Inc., MIT License, https://github.com/shader-effects-inc/shaders.
+> It holds still when motion is reduced and stops drawing off screen.
+>
+> **The rose mark** in Settings, About (`src/art/RoseMark.tsx`): the rose
+> window and heptagram cut as a CSS mask over slow waves of ordered dither in
+> the scheme's accent, stirred by the pointer. A 2D canvas, so no WebGL or
+> three.js; the same reduced-motion and off-screen rules.
+>
+> **The lit rose** beside the Lab's title (`src/art/LitRose.tsx`): the rose
+> window as dark metal, with a rubric and a gilt light circling it, glinting on
+> the bevels and casting a glow the tracery shadows. Same shader source and
+> licence as the trinity mark; both share the distance field and WebGL loop in
+> `src/art/sdfMark.ts`.
+
 ## Dithering pipeline
 
 Offline, scripted, reproducible: `scripts/art/dither.py` (or a small Rust

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Button, Icon, Input } from "@nexis/design";
+import { TrinityMark } from "@/art/TrinityMark";
 import { DitherHero, Engraving, Fleuron, useHeroes, usePaintings, usePlates } from "@/art/Art";
 import { paintingCredit, paintingForDay, paintingUrl, seasonalHero } from "@/lib/art";
 import { useScheme } from "@/app/scheme";
@@ -96,6 +97,7 @@ export function HomeView() {
       </DitherHero>
 
         <section className="mx-auto w-full max-w-3xl shrink-0 px-8 pb-8 text-center">
+          <TrinityMark className="mx-auto mb-3 size-14" />
           <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
           {passage?.verses.length ? (
             <blockquote className="mt-4">
