@@ -45,6 +45,19 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 > Tenebrae, Home opens on the day's painting instead of a Doré plate. Its light
 > variant (gesso and umber) is reached only by forcing light while in it.
 
+> **As built (palette and controls):** the command palette is the app's own
+> (`src/app/Palette.tsx`, Mod+Shift+P or the title bar): every page, setting
+> and Lab room, and nothing from Scripture, which stays in Search. It ranks
+> with the design system's `rankCommands`. While it is empty the placeholder
+> types out things to try; a dithered compass resolves as matches narrow; each
+> group has its ornament; a settings command opens Settings on that row and
+> flashes it. Search boxes and dropdowns share `src/app/controls.tsx`: a
+> `SearchField` has no glow ring on focus, only a line of ink dots that drifts
+> while you type, and a `Choice` (a Radix select) replaces the browser's
+> dropdown. A page that switches between views uses numbered sections
+> (`src/app/Sections.tsx`): a Roman numeral, a name, a line on what is there and
+> a dithered ornament in place of an icon tab.
+
 ## Typography
 
 | Use | Face | Licence | Notes |

@@ -233,7 +233,7 @@ function Exact({ r, t, onOpen }: { r: SearchResult; t: Translation; onOpen: (r: 
       return (
         <section>
           <SectionLabel>
-            {r.count.toLocaleString()} {r.count === 1 ? "verse contains" : "verses contain"} “{r.word}” in the {t.meta.abbr}
+            {r.count.toLocaleString()} {r.count === 1 ? "verse contains" : "verses contain"} “{r.word}” in {t.textsOf(r.results)}
           </SectionLabel>
           <div className="mt-2">
             {r.results.slice(0, 50).map((v) => (

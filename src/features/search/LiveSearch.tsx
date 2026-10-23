@@ -155,7 +155,7 @@ export function LiveSearch({
                         <p className="mb-1 text-xs text-muted-foreground">{formatRef(words.passage)}</p>
                       ) : (
                         <p className="mb-1 text-xs text-muted-foreground">
-                          {words.count.toLocaleString()} {words.count === 1 ? "verse" : "verses"} in the {t.meta.abbr}
+                          {words.count.toLocaleString()} {words.count === 1 ? "verse" : "verses"} in {t.textsOf(words.verses)}
                         </p>
                       )}
                       {words.verses.map((v) => (

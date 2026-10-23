@@ -60,6 +60,21 @@ Your Apocrypha case ("fascinated, but would not study it"): canon is a
 - Non-default shelves show a small badge (`Deuterocanon`) on every verse card so
   you always know what you are reading.
 
+> **As built (Pseudepigrapha):** the fourth shelf holds 1 Enoch in Charles's
+> 1917 translation, off by default like the others. No translation has the
+> book, so it is a *companion text* (`bible/enoch.json`, `companion: true`):
+> `loadTranslation` lets every translation borrow its books, and
+> `Translation.sourceOf(book)` says whose text a book is. The reader's footer,
+> the verse panel and parallel columns credit Charles. A parallel view shows
+> one column for 1 Enoch, since every translation borrows the same one, and
+> "Compare every translation" is hidden there. Search, Ask and meaning search
+> reach it when the shelf is on. Phrase counts in every translation count each
+> translation's own text only. Its verses come after the KJV's in the verse
+> index, so it has no cross references or topics of its own; "More like this"
+> and the Scripture map include it. Exact search folds accents
+> (`foldAccents`, `Verse.folded`), so "Azazel" finds Charles's "Azâzêl"; a
+> result count names whose text it counted in (`Translation.textsOf`).
+
 ## Notebooks ("instances")
 
 A **notebook** is a study: its own translations, shelves and notes. Example:

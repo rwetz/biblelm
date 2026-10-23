@@ -42,13 +42,13 @@ export async function findEverywhere(ts: Translation[], q: string, limit = 50): 
       const key = t.meta.id;
       let b = builds.get(key);
       if (!b) {
-        b = call({ kind: "build", key, texts: t.verses.map((v) => v.text) });
+        b = call({ kind: "build", key, texts: t.ownVerses.map((v) => v.text) });
         b.catch(() => builds.delete(key));
         builds.set(key, b);
       }
       await b;
       const r = await call<{ count: number; verses: number[] }>({ kind: "find", key, q: phrase, limit });
-      return { translation: t, count: r.count, verses: r.verses.map((i) => t.verses[i]) };
+      return { translation: t, count: r.count, verses: r.verses.map((i) => t.ownVerses[i]) };
     }),
   );
 }

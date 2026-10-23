@@ -752,6 +752,23 @@
   "usfm": "PS2"
  },
  {
+  "osis": "1En",
+  "code": "ENO",
+  "name": "1 Enoch",
+  "testament": "OT",
+  "shelf": "pseudepigrapha",
+  "aliases": [
+   "enoch",
+   "1 en",
+   "1en",
+   "i enoch",
+   "first enoch",
+   "ethiopic enoch",
+   "book of enoch"
+  ],
+  "usfm": "ENO"
+ },
+ {
   "osis": "Matt",
   "code": "MAT",
   "name": "Matthew",

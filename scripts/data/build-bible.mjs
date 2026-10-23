@@ -6,12 +6,14 @@
 //
 // Sources (all public domain except OpenBible, which is CC-BY: credited in the
 // app's About panel and in public/data/CREDITS.json):
-//   eBible.org verse-per-line files, OpenBible.info cross references + topics.
+//   eBible.org verse-per-line files, OpenBible.info cross references + topics,
+//   R. H. Charles's 1 Enoch (1917) from Project Gutenberg, a companion text.
 
 import { unzipSync, strFromU8 } from "fflate";
 import { createHash } from "node:crypto";
 import { BOOKS, BY_CODE, BY_OSIS, cached, kb, writeBin, writeJson } from "./lib.mjs";
 import { parseBook } from "./usfm.mjs";
+import { parseCharles } from "./enoch.mjs";
 
 const BY_USFM = new Map(BOOKS.map((b) => [b.usfm, b]));
 
@@ -96,10 +98,27 @@ async function buildTranslation(t) {
   return { meta: { ...base, hash, strongs: !!strongs, redLetter: !!usfm, books: out.map((b) => b.osis), verses, source: `https://ebible.org/details.php?id=${t.ebible}`, licence: "Public domain" }, data: out };
 }
 
-/** Verse index over the KJV (with Apocrypha): position i <-> "Gen.1.1". */
-function buildIndex(kjv) {
+/**
+ * A companion text: a book no translation has, which every translation
+ * borrows (src/lib/bible.ts). 1 Enoch, R. H. Charles (SPCK, 1917).
+ */
+async function buildEnoch() {
+  const url = "https://www.gutenberg.org/cache/epub/77935/pg77935.txt";
+  const text = strFromU8(new Uint8Array(await cached(url, "gutenberg/77935.txt")));
+  const out = [{ osis: "1En", chapters: parseCharles(text) }];
+  const verses = out[0].chapters.reduce((n, c) => n + c.v.length, 0);
+  if (out[0].chapters.length !== 108 || verses < 1060) throw new Error(`1 Enoch: parsed ${out[0].chapters.length} chapters, ${verses} verses (expected 108 and about 1,063)`);
+  const meta = { id: "enoch", name: "1 Enoch (R. H. Charles)", abbr: "Charles", language: "English", year: "1917", note: "Charles's critical signs are left out; the printed edition has them." };
+  const p = writeJson("bible/enoch.json", { ...meta, books: out });
+  console.log(`  ${"1En".padEnd(4)} ${String(1).padStart(3)} book  ${String(verses).padStart(6)} verses ${kb(p)}`);
+  const hash = createHash("sha256").update(JSON.stringify(out)).digest("hex").slice(0, 16);
+  return { meta: { ...meta, hash, companion: true, books: ["1En"], verses, source: "https://www.gutenberg.org/ebooks/77935", licence: "Public domain" }, data: out };
+}
+
+/** Verse index over the KJV (with Apocrypha): position i <-> "Gen.1.1". Companions come after, so no KJV position moves. */
+function buildIndex(...texts) {
   const refs = [];
-  for (const b of kjv) for (const c of b.chapters) for (const [v] of c.v) refs.push(`${b.osis}.${c.c}.${v}`);
+  for (const t of texts) for (const b of t) for (const c of b.chapters) for (const [v] of c.v) refs.push(`${b.osis}.${c.c}.${v}`);
   return refs;
 }
 
@@ -175,9 +194,10 @@ async function main() {
   console.log("translations");
   const built = [];
   for (const t of TRANSLATIONS) built.push(await buildTranslation(t));
-  writeJson("translations.json", built.map((b) => b.meta));
+  const enoch = await buildEnoch();
+  writeJson("translations.json", [...built, enoch].map((b) => b.meta));
 
-  const refs = buildIndex(built[0].data);
+  const refs = buildIndex(built[0].data, enoch.data);
   writeJson("refs.json", refs);
   const idx = new Map(refs.map((r, i) => [r, i]));
   console.log(`  index ${refs.length} verses`);
@@ -190,7 +210,7 @@ async function main() {
   await buildTopics(idx);
 
   writeJson("CREDITS.json", {
-    texts: built.map((b) => ({ name: b.meta.name, source: b.meta.source, licence: "Public domain" })),
+    texts: [...built, enoch].map((b) => ({ name: b.meta.name, source: b.meta.source, licence: "Public domain" })),
     data: [
       { name: "Cross references", source: "https://www.openbible.info/labs/cross-references/", licence: "CC-BY" },
       { name: "Topical Bible", source: "https://www.openbible.info/topics/", licence: "CC-BY" },

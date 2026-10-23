@@ -261,7 +261,7 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       setting("Two columns", ["columns", "layout", "printed bible"]),
       setting("Ornaments", ["decorations", "flair", "dither", "emblems", "turn off"]),
       setting("Your name", ["name", "print", "title page", "profile"]),
-      ...SHELVES.map((s) => setting(s.label, ["canon", "shelf", "apocrypha", "deuterocanon", "books"])),
+      ...SHELVES.map((s) => setting(s.label, ["canon", "shelf", "apocrypha", "deuterocanon", "pseudepigrapha", "enoch", "books"])),
       setting("Translations", ["kjv", "web", "asv", "version", "bible"]),
       setting("Semantic search", ["meaning", "embedding", "machine"]),
       setting("Jev", ["typesafe", "rerank", "api key", "machine help", "bypass"]),

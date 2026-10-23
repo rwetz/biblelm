@@ -8,6 +8,14 @@ All notable changes to BibleLM. Format based on
 
 ### Added
 
+- **The Pseudepigrapha shelf**: 1 Enoch in R. H. Charles's translation (1917,
+  public domain, from Project Gutenberg), off by default like the other
+  shelves. It reads beside any translation and is credited to Charles in the
+  reader, the verse panel and parallel columns; search, questions and search by
+  meaning reach it when the shelf is on. The book picker lists every shelf.
+- **Exact search ignores accents**: "Azazel" finds Charles's "Azâzêl" (and
+  Latin with accents in the Vulgate); the text is shown as printed.
+
 - **Seraphim and ophanim**: Merian's engraving of Ezekiel's vision (1630,
   public domain) beside Ezekiel 1, its wheel full of eyes and its four-faced
   creature as spots; hand-drawn ornaments of a six-winged seraph, the winged

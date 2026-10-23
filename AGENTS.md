@@ -34,14 +34,15 @@ plan), then the doc for the area you are touching:
 
 ```
 src/
-  app/              shell (App.tsx), Scriptorium theme
+  app/              shell (App.tsx), Palette, controls, Sections, Scriptorium theme
   art/Art.tsx       Engraving, PlateFigure, CornerPlate, DitherHero, ornaments
   features/         home, read (+VersePanel), search, topics (+map, structure,
                     words, links, echoes), atlas, gallery, look, daily, notebooks,
                     lab (corpus, training, inference, model, inside, lessons), settings
-  lib/              canon, bible (verse store), search, xrefs (graph), topics,
-                    semantic (+ worker), suffix (+ worker), words, els, atlas,
-                    interlinear, lectionary, plans, fsrs, jev, art, backend
+  lib/              canon (shelves), bible (verse store, companion texts), search,
+                    xrefs (graph), topics, studies, semantic (+ worker), suffix
+                    (+ worker), words, els, atlas, interlinear, lectionary,
+                    plans, fsrs, jev, art, backend
   store/            study (prefs + place), notebooks (your notes)
 src-tauri/src/      lib.rs (Lab workers, paths), study.rs (notes, export, Jev)
 python/biblelm/     the Lab: GPT, training, generation, ONNX, inspect_model

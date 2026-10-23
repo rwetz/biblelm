@@ -162,17 +162,17 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-6 p-4">
           <section className="space-y-3">
-            {translations.map((t) => {
+            {translations.filter((t, i) => i === 0 || t.sourceOf(refSel.book) === t.meta).map((t) => {
               const tv = t.verse(refSel);
               return (
                 <div key={t.meta.id}>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{t.meta.abbr}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{t.sourceOf(refSel.book).abbr}</p>
                   <p className="scripture mt-1 !text-base !leading-7">{tv ? <VerseText raw={tv.raw} /> : <span className="text-muted-foreground">Not in this translation.</span>}</p>
                 </div>
               );
             })}
             {v && <VerseReading reference={formatRef(refSel)} text={v.text} translation={main.meta.id} />}
-            <CompareAll refSel={refSel} base={main} />
+            {main.sourceOf(refSel.book) === main.meta && <CompareAll refSel={refSel} base={main} />}
           </section>
 
           <SeenInArt refSel={refSel} />

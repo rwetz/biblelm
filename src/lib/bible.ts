@@ -2,9 +2,11 @@
 // and served from /data (Vite's public/ in dev, the bundle in a release), so
 // reading and searching need no backend at all. Each translation keeps its own
 // versification; the KJV index (refs.json) is the spine that cross references,
-// topics and embeddings key on.
+// topics and embeddings key on. A companion text (1 Enoch in Charles's
+// translation) is one book no translation has: every translation borrows it,
+// so it reads and searches beside any of them, credited to its own source.
 
-import { book, type Ref, type Shelf } from "./canon";
+import { book, BOOKS, type Ref, type Shelf } from "./canon";
 
 export interface TranslationMeta {
   id: string;
@@ -23,6 +25,8 @@ export interface TranslationMeta {
   redLetter?: boolean;
   /** First 16 hex digits of the SHA-256 of the text: which edition, exactly. */
   hash?: string;
+  /** A book or two read beside every translation, never chosen as one. */
+  companion?: boolean;
 }
 
 interface ChapterData {
@@ -33,7 +37,7 @@ interface BookData {
   osis: string;
   chapters: ChapterData[];
 }
-interface TranslationData extends Omit<TranslationMeta, "books" | "verses" | "source" | "licence" | "strongs" | "redLetter" | "hash"> {
+interface TranslationData extends Omit<TranslationMeta, "books" | "verses" | "source" | "licence" | "strongs" | "redLetter" | "hash" | "companion"> {
   books: BookData[];
 }
 
@@ -47,17 +51,29 @@ export interface Verse {
   text: string;
   /** Starts a paragraph (pilcrow in the source). */
   para: boolean;
+  /** The text without accents, where it has any (Charles's "Azâzêl"), for exact search. */
+  folded?: string;
 }
 
 export class Translation {
   readonly meta: TranslationMeta;
   private readonly byBook = new Map<string, Map<number, Verse[]>>();
-  /** Every verse, canonical order. */
+  /** Books borrowed from a companion text, with whose they are. */
+  private readonly borrowed = new Map<string, TranslationMeta>();
+  /** Every verse, canonical order, borrowed books last. */
   readonly verses: Verse[] = [];
+  /** This translation's own verses, without borrowed books. */
+  readonly ownVerses: Verse[] = [];
 
   constructor(meta: TranslationMeta, data: TranslationData) {
     this.meta = meta;
-    for (const b of data.books) {
+    this.add(data.books);
+    this.ownVerses = [...this.verses];
+  }
+
+  private add(books: BookData[], from?: TranslationMeta) {
+    for (const b of books) {
+      if (this.byBook.has(b.osis)) continue;
       const chapters = new Map<number, Verse[]>();
       for (const ch of b.chapters) {
         const list = ch.v.map(([v, raw]) => toVerse(b.osis, ch.c, v, raw));
@@ -65,15 +81,33 @@ export class Translation {
         this.verses.push(...list);
       }
       this.byBook.set(b.osis, chapters);
+      if (from) this.borrowed.set(b.osis, from);
     }
+  }
+
+  /** Read a companion's books beside this translation's own. */
+  borrow(companion: TranslationMeta, data: { books: BookData[] }) {
+    this.add(data.books, companion);
+  }
+
+  /** Whose texts these verses are, after "in": "the KJV", "1 Enoch (R. H. Charles)", or both. */
+  textsOf(verses: readonly Verse[]): string {
+    const metas = new Set((verses.length ? verses : [undefined]).map((v) => (v ? this.sourceOf(v.book) : this.meta)));
+    return [...metas].map((m) => (m === this.meta ? `the ${m.abbr}` : m.name)).join(" and ");
+  }
+
+  /** Whose text this book is: this translation's, or the companion it borrowed it from. */
+  sourceOf(osis: string): TranslationMeta {
+    return this.borrowed.get(osis) ?? this.meta;
   }
 
   hasBook(osis: string): boolean {
     return this.byBook.has(osis);
   }
 
+  /** Canonical order, borrowed books in their place. */
   books(): string[] {
-    return [...this.byBook.keys()];
+    return BOOKS.map((b) => b.osis).filter((osis) => this.byBook.has(osis));
   }
 
   chapters(osis: string): number[] {
@@ -106,15 +140,13 @@ const SUPPLIED = /\[([^\]]*)\]/g;
 function toVerse(bookId: string, chapter: number, verse: number, raw: string): Verse {
   const para = raw.startsWith("¶");
   const body = para ? raw.slice(1).trimStart() : raw;
-  return {
-    book: bookId,
-    chapter,
-    verse,
-    raw: body,
-    text: body.replace(SUPPLIED, "$1").replace(WJ, "").replace(/¶\s*/g, "").replace(/\s+/g, " ").trim(),
-    para,
-  };
+  const text = body.replace(SUPPLIED, "$1").replace(WJ, "").replace(/¶\s*/g, "").replace(/\s+/g, " ").trim();
+  const folded = /[^\p{ASCII}\p{P}]/u.test(text) ? foldAccents(text) : text;
+  return { book: bookId, chapter, verse, raw: body, text, para, ...(folded !== text && { folded }) };
 }
+
+/** "Azâzêl" -> "Azazel": accents off, letters kept. */
+export const foldAccents = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").normalize("NFC");
 
 export const WJ_OPEN = "⸢";
 export const WJ_CLOSE = "⸣";
@@ -187,20 +219,38 @@ export async function getBinary(path: string): Promise<ArrayBuffer> {
 
 let catalog: Promise<TranslationMeta[]> | null = null;
 const loaded = new Map<string, Promise<Translation>>();
+const companions = new Map<string, Promise<TranslationData>>();
 
-export function listTranslations(): Promise<TranslationMeta[]> {
+function companionData(id: string): Promise<TranslationData> {
+  let p = companions.get(id);
+  if (!p) {
+    p = getJson<TranslationData>(`bible/${id}.json`);
+    p.catch(() => companions.delete(id));
+    companions.set(id, p);
+  }
+  return p;
+}
+
+function listAll(): Promise<TranslationMeta[]> {
   catalog ??= getJson<TranslationMeta[]>("translations.json");
   return catalog;
+}
+
+/** The translations a person can choose; companion texts are not among them. */
+export async function listTranslations(): Promise<TranslationMeta[]> {
+  return (await listAll()).filter((m) => !m.companion);
 }
 
 export function loadTranslation(id: string): Promise<Translation> {
   let p = loaded.get(id);
   if (!p) {
     p = (async () => {
-      const metas = await listTranslations();
-      const meta = metas.find((m) => m.id === id);
+      const metas = await listAll();
+      const meta = metas.find((m) => m.id === id && !m.companion);
       if (!meta) throw new Error(`Unknown translation "${id}"`);
-      return new Translation(meta, await getJson<TranslationData>(`bible/${id}.json`));
+      const t = new Translation(meta, await getJson<TranslationData>(`bible/${id}.json`));
+      for (const c of metas.filter((m) => m.companion)) t.borrow(c, await companionData(c.id));
+      return t;
     })();
     p.catch(() => loaded.delete(id));
     loaded.set(id, p);
@@ -238,4 +288,5 @@ export function resetBibleCache(): void {
   catalog = null;
   index = null;
   loaded.clear();
+  companions.clear();
 }

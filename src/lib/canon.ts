@@ -4,7 +4,7 @@
 
 import BOOKS_JSON from "./data/books.json";
 
-export type Shelf = "protestant" | "deuterocanon" | "apocrypha";
+export type Shelf = "protestant" | "deuterocanon" | "apocrypha" | "pseudepigrapha";
 export type Testament = "OT" | "NT";
 
 export interface Book {
@@ -23,6 +23,7 @@ export const SHELVES: { id: Shelf; label: string; blurb: string }[] = [
   { id: "protestant", label: "Protestant canon", blurb: "The 66 books." },
   { id: "deuterocanon", label: "Deuterocanon", blurb: "Tobit, Judith, Wisdom, Sirach, Baruch, Maccabees and the Greek additions." },
   { id: "apocrypha", label: "Apocrypha", blurb: "1 and 2 Esdras, the Prayer of Manasseh, Psalm 151, 3 and 4 Maccabees." },
+  { id: "pseudepigrapha", label: "Pseudepigrapha", blurb: "1 Enoch, in R. H. Charles's translation (1917). Quoted in Jude; Scripture in the Ethiopian and Eritrean churches." },
 ];
 
 export function book(osis: string): Book | undefined {

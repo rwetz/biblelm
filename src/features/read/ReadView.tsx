@@ -125,7 +125,7 @@ export function ReadView() {
           {chapterPaintings.length > 0 && <Frontispiece key={`${bookId}.${location.chapter}`} paintings={chapterPaintings} />}
           <article
             className="mx-auto px-8 pb-24 pt-10"
-            style={{ maxWidth: ts!.length > 1 ? "none" : columns ? "68rem" : "42rem", ["--scripture-face" as string]: FACES[face], ["--scripture-size" as string]: `${textSize}px` }}
+            style={{ maxWidth: columnsOf(ts!, bookId).length > 1 ? "none" : columns ? "68rem" : "42rem", ["--scripture-face" as string]: FACES[face], ["--scripture-size" as string]: `${textSize}px` }}
           >
             <header className="mb-8 text-center">
               {firstChapter && <BookHead bookId={bookId} plates={plates} />}
@@ -140,8 +140,8 @@ export function ReadView() {
               </p>
             </header>
 
-            {ts!.length > 1 ? (
-              <Parallel ts={ts!} bookId={bookId} chapter={location.chapter} picked={picked} onPick={onPick} />
+            {columnsOf(ts!, bookId).length > 1 ? (
+              <Parallel ts={columnsOf(ts!, bookId)} bookId={bookId} chapter={location.chapter} picked={picked} onPick={onPick} />
             ) : interlinear ? (
               <Interlinear verses={verses} bookId={bookId} chapter={location.chapter} picked={picked} onPick={onPick} />
             ) : (
@@ -161,7 +161,7 @@ export function ReadView() {
               <Button variant="ghost" size="sm" onClick={() => chapterStep(-1)}>
                 <Icon name="chevron-left" /> Previous
               </Button>
-              <span className="text-xs text-muted-foreground">{main.meta.name}</span>
+              <span className="text-xs text-muted-foreground">{main.sourceOf(bookId).name}</span>
               <Button variant="ghost" size="sm" onClick={() => chapterStep(1)}>
                 Next <Icon name="chevron-right" />
               </Button>
@@ -390,6 +390,12 @@ export function VerseText({ raw, dropcap = false, capArt }: { raw: string; dropc
   return <>{parts.map((r, i) => <RunText key={i} r={r} />)}</>;
 }
 
+/** Parallel columns for a book: one per distinct text (every translation borrows 1 Enoch from the same one). */
+function columnsOf(ts: Translation[], bookId: string): Translation[] {
+  const seen = new Set<string>();
+  return ts.filter((t) => t.hasBook(bookId) && !seen.has(t.sourceOf(bookId).id) && seen.add(t.sourceOf(bookId).id));
+}
+
 function Parallel({ ts, bookId, chapter, picked, onPick }: { ts: Translation[]; bookId: string; chapter: number; picked: Set<number>; onPick: OnPick }) {
   const nums = useMemo(() => {
     const set = new Set<number>();
@@ -401,7 +407,7 @@ function Parallel({ ts, bookId, chapter, picked, onPick }: { ts: Translation[]; 
     <div className="scripture">
       <div className="grid gap-x-8 border-b border-border pb-2 font-sans text-xs font-medium uppercase tracking-wider text-muted-foreground" style={{ gridTemplateColumns: `repeat(${ts.length}, minmax(0, 1fr))` }}>
         {ts.map((t) => (
-          <span key={t.meta.id}>{t.meta.abbr} · {t.meta.language}</span>
+          <span key={t.meta.id}>{t.sourceOf(bookId).abbr} · {t.sourceOf(bookId).language}</span>
         ))}
       </div>
       {nums.map((n) => (
