@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { InfoTip } from "@/features/lab/InfoTip";
 import { useAppStore, type ModelInfo } from "@/store/appStore";
 import { cn } from "@/lib/utils";
-import { Button, Icon, Input, Spinner } from "@nexis/design";
+import { Button, Icon, IN_TAURI, Input, Spinner } from "@nexis/design";
 
 /** Extensions `biblelm.model_io` knows how to validate and install. */
 const ACCEPTED = [".pt", ".pth", ".ckpt", ".onnx", ".json"];
@@ -57,7 +57,7 @@ export function ModelCard() {
     try {
       setModelInfo(await invoke<ModelInfo>("model_status"));
     } catch (err) {
-      console.error("model_status failed:", err);
+      if (IN_TAURI) console.error("model_status failed:", err);
     }
   }, [setModelInfo]);
 

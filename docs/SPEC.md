@@ -7,6 +7,10 @@ tags:
 
 # BibleLM — Tiny Transformer from Scratch
 
+> **Status:** the original 1.x idea note, kept for history. BibleLM is now an
+> illustrated study Bible with this model in its Lab; see
+> [ROADMAP.md](ROADMAP.md) for where it went.
+
 ## The Idea
 Train a small GPT-style transformer entirely from scratch on the King James Bible, then run inference through nexis-ml-rs (custom Rust engine). The goal isn't a useful chatbot — it's a complete, owned, end-to-end LM pipeline: tokenizer → training loop → ONNX export → Rust inference.
 

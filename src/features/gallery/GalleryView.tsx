@@ -34,11 +34,11 @@ export function GalleryView() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <DitherHero hero={hero} height="15rem" clearLeft fadeFrom={45} caption={false}>
+      <DitherHero hero={hero} height="15rem" clearLeft fadeFrom={36} caption={false}>
         <div className="mx-auto flex w-full max-w-6xl flex-1 items-end gap-4 px-8 pb-4">
           <div>
             <h1 className="flex items-center gap-3 font-blackletter text-5xl"><PageMark page="gallery" />Gallery</h1>
-            <p className="mt-1 max-w-md text-sm text-muted-foreground">
+            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
               Caravaggio, Rembrandt and their followers in oil; Doré, Dürer, Schnorr and Blake in engraving and woodcut. Each opens beside the passage it shows.
             </p>
           </div>

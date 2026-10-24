@@ -40,7 +40,8 @@ export function TopicsView() {
   if (error) return <DataMissing message={error} />;
   return (
     <div className="relative isolate flex min-h-0 flex-1 flex-col">
-      {(tab === "topics" || tab === "walk") && <CornerPlate plate={plate} corner="br" />}
+      {/* The plate keeps the empty index company; once a topic opens, its verses run where the plate would be. */}
+      {tab === "topics" && !topic && <CornerPlate plate={plate} corner="br" />}
       <DitherHero hero={mercy} height="8.5rem" clearLeft fadeFrom={30} caption={false}>
       <div className="mx-auto flex h-full w-full max-w-6xl items-end gap-4 px-8 pb-3 pt-8">
         <div>
@@ -133,6 +134,9 @@ const WHERE: [string, string][] = [
 type Size = "any" | "broad" | "focused";
 type Sort = "passages" | "az";
 
+/** A to Z with names that start with a letter first, so the index opens on "Abba", not "10 Commandments" and "2012". */
+const lettersFirst = (a: Topic, b: Topic) => Number(!/^[a-z]/i.test(a.name)) - Number(!/^[a-z]/i.test(b.name)) || a.name.localeCompare(b.name);
+
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
@@ -152,6 +156,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
   const [topics] = useTopics();
   const selectedName = useStudy((s) => s.topic);
+  const openTopic = useStudy((s) => s.openTopic);
   const [filter, setFilter] = useState("");
   const [kind, setKind] = useState<string | null>(null);
   const [where, setWhere] = useState("");
@@ -189,7 +194,7 @@ function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
     }
     // Names that start with what was typed come first, then the chosen order.
     const lead = (x: Topic) => (f && x.name.startsWith(f) ? 1 : 0);
-    list.sort((a, b) => lead(b) - lead(a) || (sort === "az" ? a.name.localeCompare(b.name) : b.p.length - a.p.length));
+    list.sort((a, b) => lead(b) - lead(a) || (sort === "az" ? lettersFirst(a, b) : b.p.length - a.p.length));
     return { list, perKind };
   }, [topics, places, kinds, filter, kind, where, size, sort]);
 
@@ -271,7 +276,7 @@ function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
             return (
               <button
                 type="button"
-                onClick={() => setSel(x.name)}
+                onClick={() => openTopic(x.name)}
                 className={cn("flex h-[30px] w-full items-center gap-2 px-4 text-left text-sm capitalize hover:bg-muted", sel === x.name && "bg-accent text-foreground")}
               >
                 <span className="flex-1 truncate">{x.name}</span>
@@ -324,6 +329,9 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
   const [from, setFrom] = useState(seed ? formatRef(seed) : "John 3:16");
   const [to, setTo] = useState("Genesis 22:8");
   const [walkFrom, setWalkFrom] = useState<number | null>(null);
+  /** What was typed when it could not be read as a verse. */
+  const [unread, setUnread] = useState<string | null>(null);
+  const [connectUnread, setConnectUnread] = useState<string | null>(null);
   const [chain, setChain] = useState<number[] | null | undefined>(undefined);
   const [idea, setIdea] = useState<number[] | "loading" | "error" | null>(null);
   const shelves = useStudy((s) => s.shelves);
@@ -350,7 +358,7 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
             Start at a verse and follow where Scripture keeps pointing. A random walk over 341,000 cross references that keeps returning to your verse
             (personalised PageRank) ranks the passages most bound up with it.
           </p>
-          <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); const i = resolve(from); setWalkFrom(i ?? null); }}>
+          <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); const i = resolve(from); setWalkFrom(i ?? null); setUnread(i === undefined ? from.trim() : null); }}>
             <Input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="A verse, e.g. Isaiah 53:5" />
             <Button type="submit" variant="brand" disabled={!g}>{g ? "Walk" : <Spinner />}</Button>
           </form>
@@ -358,7 +366,11 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
             {results?.map((r, i) => (
               <PassageRow key={r.verse} t={t} index={index} start={r.verse} end={r.verse} extra={<span className="ml-2 font-mono text-[10px] text-muted-foreground">#{i + 1}</span>} />
             ))}
-            {walkFrom === null && results === null && from && <p className="text-xs text-muted-foreground">Type a verse reference to begin.</p>}
+            {unread ? (
+              <p className="text-xs text-muted-foreground">Could not read “{unread}” as a verse. Try a reference such as Isaiah 53:5 or ps 23:1.</p>
+            ) : (
+              walkFrom === null && results === null && from && <p className="text-xs text-muted-foreground">Type a verse reference to begin.</p>
+            )}
           </div>
         </section>
         <section>
@@ -372,7 +384,9 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
             onSubmit={(e) => {
               e.preventDefault();
               const a = resolve(from), b = resolve(to);
-              setChain(g && a !== undefined && b !== undefined ? connect(g, a, b) : null);
+              const bad = a === undefined ? from.trim() : b === undefined ? to.trim() : null;
+              setConnectUnread(bad);
+              setChain(bad !== null ? undefined : g && a !== undefined && b !== undefined ? connect(g, a, b) : null);
             }}
           >
             <div className="flex items-center gap-2">
@@ -383,6 +397,7 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
             <Button type="submit" variant="outline" disabled={!g}>Connect</Button>
           </form>
           <div className="mt-4">
+            {connectUnread !== null && <p className="text-xs text-muted-foreground">Could not read “{connectUnread}” as a verse. Try a reference such as Isaiah 53:5 or ps 23:1.</p>}
             {chain === null && <p className="text-sm text-muted-foreground">No chain of cross references links these two (links run one way, as readers entered them).</p>}
             {chain && (
               <ol className="relative space-y-1 border-l border-border pl-4">

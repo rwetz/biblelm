@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { Button, Icon, Popover, PopoverContent, PopoverTrigger, cn } from "@nexis/design";
-import { book as bookOf, bookName } from "@/lib/canon";
+import { book as bookOf, bookName, SHELVES } from "@/lib/canon";
 import type { Translation } from "@/lib/bible";
 
 const SECTIONS: { testament: "OT" | "NT"; title: string; books: string[] }[] = [
@@ -39,9 +39,8 @@ export function BookPicker({
   const [picked, setPicked] = useState<string | null>(null);
   const have = new Set(books);
   const extra = books.filter((b) => !LISTED.has(b));
-  const shelfOf = (b: string) => (bookOf(b)?.shelf === "apocrypha" ? "Apocrypha" : "Deuterocanon");
-  const extraSections = ["Deuterocanon", "Apocrypha"]
-    .map((title) => ({ title, books: extra.filter((b) => shelfOf(b) === title) }))
+  const extraSections = SHELVES.filter((s) => s.id !== "protestant")
+    .map((s) => ({ title: s.label, books: extra.filter((b) => bookOf(b)?.shelf === s.id) }))
     .filter((s) => s.books.length);
 
   const choose = (b: string) => {
@@ -71,7 +70,7 @@ export function BookPicker({
       }}
     >
       <PopoverTrigger asChild>
-        <Button variant="secondary" size="sm" className="min-w-40 justify-between gap-2" aria-label="Book and chapter">
+        <Button variant="secondary" size="sm" className="min-w-0 justify-between gap-2 @xl:min-w-40" aria-label="Book and chapter">
           <span className="truncate">
             {bookName(bookId)} {chapter}
           </span>

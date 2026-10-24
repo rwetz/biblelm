@@ -4,9 +4,30 @@ All notable changes to BibleLM. Format based on
 [Keep a Changelog](https://keepachangelog.com/); this project follows
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## [2.1.0] — 2026-10-23
 
 ### Added
+
+- **The Pseudepigrapha shelf**: 1 Enoch in R. H. Charles's translation (1917,
+  public domain, from Project Gutenberg), off by default like the other
+  shelves. It reads beside any translation and is credited to Charles in the
+  reader, the verse panel and parallel columns; search, questions and search by
+  meaning reach it when the shelf is on. The book picker lists every shelf.
+- **Search by meaning listens to readers**: the verses OpenBible readers vote
+  for under the topics a question names are fused into the results, so "when
+  I feel anxious about tomorrow" finds Philippians 4:6.
+- **Beyond the canon**: the verse panel links Jude 14-15 to 1 Enoch 1:9, and
+  the echoes in Jude 6, 2 Peter 2:4 and Genesis 5 and 6, from either side,
+  each with the passage and a labelled study note.
+- **Notes read as written**: their Markdown is drawn (bold, italic, lists,
+  quotes, [[John.3.16]] links) and becomes the text box again on a click.
+- **Look at any engraving**: a plate beside the text opens full window.
+- **Places and people by book**: a long verse list opens with where Scripture
+  first names them and a chip per book.
+- **The Lab's Corpus in the browser**, read from the study texts.
+- **An end-to-end walk test** over the built data (`src/test/walk.test.tsx`).
+- **Exact search ignores accents**: "Azazel" finds Charles's "Azâzêl" (and
+  Latin with accents in the Vulgate); the text is shown as printed.
 
 - **Seraphim and ophanim**: Merian's engraving of Ezekiel's vision (1630,
   public domain) beside Ezekiel 1, its wheel full of eyes and its four-faced
@@ -93,6 +114,35 @@ All notable changes to BibleLM. Format based on
 - Notes are listed and exported in Bible order (Genesis before Exodus), not by
   the letters of the book's abbreviation.
 - The reader marks a note once, where each of its runs ends, not on every verse.
+
+### Fixed
+
+From the end-to-end review (docs/evals/e2e-2026-10-23.md):
+
+- Today's painting and the Home hero change at local midnight, not at UTC's
+  (7 pm in Chicago).
+- At the smallest window the verse panel no longer covers the reader's
+  toolbar: the rarer buttons fold into a More menu.
+- Corner plates never sit under text: pages pad their column clear of the
+  plate, and Topics shows its plate only while no topic is open.
+- The Lab no longer says "Loading translations…" forever in a browser, and
+  names Axon beside Python.
+- About credits 1 Enoch (Charles) and Merian's engraving; "1 note", not
+  "1 notes"; the evangelist's emblem no longer nests a block in a paragraph.
+- Compare says why a translation has nothing ("The LXX is the Old Testament
+  only"); the verse panel credits woodcuts to their makers.
+- The reader's sidebar shows the scene before the chapter rather than repeat
+  the plate beside it.
+- The topic index opens on names, not "10 Commandments" and "2012".
+- The Scripture map is no longer squeezed by a few far outliers.
+- Two people of one name are told apart in the timeline; the sons of Jacob
+  read as men, not as their tribes.
+- A sentence that no verse matches word for word opens on its meaning
+  results, not on "Nothing here".
+- Walk and Connect say when they cannot read a reference.
+- The palette finds each shelf by its own books ("enoch", "tobit").
+- A window narrower than the desktop's minimum (in `pnpm dev`) folds the
+  sidebar to its icons instead of squeezing the page.
 
 ## [2.0.0] — 2026-10-21
 
@@ -376,6 +426,7 @@ training dashboard.
 - **Architecture** — Rust backend spawns the Python scripts and bridges their NDJSON
   stdout to Tauri events; the frontend never touches PyTorch.
 
+[2.1.0]: https://github.com/rwetz/biblelm/releases/tag/v2.1.0
 [2.0.0]: https://github.com/rwetz/biblelm/releases/tag/v2.0.0
 [1.2.0]: https://github.com/rwetz/biblelm/releases/tag/v1.2.0
 [1.0.0]: https://github.com/rwetz/biblelm/releases/tag/v1.0.0

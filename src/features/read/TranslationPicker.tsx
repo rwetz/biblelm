@@ -14,7 +14,7 @@ export function TranslationPicker({ catalog, value, onChange }: { catalog: Trans
       <PopoverTrigger asChild>
         <Button variant="secondary" size="sm" className="justify-between gap-2" aria-label="Translation">
           <span className="font-medium">{current?.abbr ?? value.toUpperCase()}</span>
-          <span className="hidden max-w-44 truncate text-muted-foreground lg:inline">{current?.name}</span>
+          <span className="hidden max-w-44 truncate text-muted-foreground @2xl:inline">{current?.name}</span>
           <Icon name="chevron-down" size="xs" className="text-muted-foreground" />
         </Button>
       </PopoverTrigger>

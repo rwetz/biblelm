@@ -45,6 +45,28 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 > Tenebrae, Home opens on the day's painting instead of a Doré plate. Its light
 > variant (gesso and umber) is reached only by forcing light while in it.
 
+> **As built (palette and controls):** the command palette is the app's own
+> (`src/app/Palette.tsx`, Mod+Shift+P or the title bar): every page, setting
+> and Lab room, and nothing from Scripture, which stays in Search. It ranks
+> with the design system's `rankCommands`. While it is empty the placeholder
+> types out things to try; a dithered compass resolves as matches narrow; each
+> group has its ornament; a settings command opens Settings on that row and
+> flashes it. Search boxes and dropdowns share `src/app/controls.tsx`: a
+> `SearchField` has no glow ring on focus, only a line of ink dots that drifts
+> while you type, and a `Choice` (a Radix select) replaces the browser's
+> dropdown. A page that switches between views uses numbered sections
+> (`src/app/Sections.tsx`): a Roman numeral, a name, a line on what is there and
+> a dithered ornament in place of an icon tab.
+
+> **As built (narrow windows):** the reader column is a container: below 36rem
+> its toolbar folds Interlinear, Two columns and the chapter arrows into a
+> More menu, and the translation name and "Parallel" drop to their icons;
+> the verse panel is `clamp(18rem, 34vw, 25rem)` wide. So at the 900 px
+> minimum window, with the panel open, nothing in the toolbar is covered.
+> Below 900 px (only `pnpm dev` gets there) the sidebar folds to its icon
+> rail without its art (`useNarrow` in App.tsx) and the title-bar search
+> narrows.
+
 ## Typography
 
 | Use | Face | Licence | Notes |

@@ -26,7 +26,7 @@ const clean = (s) => s.replace(/\[([^\]]*)\]/g, "$1").replace(/[⸢⸣]/g, "").r
 
 function verseTexts(refs) {
   const text = new Map();
-  for (const id of ["kjv", "web"]) {
+  for (const id of ["kjv", "web", "enoch"]) {
     for (const b of read(`bible/${id}.json`).books)
       for (const c of b.chapters) for (const [v, t] of c.v) if (t) text.set(`${b.osis}.${c.c}.${v}`, clean(t)); // web overwrites kjv
   }
@@ -78,12 +78,19 @@ async function main() {
   const rows = Array.from({ length: refs.length }, (_, i) => Array.from(f32.subarray(i * DIM, (i + 1) * DIM)));
   const umap = new UMAP({ nComponents: 2, nNeighbors: 15, minDist: 0.08, random, nEpochs: 200 });
   const pos = umap.fit(rows);
-  const xs = pos.map((p) => p[0]), ys = pos.map((p) => p[1]);
-  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  // Fit the 0.5th to 99.5th percentile, not the extremes: a handful of verses
+  // UMAP flings far off (lists of names) would otherwise squeeze the rest into
+  // a corner of the default view. Those few sit on the edge instead.
+  const span = (vs) => {
+    const s = [...vs].sort((a, b) => a - b);
+    return [s[Math.floor(s.length * 0.005)], s[Math.ceil(s.length * 0.995) - 1]];
+  };
+  const [x0, x1] = span(pos.map((p) => p[0])), [y0, y1] = span(pos.map((p) => p[1]));
+  const unit = (v, lo, hi) => Math.round(Math.min(1, Math.max(0, (v - lo) / (hi - lo))) * 65535);
   const map = new Uint16Array(refs.length * 2);
   pos.forEach(([x, y], i) => {
-    map[i * 2] = Math.round(((x - x0) / (x1 - x0)) * 65535);
-    map[i * 2 + 1] = Math.round(((y - y0) / (y1 - y0)) * 65535);
+    map[i * 2] = unit(x, x0, x1);
+    map[i * 2 + 1] = unit(y, y0, y1);
   });
   writeBin("map.u16", map);
   console.log(`  done in ${Math.round((Date.now() - t0) / 1000)}s`);

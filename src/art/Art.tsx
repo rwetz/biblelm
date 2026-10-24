@@ -104,10 +104,14 @@ export function Engraving({
 
 /** A plate beside its passage, with its caption, as in an illustrated Bible. */
 export function PlateFigure({ plate, onOpenRef, className }: { plate: Plate; onOpenRef?: () => void; className?: string }) {
+  const openLook = useStudy((s) => s.openLook);
+  const look = () => openLook({ kind: "plate", id: plate.id });
   return (
     <figure className={cn("my-6 break-inside-avoid", className)}>
-      {/* Never wider than the scan itself: stretching a small plate is what blurs it. */}
-      <Engraving plate={plate} className="mx-auto w-full" style={{ maxWidth: `min(34rem, ${plate.full.width}px)` }} />
+      {/* Never wider than the scan itself: stretching a small plate is what blurs it. Click to look at it full window. */}
+      <button type="button" onClick={look} aria-label={`Look at ${plate.title}`} className="block w-full cursor-zoom-in">
+        <Engraving plate={plate} className="mx-auto w-full" style={{ maxWidth: `min(34rem, ${plate.full.width}px)` }} />
+      </button>
       <figcaption className="mt-2 text-center text-xs text-muted-foreground">
         <span className="font-garamond text-sm italic text-foreground">{plate.title}</span>
         {plate.ref && (
@@ -118,6 +122,8 @@ export function PlateFigure({ plate, onOpenRef, className }: { plate: Plate; onO
             </button>
           </>
         )}
+        {" · "}
+        <button type="button" className="underline-offset-2 hover:underline" onClick={look}>Look</button>
         <span className="block opacity-70">{plateCredit(plate)}</span>
       </figcaption>
     </figure>
@@ -311,6 +317,9 @@ export function Dither({
  * Tier 2: a quiet plate in a page's corner, in dots. It sits behind the page
  * (the host needs `isolate`), so text and cards always cover it.
  */
+/** A corner plate's width, shared with PlatePage's clearance. */
+const PLATE_WIDTH = "min(28%, 20rem)";
+
 export function CornerPlate({
   plate,
   corner = "br",
@@ -332,7 +341,8 @@ export function CornerPlate({
       dot={1}
       focusY={30}
       edges={{ br: { top: 0.3, left: 0.3 }, tr: { bottom: 0.3, left: 0.3 }, bl: { top: 0.3, right: 0.3 } }[corner]}
-      className={cn("pointer-events-none absolute -z-10 aspect-[4/5] w-[min(28%,20rem)] select-none text-muted-foreground opacity-80", pos, className)}
+      className={cn("pointer-events-none absolute -z-10 aspect-[4/5] select-none text-muted-foreground opacity-80", pos, className)}
+      style={{ width: PLATE_WIDTH }}
       scatter={scatter}
     />
   );
@@ -341,25 +351,34 @@ export function CornerPlate({
 /**
  * A scrolling page with a corner plate pinned to the window, not the text: as
  * the page scrolls the plate's dots blow loose and gather again in the corner.
+ * The page's centred column (`column` wide) is padded clear of the plate when
+ * the window is too narrow for both, so no text ever runs over it.
  */
 export function PlatePage({
   plate,
   corner = "br",
   hidePlate = false,
+  column = "48rem",
   className,
   children,
 }: {
   plate?: Plate;
   corner?: "br" | "tr" | "bl";
   hidePlate?: boolean;
+  column?: string;
   className?: string;
   children: React.ReactNode;
 }) {
   const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
+  const mode = useStudy((s) => s.illustrations);
+  // Centred, the column's edge meets the plate once the page is narrower than
+  // the column plus the plate on both sides; pad by the difference.
+  const clear = `max(0px, calc(${column} + 2 * ${PLATE_WIDTH} - 100%))`;
+  const pad = plate && !hidePlate && mode !== "off" ? (corner === "bl" ? { paddingLeft: clear } : { paddingRight: clear }) : undefined;
   return (
     <div className="relative isolate flex min-h-0 flex-1 flex-col">
       {!hidePlate && <CornerPlate plate={plate} corner={corner} scatter={scroller} />}
-      <div ref={setScroller} className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto", className)}>
+      <div ref={setScroller} className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto", className)} style={pad}>
         {children}
       </div>
     </div>

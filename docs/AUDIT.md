@@ -79,6 +79,11 @@ use the Bible.
   not used at all. Axon today trains MLPs, CNNs and gradient-boosted trees, not
   transformers, and its v0.9.0 work on the `gbdt-trees` branch is unreleased.
 
+> **Since (2026-10):** this audit describes 1.x and is kept as it was. Axon
+> has since gained trees (v0.10.0) and a text GPT (v0.11.0) on its `text-gpt`
+> branch, which BibleLM's Lab drives when it is installed (ML.md); the release
+> waits on that branch's pull request to Axon's `main`.
+
 ## Verdict
 
 Keep the Lab, it is the best-built part. Build a study app around it:

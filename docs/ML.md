@@ -14,6 +14,18 @@ the text of the Bible. Generated text is always labelled.
 > `text-gpt`, v0.11.0: `axon new text`, same shape as `model.py`, `serve`
 > streams characters).
 >
+> **As built (1 Enoch):** the index now ends with 1 Enoch's 1,063 verses
+> (37,885 vectors), embedded from Charles's text; they are searched only with
+> the Pseudepigrapha shelf on.
+>
+> **As built (topic votes):** search by meaning fuses in the verses
+> OpenBible readers vote for under the topics a query names (`votedVerses` in
+> `src/lib/topics.ts`): a topic counts when every word of its name shares a
+> stem with a query word, its passage scores are capped at 20 (a few
+> one-passage topics score 100), and the two lists meet by reciprocal rank
+> fusion, as exact and semantic search already do. Code chooses which
+> topics count; nothing is generated.
+>
 > **As built (M11):** the Lab drives Axon when it finds an `axon` binary
 > (`BIBLELM_AXON`, else PATH) that is 0.11 or newer (`lab_engines` in
 > `src-tauri/src/lib.rs`). Training: the Lab writes `runs/axon/train.toml` from

@@ -249,6 +249,13 @@ top-right, masked with a soft radial edge. Static, low contrast.
 > A page's views are numbered sections everywhere (`src/app/Sections.tsx`):
 > the Lab, Topics, the Atlas, the Gallery.
 
+> **As built (review fixes):** a corner plate is never under text. `PlatePage`
+> pads its centred column by `max(0, column + 2 × plate − page)`, which is
+> nothing on a wide window, and Topics shows its plate only on the empty
+> index. In the reader the sidebar shows the scene before the chapter
+> (`plateSoFar(…, before)`), since the chapter's own plates are beside its
+> verses. A plate beside the text opens in Look.
+
 ## Dithering pipeline
 
 Offline, scripted, reproducible: `scripts/art/dither.py` (or a small Rust

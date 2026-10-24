@@ -12,6 +12,7 @@ import { useTranslation } from "@/lib/hooks";
 import { VerseText } from "@/features/read/ReadView";
 import { bibleOrder, noteSpans, spansLabel, useNotebooks, type Note, type Notebook } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
+import { Markdown } from "@/lib/markdown";
 
 const label = (osis: string) => {
   const r = parseOsis(osis);
@@ -48,7 +49,7 @@ export function PrintNotebook({ nb, keep, subtitle, onDone }: { nb: Notebook; ke
         {subtitle && <p className="mt-3 font-garamond text-2xl">{subtitle}</p>}
         {nb.description && <p className="mt-4 font-garamond text-xl italic">{nb.description}</p>}
         {cover && <Engraving plate={cover} loading="eager" className="mx-auto mt-10 max-h-[60vh] w-auto" />}
-        <p className="mt-8 font-garamond text-sm">{notes.length} notes · {(nb.translations[0] ?? "kjv").toUpperCase()}</p>
+        <p className="mt-8 font-garamond text-sm">{notes.length} {notes.length === 1 ? "note" : "notes"} · {(nb.translations[0] ?? "kjv").toUpperCase()}</p>
       </section>
       {t &&
         notes.map((n) => {
@@ -93,7 +94,7 @@ export function PrintNotebook({ nb, keep, subtitle, onDone }: { nb: Notebook; ke
                   </span>
                 ))}
               </blockquote>
-              <div className="whitespace-pre-wrap font-garamond text-[15px] leading-7">{n.body}</div>
+              <Markdown text={n.body} className="font-garamond text-[15px] leading-7" />
               {n.tags.length > 0 && <p className="mt-1 text-xs">{n.tags.map((x) => `#${x}`).join(" ")}</p>}
             </article>
           );

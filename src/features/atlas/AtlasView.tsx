@@ -9,9 +9,9 @@ import { Button, SectionLabel,Spinner, cn, useReducedMotion } from "@nexis/desig
 import { m } from "motion/react";
 import type { OrnamentName } from "@/art/ornaments";
 import { Ornament } from "@/art/Art";
-import { ERAS, loadLand, personName, project, yearLabel, type Land, type Person, type Place } from "@/lib/atlas";
+import { distinctNames, ERAS, loadLand, personName, project, yearLabel, type Land, type Person, type Place } from "@/lib/atlas";
 import type { Translation, VerseIndex } from "@/lib/bible";
-import { BOOKS, formatRef } from "@/lib/canon";
+import { BOOKS, bookName, formatRef } from "@/lib/canon";
 import { useIndex, useTranslation } from "@/lib/hooks";
 import { useStudy } from "@/store/study";
 import { DataMissing } from "@/features/read/ReadView";
@@ -69,13 +69,56 @@ export function AtlasView() {
 }
 
 /** A verse list: reference and text, each opening the reader. */
+/**
+ * A place's or person's verses. A long list opens with where Scripture first
+ * names them and a chip per book (in Bible order, with its count), so
+ * Jerusalem's 955 verses can be read a book at a time.
+ */
 function Verses({ t, index, verses, limit = 60 }: { t: Translation; index: VerseIndex; verses: number[]; limit?: number }) {
   const read = useStudy((s) => s.read);
   const [n, setN] = useState(limit);
-  useEffect(() => setN(limit), [verses, limit]);
+  const [only, setOnly] = useState<string | null>(null);
+  useEffect(() => {
+    setN(limit);
+    setOnly(null);
+  }, [verses, limit]);
+  // The verse index runs in Bible order, so sorting by it is reading order.
+  const ordered = useMemo(() => [...verses].sort((a, b) => a - b), [verses]);
+  const books = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const i of ordered) {
+      const b = index.ref(i).book;
+      m.set(b, (m.get(b) ?? 0) + 1);
+    }
+    return [...m];
+  }, [ordered, index]);
+  const list = only ? ordered.filter((i) => index.ref(i).book === only) : verses;
+  const first = ordered[0];
   return (
     <div className="space-y-1">
-      {verses.slice(0, n).map((i) => {
+      {verses.length > 12 && first !== undefined && (
+        <div className="mb-3 space-y-2 px-2">
+          <p className="text-xs text-muted-foreground">
+            First named in{" "}
+            <button type="button" className="font-semibold text-brand hover:underline" onClick={() => read(index.ref(first), { select: true })}>
+              {formatRef(index.ref(first))}
+            </button>
+          </p>
+          {books.length > 1 && (
+            <div className="flex flex-wrap gap-1">
+              <button type="button" onClick={() => setOnly(null)} className={cn("rounded-full px-2 py-0.5 text-[11px]", only === null ? "bg-foreground/15 text-foreground" : "bg-muted/70 text-muted-foreground hover:bg-foreground/10")}>
+                All {verses.length}
+              </button>
+              {books.map(([b, k]) => (
+                <button key={b} type="button" onClick={() => setOnly(only === b ? null : b)} className={cn("rounded-full px-2 py-0.5 text-[11px]", only === b ? "bg-foreground/15 text-foreground" : "bg-muted/70 text-muted-foreground hover:bg-foreground/10")}>
+                  {bookName(b)} {k}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {list.slice(0, n).map((i) => {
         const r = index.ref(i);
         const v = t.verse(r);
         return (
@@ -85,9 +128,9 @@ function Verses({ t, index, verses, limit = 60 }: { t: Translation; index: Verse
           </button>
         );
       })}
-      {verses.length > n && (
+      {list.length > n && (
         <Button variant="ghost" size="sm" onClick={() => setN(n + 100)}>
-          {verses.length - n} more
+          {list.length - n} more
         </Button>
       )}
     </div>
@@ -476,6 +519,7 @@ function Timeline({ people, onPerson }: { people: Person[]; onPerson: (id: strin
   const [hover, setHover] = useState<string | null>(null);
   const reduced = useReducedMotion();
   const dated = ERAS.filter((e) => !Number.isNaN(e.from));
+  const byId = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
   const start = -2100, end = 120;
   const pct = (y: number) => ((y - start) / (end - start)) * 100;
   return (
@@ -513,6 +557,7 @@ function Timeline({ people, onPerson }: { people: Person[]; onPerson: (id: strin
         <div className="mt-6 space-y-6">
           {ERAS.map((e, ei) => {
             const here = people.filter((p) => p.era === e.name).slice(0, 16);
+            const names = distinctNames(here, byId);
             return (
               <m.section
                 key={e.name}
@@ -537,7 +582,7 @@ function Timeline({ people, onPerson }: { people: Person[]; onPerson: (id: strin
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {here.map((p) => (
                         <button key={p.id} type="button" title={p.brief} onClick={() => onPerson(p.id)} className="rounded-full bg-muted/70 px-2.5 py-0.5 text-xs hover:bg-foreground/10">
-                          {personName(p)}
+                          {names.get(p.id)}
                         </button>
                       ))}
                     </div>

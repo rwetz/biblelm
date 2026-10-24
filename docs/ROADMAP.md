@@ -164,6 +164,14 @@ M0 ─┬─ M1 ─┬─ M3 ─┬─ M5
 - [x] M17 Notes on several verses (ctrl and shift click in the reader, notes version 3) and export by book or chapter (STUDY.md)
 - [x] M18 Studies for young men (Topics, Studies; STUDY.md) and ornaments (ART.md)
 - [x] M19 Woodcuts and the rest of ART.md's Tier 3 (Dürer, Schnorr, Blake, Nuremberg, Luther 1534, evangelists; ART.md)
+- [x] M20 The Pseudepigrapha shelf: 1 Enoch in Charles's translation, a companion text every translation borrows (STUDY.md, DATA.md)
+
+Released as v2.1.0 (2026-10-23): M14 to M20, and the fixes from the
+end-to-end review (docs/evals/e2e-2026-10-23.md).
+
+Still open outside this repo: Axon 0.10 and 0.11 wait on
+[rwetz/axon#1](https://github.com/rwetz/axon/pull/1) (`text-gpt` into `main`);
+the Lab already drives a locally installed Axon.
 
 ## What changed from the plan
 
@@ -177,3 +185,6 @@ Added after 2.0's plan: paintings with partial dithering and a third scheme,
 Tenebrae (M14); the Atlas, the Daily page and the interlinear (M15); every
 remaining idea in IDEAS.md (M16). The Lab drives Axon's text model when it is
 installed (M11); Axon 0.11 itself is still on its `text-gpt` branch, unreleased.
+1 Enoch arrived as a companion text rather than a seventh translation (M20): no
+translation has it, so every one borrows it, and its verses follow the KJV's
+in the verse index.

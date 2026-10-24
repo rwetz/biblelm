@@ -21,7 +21,7 @@ import { Heptagram } from "@/art/Art";
 import { Palette } from "./Palette";
 import { Welcome } from "./Welcome";
 import { SidebarArt, SidebarOrnament } from "@/art/SidebarArt";
-import { formatRef, SHELVES } from "@/lib/canon";
+import { formatRef, SHELVES, type Shelf } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
 import { refreshGpuInfo } from "@/lib/gpu";
 import { HomeView } from "@/features/home/HomeView";
@@ -42,6 +42,13 @@ import { loadPaintings, paintingForDay, type Painting } from "@/lib/art";
 import { nextScheme, useScheme } from "@/app/scheme";
 import { SCHEMES } from "@/app/theme";
 import { useStudy, type Page } from "@/store/study";
+
+const SHELF_WORDS: Record<Shelf, string[]> = {
+  protestant: ["protestant", "66 books"],
+  deuterocanon: ["deuterocanon", "catholic", "tobit", "judith", "wisdom", "sirach", "baruch", "maccabees"],
+  apocrypha: ["apocrypha", "esdras", "manasseh", "psalm 151", "1611"],
+  pseudepigrapha: ["pseudepigrapha", "enoch", "watchers", "charles"],
+};
 
 const NAV: SidebarNavSection<Page>[] = [
   {
@@ -78,11 +85,30 @@ const VIEWS: Record<Page, () => React.ReactNode> = {
   settings: () => <SettingsView />,
 };
 
+/**
+ * Narrower than the desktop window's minimum (900 px), as `pnpm dev` can be:
+ * the sidebar folds to its icons and drops its art, so the page keeps room.
+ */
+function useNarrow(): boolean {
+  const query = "(max-width: 899px)";
+  const [narrow, setNarrow] = useState(() => typeof window !== "undefined" && window.matchMedia?.(query).matches === true);
+  useEffect(() => {
+    const m = window.matchMedia?.(query);
+    if (!m) return;
+    const on = () => setNarrow(m.matches);
+    on();
+    m.addEventListener?.("change", on);
+    return () => m.removeEventListener?.("change", on);
+  }, []);
+  return narrow;
+}
+
 export default function App() {
   const page = useStudy((s) => s.page);
   const redLetter = useStudy((s) => s.redLetter);
   const go = useStudy((s) => s.go);
   const [palette, setPalette] = useState(false);
+  const narrow = useNarrow();
   useCommandPaletteShortcut(() => setPalette((o) => !o));
   const commands = useCommands(() => setPalette(true));
   const loadNotes = useNotebooks((s) => s.load);
@@ -102,20 +128,20 @@ export default function App() {
           <button
             type="button"
             onClick={() => setPalette(true)}
-            className="group flex h-7 w-80 items-center gap-2 rounded-md bg-muted/60 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+            className="group flex h-7 w-80 max-w-[40vw] items-center gap-2 rounded-md bg-muted/60 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
           >
             <Icon name="search" size="xs" />
             <span className="flex-1 truncate text-left transition-colors group-hover:text-foreground">Find a page, setting or command</span>
-            <kbd className="font-mono text-[10px] opacity-70">{fmtShortcut(MOD_KEY, "Shift", "P")}</kbd>
+            <kbd className="hidden font-mono text-[10px] opacity-70 md:inline">{fmtShortcut(MOD_KEY, "Shift", "P")}</kbd>
           </button>
         }
         actions={<ModeToggle />}
       />
       <div className="nexis-shell-body flex min-h-0 flex-1">
         <div className="relative flex shrink-0">
-          <SidebarNav sections={NAV} value={page} onChange={go} label="BibleLM" />
-          <SidebarOrnament />
-          <SidebarArt />
+          <SidebarNav sections={NAV} value={page} onChange={go} label="BibleLM" collapsed={narrow} />
+          {!narrow && <SidebarOrnament />}
+          {!narrow && <SidebarArt />}
         </div>
         <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <ViewEnter replayKey={page} className="flex min-h-0 flex-1 flex-col">
@@ -219,6 +245,7 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
         label: `${on ? "Hide" : "Show"} the ${s.label}`,
         group: "Canon",
         icon: "layers",
+        keywords: SHELF_WORDS[s.id],
         run: () => study.set({ shelves: on ? study.shelves.filter((x) => x !== s.id) : [...study.shelves, s.id] }),
       };
     });
@@ -261,7 +288,8 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       setting("Two columns", ["columns", "layout", "printed bible"]),
       setting("Ornaments", ["decorations", "flair", "dither", "emblems", "turn off"]),
       setting("Your name", ["name", "print", "title page", "profile"]),
-      ...SHELVES.map((s) => setting(s.label, ["canon", "shelf", "apocrypha", "deuterocanon", "books"])),
+      // Each shelf by its own books, so "enoch" finds the Pseudepigrapha alone.
+      ...SHELVES.map((s) => setting(s.label, ["canon", "shelf", "books", ...SHELF_WORDS[s.id]])),
       setting("Translations", ["kjv", "web", "asv", "version", "bible"]),
       setting("Semantic search", ["meaning", "embedding", "machine"]),
       setting("Jev", ["typesafe", "rerank", "api key", "machine help", "bypass"]),

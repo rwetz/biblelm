@@ -3,7 +3,7 @@
 // on any translation and respects canon shelves. No model is involved: rules
 // and arithmetic stay in code.
 
-import type { Translation, Verse } from "./bible";
+import { foldAccents, type Translation, type Verse } from "./bible";
 import { book, bookName, formatRef, parseRef, resolveBook, type Ref, type Shelf } from "./canon";
 
 export type SearchResult =
@@ -34,12 +34,12 @@ export function hasWord(word: string, text: string): boolean {
 
 /** Verses containing `word`, split into enabled shelves and the rest. */
 export function find(t: Translation, word: string, shelves: ReadonlySet<Shelf>, limit = 200) {
-  const re = wordRe(word);
+  const re = wordRe(foldAccents(word));
   const results: Verse[] = [];
   const other: Verse[] = [];
   let count = 0;
   for (const v of t.verses) {
-    if (!re.test(v.text)) continue;
+    if (!re.test(v.folded ?? v.text)) continue;
     if (shelves.has(book(v.book)?.shelf ?? "protestant")) {
       count++;
       if (results.length < limit) results.push(v);

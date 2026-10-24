@@ -19,13 +19,15 @@ const ORDER = new Map(BOOKS.map((b, i) => [b.osis, i]));
 /**
  * The latest scene so far: the last plate at or before this chapter, reading
  * the Bible in order, so a book with no plate of its own (most epistles) shows
- * the nearest scene before it. Before the first plate, the first.
+ * the nearest scene before it. Before the first plate, the first. With
+ * `before`, only plates of earlier chapters: the reader already sets this
+ * chapter's own beside its verses, so the sidebar shows the scene that led here.
  */
-export function plateSoFar(plates: Plate[], book: string, chapter: number): Plate | undefined {
+export function plateSoFar(plates: Plate[], book: string, chapter: number, before = false): Plate | undefined {
   const at = (p: Plate) => (ORDER.get(p.ref!.book) ?? 999) * 1000 + p.ref!.chapter;
   const here = (ORDER.get(book) ?? 999) * 1000 + chapter;
   const placed = plates.filter((p) => p.ref).sort((a, b) => at(a) - at(b) || (a.ref!.verse ?? 0) - (b.ref!.verse ?? 0));
-  return placed.filter((p) => at(p) <= here).pop() ?? placed[0];
+  return placed.filter((p) => (before ? at(p) < here : at(p) <= here)).pop() ?? placed[0];
 }
 
 function useSidebarPlate(): Plate | undefined {
@@ -34,6 +36,7 @@ function useSidebarPlate(): Plate | undefined {
   const cover = useNotebooks((s) => s.notebooks.find((b) => b.id === s.active)?.plate);
   const devPlate = useStudy((s) => (s.devMode ? s.devPlate : null));
   const plates = usePlates();
+  const inText = useStudy((s) => s.illustrations === "full");
   return useMemo(() => {
     if (!plates.length) return undefined;
     const n = (k: number) => plates.find((p) => p.n === k);
@@ -43,13 +46,13 @@ function useSidebarPlate(): Plate | undefined {
       case "home":
         return plateSoFar(plates, daily.book, daily.chapter) ?? n(PAGE_PLATES.empty);
       case "read":
-        return plateSoFar(plates, location.book, location.chapter) ?? n(PAGE_PLATES.empty);
+        return plateSoFar(plates, location.book, location.chapter, inText) ?? n(PAGE_PLATES.empty);
       case "notebooks":
         return plates.find((p) => p.id === cover) ?? n(SIDEBAR_PLATES.notebooks);
       default:
         return n(SIDEBAR_PLATES[page] ?? PAGE_PLATES.empty);
     }
-  }, [plates, page, location.book, location.chapter, cover, devPlate]);
+  }, [plates, page, location.book, location.chapter, cover, devPlate, inText]);
 }
 
 export function SidebarArt() {
