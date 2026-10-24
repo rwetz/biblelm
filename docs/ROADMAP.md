@@ -166,6 +166,9 @@ M0 ─┬─ M1 ─┬─ M3 ─┬─ M5
 - [x] M19 Woodcuts and the rest of ART.md's Tier 3 (Dürer, Schnorr, Blake, Nuremberg, Luther 1534, evangelists; ART.md)
 - [x] M20 The Pseudepigrapha shelf: 1 Enoch in Charles's translation, a companion text every translation borrows (STUDY.md, DATA.md)
 
+Released as v2.1.0 (2026-10-23): M14 to M20, and the fixes from the
+end-to-end review (docs/evals/e2e-2026-10-23.md).
+
 Still open outside this repo: Axon 0.10 and 0.11 wait on
 [rwetz/axon#1](https://github.com/rwetz/axon/pull/1) (`text-gpt` into `main`);
 the Lab already drives a locally installed Axon.

@@ -4,7 +4,7 @@ All notable changes to BibleLM. Format based on
 [Keep a Changelog](https://keepachangelog.com/); this project follows
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## [2.1.0] — 2026-10-23
 
 ### Added
 
@@ -426,6 +426,7 @@ training dashboard.
 - **Architecture** — Rust backend spawns the Python scripts and bridges their NDJSON
   stdout to Tauri events; the frontend never touches PyTorch.
 
+[2.1.0]: https://github.com/rwetz/biblelm/releases/tag/v2.1.0
 [2.0.0]: https://github.com/rwetz/biblelm/releases/tag/v2.0.0
 [1.2.0]: https://github.com/rwetz/biblelm/releases/tag/v1.2.0
 [1.0.0]: https://github.com/rwetz/biblelm/releases/tag/v1.0.0
