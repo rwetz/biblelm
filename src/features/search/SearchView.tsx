@@ -59,6 +59,10 @@ export function SearchView() {
   const exact = useMemo<SearchResult | null>(() => (t && submitted ? search(t, submitted, shelfs) : null), [t, submitted, shelfs]);
   const topicHits = useMemo(() => (topics && submitted ? findTopics(topics, submitted.replace(/^(verses?|find|search)\s+(about|on|for)?\s*/i, ""), 8) : []), [topics, submitted]);
   const wantsMeaning = exact?.kind === "search" || exact?.kind === "no_results";
+  // A sentence ("when I feel anxious about tomorrow") is asked by meaning: an
+  // exact miss is expected, so it is a line at the end, not the empty state.
+  const words = submitted.trim().split(/\s+/).length;
+  const sentenceMiss = exact?.kind === "no_results" && words >= 3;
   const typing = q.trim().length > 0 && q.trim() !== submitted.trim() && !parseCode(q.trim());
 
   if (error) return <DataMissing message={error} />;
@@ -117,8 +121,8 @@ export function SearchView() {
         {!typing && t && exact && index && !parseCode(submitted) && (
           <ResultArrival replayKey={submitted} className="mt-8 space-y-8">
             {wantsMeaning && <Answer query={submitted} t={t} index={index} shelves={shelfs} onOpen={(r) => read(r, { select: true })} />}
-            <Exact r={exact} t={t} onOpen={(r) => read(r, { select: true })} />
-            {(exact.kind === "search" || exact.kind === "no_results") && <EveryTranslation phrase={submitted} onOpen={(r) => read(r, { select: true })} />}
+            {sentenceMiss ? <Meaning query={submitted} t={t} index={index} onOpen={(r) => read(r, { select: true })} /> : <Exact r={exact} t={t} onOpen={(r) => read(r, { select: true })} />}
+            {(exact.kind === "search" || exact.kind === "no_results") && words <= 4 && <EveryTranslation phrase={submitted} onOpen={(r) => read(r, { select: true })} />}
             {topicHits.length > 0 && (
               <section>
                 <SectionLabel>Topics</SectionLabel>
@@ -131,7 +135,8 @@ export function SearchView() {
                 </div>
               </section>
             )}
-            {wantsMeaning && <Meaning query={submitted} t={t} index={index} onOpen={(r) => read(r, { select: true })} />}
+            {wantsMeaning && !sentenceMiss && <Meaning query={submitted} t={t} index={index} onOpen={(r) => read(r, { select: true })} />}
+            {sentenceMiss && <p className="text-xs text-muted-foreground">No verse in the {t.meta.abbr} uses those exact words.</p>}
           </ResultArrival>
         )}
       </div>

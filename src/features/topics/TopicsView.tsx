@@ -329,6 +329,9 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
   const [from, setFrom] = useState(seed ? formatRef(seed) : "John 3:16");
   const [to, setTo] = useState("Genesis 22:8");
   const [walkFrom, setWalkFrom] = useState<number | null>(null);
+  /** What was typed when it could not be read as a verse. */
+  const [unread, setUnread] = useState<string | null>(null);
+  const [connectUnread, setConnectUnread] = useState<string | null>(null);
   const [chain, setChain] = useState<number[] | null | undefined>(undefined);
   const [idea, setIdea] = useState<number[] | "loading" | "error" | null>(null);
   const shelves = useStudy((s) => s.shelves);
@@ -355,7 +358,7 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
             Start at a verse and follow where Scripture keeps pointing. A random walk over 341,000 cross references that keeps returning to your verse
             (personalised PageRank) ranks the passages most bound up with it.
           </p>
-          <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); const i = resolve(from); setWalkFrom(i ?? null); }}>
+          <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); const i = resolve(from); setWalkFrom(i ?? null); setUnread(i === undefined ? from.trim() : null); }}>
             <Input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="A verse, e.g. Isaiah 53:5" />
             <Button type="submit" variant="brand" disabled={!g}>{g ? "Walk" : <Spinner />}</Button>
           </form>
@@ -363,7 +366,11 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
             {results?.map((r, i) => (
               <PassageRow key={r.verse} t={t} index={index} start={r.verse} end={r.verse} extra={<span className="ml-2 font-mono text-[10px] text-muted-foreground">#{i + 1}</span>} />
             ))}
-            {walkFrom === null && results === null && from && <p className="text-xs text-muted-foreground">Type a verse reference to begin.</p>}
+            {unread ? (
+              <p className="text-xs text-muted-foreground">Could not read “{unread}” as a verse. Try a reference such as Isaiah 53:5 or ps 23:1.</p>
+            ) : (
+              walkFrom === null && results === null && from && <p className="text-xs text-muted-foreground">Type a verse reference to begin.</p>
+            )}
           </div>
         </section>
         <section>
@@ -377,7 +384,9 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
             onSubmit={(e) => {
               e.preventDefault();
               const a = resolve(from), b = resolve(to);
-              setChain(g && a !== undefined && b !== undefined ? connect(g, a, b) : null);
+              const bad = a === undefined ? from.trim() : b === undefined ? to.trim() : null;
+              setConnectUnread(bad);
+              setChain(bad !== null ? undefined : g && a !== undefined && b !== undefined ? connect(g, a, b) : null);
             }}
           >
             <div className="flex items-center gap-2">
@@ -388,6 +397,7 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
             <Button type="submit" variant="outline" disabled={!g}>Connect</Button>
           </form>
           <div className="mt-4">
+            {connectUnread !== null && <p className="text-xs text-muted-foreground">Could not read “{connectUnread}” as a verse. Try a reference such as Isaiah 53:5 or ps 23:1.</p>}
             {chain === null && <p className="text-sm text-muted-foreground">No chain of cross references links these two (links run one way, as readers entered them).</p>}
             {chain && (
               <ol className="relative space-y-1 border-l border-border pl-4">

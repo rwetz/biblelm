@@ -63,6 +63,9 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 > More menu, and the translation name and "Parallel" drop to their icons;
 > the verse panel is `clamp(18rem, 34vw, 25rem)` wide. So at the 900 px
 > minimum window, with the panel open, nothing in the toolbar is covered.
+> Below 900 px (only `pnpm dev` gets there) the sidebar folds to its icon
+> rail without its art (`useNarrow` in App.tsx) and the title-bar search
+> narrows.
 
 ## Typography
 

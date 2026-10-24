@@ -137,6 +137,12 @@ From the end-to-end review (docs/evals/e2e-2026-10-23.md):
 - The Scripture map is no longer squeezed by a few far outliers.
 - Two people of one name are told apart in the timeline; the sons of Jacob
   read as men, not as their tribes.
+- A sentence that no verse matches word for word opens on its meaning
+  results, not on "Nothing here".
+- Walk and Connect say when they cannot read a reference.
+- The palette finds each shelf by its own books ("enoch", "tobit").
+- A window narrower than the desktop's minimum (in `pnpm dev`) folds the
+  sidebar to its icons instead of squeezing the page.
 
 ## [2.0.0] — 2026-10-21
 
