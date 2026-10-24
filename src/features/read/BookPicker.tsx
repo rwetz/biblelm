@@ -70,7 +70,7 @@ export function BookPicker({
       }}
     >
       <PopoverTrigger asChild>
-        <Button variant="secondary" size="sm" className="min-w-40 justify-between gap-2" aria-label="Book and chapter">
+        <Button variant="secondary" size="sm" className="min-w-0 justify-between gap-2 @xl:min-w-40" aria-label="Book and chapter">
           <span className="truncate">
             {bookName(bookId)} {chapter}
           </span>

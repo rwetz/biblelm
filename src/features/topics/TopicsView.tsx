@@ -40,7 +40,8 @@ export function TopicsView() {
   if (error) return <DataMissing message={error} />;
   return (
     <div className="relative isolate flex min-h-0 flex-1 flex-col">
-      {(tab === "topics" || tab === "walk") && <CornerPlate plate={plate} corner="br" />}
+      {/* The plate keeps the empty index company; once a topic opens, its verses run where the plate would be. */}
+      {tab === "topics" && !topic && <CornerPlate plate={plate} corner="br" />}
       <DitherHero hero={mercy} height="8.5rem" clearLeft fadeFrom={30} caption={false}>
       <div className="mx-auto flex h-full w-full max-w-6xl items-end gap-4 px-8 pb-3 pt-8">
         <div>
@@ -152,6 +153,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
   const [topics] = useTopics();
   const selectedName = useStudy((s) => s.topic);
+  const openTopic = useStudy((s) => s.openTopic);
   const [filter, setFilter] = useState("");
   const [kind, setKind] = useState<string | null>(null);
   const [where, setWhere] = useState("");
@@ -271,7 +273,7 @@ function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
             return (
               <button
                 type="button"
-                onClick={() => setSel(x.name)}
+                onClick={() => openTopic(x.name)}
                 className={cn("flex h-[30px] w-full items-center gap-2 px-4 text-left text-sm capitalize hover:bg-muted", sel === x.name && "bg-accent text-foreground")}
               >
                 <span className="flex-1 truncate">{x.name}</span>

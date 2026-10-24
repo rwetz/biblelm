@@ -103,7 +103,7 @@ function MergeButton() {
             const before = useNotebooks.getState().notes.length;
             mergeFrom(JSON.parse(await f.text()));
             const after = useNotebooks.getState().notes.length;
-            toast.success("Merged", { description: `${after - before >= 0 ? after - before : 0} notes added; newer edits kept.` });
+            toast.success("Merged", { description: `${Math.max(0, after - before)} ${after - before === 1 ? "note" : "notes"} added; newer edits kept.` });
           } catch (err) {
             toast.error("Could not merge that file", { description: String(err) });
           }
@@ -132,7 +132,7 @@ function NotebookRow({ b, active, onClick }: { b: Notebook; active: boolean; onC
       </div>
       <div className="min-w-0">
         <p className="truncate text-sm font-medium">{b.title}</p>
-        <p className="truncate text-xs text-muted-foreground">{count} notes · {b.translations.join(", ").toUpperCase()}</p>
+        <p className="truncate text-xs text-muted-foreground">{count} {count === 1 ? "note" : "notes"} · {b.translations.join(", ").toUpperCase()}</p>
       </div>
     </button>
   );
@@ -240,7 +240,7 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
       </header>
 
       <div className="mt-8 flex items-center gap-3">
-        <SectionLabel className="flex-1">{mine.length} notes</SectionLabel>
+        <SectionLabel className="flex-1">{mine.length} {mine.length === 1 ? "note" : "notes"}</SectionLabel>
         <SearchField size="sm" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter notes" className="w-56" />
       </div>
       <div className="mt-3 space-y-3">
@@ -276,7 +276,7 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete “{nb.title}”?</AlertDialogTitle>
             <AlertDialogDescription>
-              Its {mine.length} notes and highlights go with it. The last 14 daily backups of your notes stay in the app data folder.
+              Its {mine.length} {mine.length === 1 ? "note" : "notes"} and highlights go with it. The last 14 daily backups of your notes stay in the app data folder.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

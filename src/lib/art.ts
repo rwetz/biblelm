@@ -138,12 +138,18 @@ export const SIDEBAR_PLATES: Record<string, number> = {
 
 export const plateNumber =(all: Plate[], n: number) => all.find((p) => p.n === n);
 
+/**
+ * The local calendar date as a day number, so "today" turns over at the
+ * reader's midnight, not UTC's (which is 7 pm in Chicago).
+ */
+export const localDay = (d: Date) => Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000);
+
 /** Tier 1: which hero to show on Home, following the church year. */
 export function seasonalHero(heroesList: Hero[], date = new Date()): Hero | undefined {
   const by = (plate: string) => heroesList.find((h) => h.plate === plate);
   const y = date.getFullYear();
   const easter = easterSunday(y);
-  const day = (d: Date) => Math.floor(d.getTime() / 86_400_000);
+  const day = localDay;
   const t = day(date);
   const christmas = day(new Date(y, 11, 25));
   const xmasDow = new Date(y, 11, 25).getDay();
@@ -239,7 +245,7 @@ export const PAGE_PAINTINGS: Record<string, string> = {
 export function paintingForDay(all: Painting[], date = new Date()): Painting | undefined {
   if (!all.length) return undefined;
   const y = date.getFullYear();
-  const day = (d: Date) => Math.floor(d.getTime() / 86_400_000);
+  const day = localDay;
   const t = day(date);
   const easter = day(easterSunday(y));
   const christmas = day(new Date(y, 11, 25));

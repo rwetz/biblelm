@@ -10,7 +10,7 @@ import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 import { listen as tauriListen, type EventCallback, type UnlistenFn } from "@tauri-apps/api/event";
 import { IN_TAURI } from "@nexis/design";
 
-export const LAB_NEEDS_DESKTOP = "The Lab trains and runs the model through Python, so it needs the desktop app.";
+export const LAB_NEEDS_DESKTOP = "The Lab trains and runs the model on this computer, through Python or Axon, so it needs the desktop app.";
 
 // ── notes ────────────────────────────────────────────────────────────────
 

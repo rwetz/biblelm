@@ -5,6 +5,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -119,7 +120,7 @@ export function ReadView() {
 
   return (
     <div className="flex min-h-0 flex-1">
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="@container flex min-w-0 flex-1 flex-col">
         <ReaderToolbar t={main} bookId={bookId} />
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
           {chapterPaintings.length > 0 && <Frontispiece key={`${bookId}.${location.chapter}`} paintings={chapterPaintings} />}
@@ -133,11 +134,11 @@ export function ReadView() {
                 <Badge variant="outline" className="mb-3">{SHELVES.find((s) => s.id === b.shelf)?.label}</Badge>
               )}
               <h1 className="font-blackletter text-5xl leading-tight text-foreground">{bookName(bookId)}</h1>
-              <p className="mt-2 flex items-center justify-center gap-3 font-garamond text-lg italic text-muted-foreground">
+              <div className="mt-2 flex items-center justify-center gap-3 font-garamond text-lg italic text-muted-foreground">
                 {EVANGELIST[bookId] && <Ornament name={EVANGELIST[bookId]} label={ORNAMENTS[EVANGELIST[bookId]].title} className="h-11" />}
                 {bookId === "Ps" ? `Psalm ${location.chapter}` : `Chapter ${location.chapter}`}
                 {EVANGELIST[bookId] && <span className="w-11" />}
-              </p>
+              </div>
             </header>
 
             {columnsOf(ts!, bookId).length > 1 ? (
@@ -441,17 +442,17 @@ function ReaderToolbar({ t, bookId }: { t: Translation; bookId: string }) {
   const books = t.books().filter((b) => shelves.includes(bookOf(b)?.shelf ?? "protestant"));
 
   return (
-    <Toolbar className="border-b border-border/60 px-3">
+    <Toolbar className="min-w-0 gap-1 overflow-hidden border-b border-border/60 px-3 @xl:gap-2">
       <BookPicker t={t} books={books} bookId={bookId} chapter={location.chapter} onGo={(b, c) => read({ book: b, chapter: c, verse: 0 })} />
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label="Previous chapter" onClick={() => chapterStep(-1)}><Icon name="chevron-left" /></Button>
+          <Button variant="ghost" size="icon-sm" className="hidden @md:inline-flex" aria-label="Previous chapter" onClick={() => chapterStep(-1)}><Icon name="chevron-left" /></Button>
         </TooltipTrigger>
         <TooltipContent>Previous chapter ( [ )</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label="Next chapter" onClick={() => chapterStep(1)}><Icon name="chevron-right" /></Button>
+          <Button variant="ghost" size="icon-sm" className="hidden @md:inline-flex" aria-label="Next chapter" onClick={() => chapterStep(1)}><Icon name="chevron-right" /></Button>
         </TooltipTrigger>
         <TooltipContent>Next chapter ( ] )</TooltipContent>
       </Tooltip>
@@ -459,8 +460,8 @@ function ReaderToolbar({ t, bookId }: { t: Translation; bookId: string }) {
       <TranslationPicker catalog={catalog ?? []} value={translation} onChange={(id) => set({ translation: id })} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant={parallel.length ? "secondary" : "ghost"} size="sm">
-            <Icon name="split-vertical" /> Parallel{parallel.length ? ` (${parallel.length})` : ""}
+          <Button variant={parallel.length ? "secondary" : "ghost"} size="sm" aria-label="Parallel">
+            <Icon name="split-vertical" /> <span className="hidden @lg:inline">Parallel</span>{parallel.length ? ` (${parallel.length})` : ""}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
@@ -487,7 +488,7 @@ function ReaderToolbar({ t, bookId }: { t: Translation; bookId: string }) {
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant={interlinear ? "secondary" : "ghost"} size="icon-sm" aria-label="Interlinear" aria-pressed={interlinear} onClick={() => set({ interlinear: !interlinear })}>
+          <Button variant={interlinear ? "secondary" : "ghost"} size="icon-sm" className="hidden @xl:inline-flex" aria-label="Interlinear" aria-pressed={interlinear} onClick={() => set({ interlinear: !interlinear })}>
             <Icon name="text" />
           </Button>
         </TooltipTrigger>
@@ -495,12 +496,34 @@ function ReaderToolbar({ t, bookId }: { t: Translation; bookId: string }) {
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant={columns ? "secondary" : "ghost"} size="icon-sm" aria-label="Two columns" onClick={() => set({ columns: !columns })}>
+          <Button variant={columns ? "secondary" : "ghost"} size="icon-sm" className="hidden @xl:inline-flex" aria-label="Two columns" onClick={() => set({ columns: !columns })}>
             <Icon name="layout-left" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>Two columns, like a printed Bible</TooltipContent>
       </Tooltip>
+      {/* A narrow column (the verse panel open in a small window) folds the rest in here. */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon-sm" className="@xl:hidden" aria-label="More reading options">
+            <Icon name="more" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => chapterStep(-1)}>
+            <Icon name="chevron-left" /> Previous chapter
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => chapterStep(1)}>
+            <Icon name="chevron-right" /> Next chapter
+          </DropdownMenuItem>
+          <DropdownMenuCheckboxItem checked={interlinear} onCheckedChange={(on) => set({ interlinear: on })}>
+            Interlinear (Hebrew and Greek)
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem checked={columns} onCheckedChange={(on) => set({ columns: on })}>
+            Two columns
+          </DropdownMenuCheckboxItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </Toolbar>
   );
 }

@@ -58,7 +58,7 @@ function PassagePanel({ book, chapter, verses, translations, onClose }: { book: 
   };
 
   return (
-    <aside className="flex w-[25rem] shrink-0 flex-col border-l border-border/60 bg-card/60">
+    <aside className="flex w-[clamp(18rem,34vw,25rem)] shrink-0 flex-col border-l border-border/60 bg-card/60">
       <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border/60 px-4">
         <h2 className="min-w-0 truncate font-garamond text-xl" title={title}>{title}</h2>
         <span className="flex-1" />
@@ -133,7 +133,7 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
   useEffect(() => setStudy(null), [osis]);
 
   return (
-    <aside className="flex w-[25rem] shrink-0 flex-col border-l border-border/60 bg-card/60">
+    <aside className="flex w-[clamp(18rem,34vw,25rem)] shrink-0 flex-col border-l border-border/60 bg-card/60">
       <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border/60 px-4">
         <h2 className="font-garamond text-xl">{formatRef(refSel)}</h2>
         <span className="flex-1" />

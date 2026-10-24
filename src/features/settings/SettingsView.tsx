@@ -198,10 +198,10 @@ export function SettingsView() {
               scratch on Scripture, inside an illustrated Bible. The machine finds; Scripture speaks.
             </p>
             <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
-              <li>Texts: public domain, from eBible.org.</li>
+              <li>Texts: public domain, from eBible.org. 1 Enoch: R. H. Charles's translation (SPCK, 1917), public domain, via Project Gutenberg.</li>
               <li>Cross references and topics: OpenBible.info, CC-BY.</li>
               <li>Illustrations: Gustave Doré, La Grande Bible de Tours (1866), public domain, via Wikimedia Commons.</li>
-              <li>Woodcuts and engravings: Albrecht Dürer (the Met, CC0), Julius Schnorr von Carolsfeld, William Blake (Yale Center for British Art, CC0), the Nuremberg Chronicle, the 1534 Luther Bible and the four evangelists (Rijksmuseum, CC0); public domain, via Wikimedia Commons.</li>
+              <li>Woodcuts and engravings: Albrecht Dürer (the Met, CC0), Julius Schnorr von Carolsfeld, William Blake (Yale Center for British Art, CC0), the Nuremberg Chronicle, the 1534 Luther Bible, Matthäus Merian's Vision of Ezekiel (1630) and the four evangelists (Rijksmuseum, CC0); public domain, via Wikimedia Commons.</li>
               <li>Paintings: Caravaggio, Rembrandt, Honthorst and Georges de La Tour, public domain (Wikimedia Commons; the Met and the Rijksmuseum, CC0).</li>
               <li>Places: OpenBible.info Bible Geocoding Data, CC BY 4.0. Coastlines and rivers: Natural Earth, public domain.</li>
               <li>People and the Hebrew and Greek interlinear: STEPBible (Tyndale House), TIPNR, TAHOT and TAGNT, CC BY 4.0.</li>

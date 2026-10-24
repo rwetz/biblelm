@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { InfoTip } from "@/features/lab/InfoTip";
 import { useAppStore, type CorpusInfo } from "@/store/appStore";
 import { cn } from "@/lib/utils";
-import { Button, Icon, Input, Panel, Progress } from "@nexis/design";
+import { Button, Icon, IN_TAURI, Input, Panel, Progress } from "@nexis/design";
 import { LabSection } from "@/features/lab/LabSection";
 import { Reading, ScaleField, TypeCase } from "./Figures";
 
@@ -33,6 +33,7 @@ export function CorpusView({ front = false }: { front?: boolean } = {}) {
   const setCorpus = useAppStore((s) => s.setCorpus);
 
   const [translations, setTranslations] = useState<Translation[]>([]);
+  const [listError, setListError] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ bytes: number; total: number } | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -41,8 +42,11 @@ export function CorpusView({ front = false }: { front?: boolean } = {}) {
   const refresh = useCallback(async () => {
     try {
       setTranslations(await invoke<Translation[]>("corpus_list"));
+      setListError(false);
     } catch (err) {
-      console.error("corpus_list failed:", err);
+      // In the browser there is no Lab backend: say so instead of loading forever.
+      if (IN_TAURI) console.error("corpus_list failed:", err);
+      setListError(true);
     }
   }, []);
 
@@ -164,7 +168,7 @@ export function CorpusView({ front = false }: { front?: boolean } = {}) {
           >
             {showAdd && <AddForm onAdd={handleAdd} />}
             {languages.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-muted-foreground">Loading translations…</p>
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">{listError ? "The Lab's translations live in the desktop app." : "Loading translations…"}</p>
             ) : (
               languages.map((lang) => (
                 <div key={lang}>
