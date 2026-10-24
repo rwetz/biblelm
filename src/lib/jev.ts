@@ -213,7 +213,7 @@ const GENRE: [string, string[]][] = [
   ["Gospels", ["Matt", "Mark", "Luke", "John"]],
   ["Acts", ["Acts"]],
   ["Epistles", ["Rom", "1Cor", "2Cor", "Gal", "Eph", "Phil", "Col", "1Thess", "2Thess", "1Tim", "2Tim", "Titus", "Phlm", "Heb", "Jas", "1Pet", "2Pet", "1John", "2John", "3John", "Jude"]],
-  ["Apocalyptic", ["Rev"]],
+  ["Apocalyptic", ["Rev", "1En"]],
 ];
 const GENRE_OF = new Map(GENRE.flatMap(([g, books]) => books.map((b) => [b, g] as const)));
 export const genreOf = (osisBook: string) => GENRE_OF.get(osisBook) ?? "Other";

@@ -35,6 +35,7 @@ import { bibleOrder, noteSpans, spansLabel, useNotebooks, type Note, type Notebo
 import { useStudy } from "@/store/study";
 import { ExportDialog, type PrintScope } from "./ExportDialog";
 import { PrintNotebook } from "./PrintNotebook";
+import { NoteBody } from "./NoteBody";
 import { SearchField } from "@/app/controls";
 import { PageMark } from "@/art/SidebarArt";
 
@@ -312,7 +313,12 @@ function NoteCard({ n, onOpen, onChange, onTags, onDelete }: { n: Note; onOpen: 
           <Icon name="delete" size="xs" />
         </Button>
       </div>
-      <Textarea value={n.body} onChange={(e) => onChange(e.target.value)} className="mt-2 min-h-20 resize-y border-none bg-transparent p-0 font-garamond text-[16px] leading-7 shadow-none focus-visible:ring-0" />
+      <NoteBody
+        value={n.body}
+        onChange={onChange}
+        className="mt-2 min-h-12 font-garamond text-[16px] leading-7"
+        editClassName="mt-2 min-h-20 resize-y border-none bg-transparent p-0 font-garamond text-[16px] leading-7 shadow-none focus-visible:ring-0"
+      />
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {n.tags.map((t) => (
           <button key={t} type="button" onClick={() => onTags(n.tags.filter((x) => x !== t))} className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground hover:line-through">

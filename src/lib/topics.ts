@@ -37,6 +37,38 @@ export function findTopics(all: Topic[], query: string, limit = 30): Topic[] {
   return [...starts.sort((a, b) => weight(b) - weight(a)), ...contains.sort((a, b) => weight(b) - weight(a))].slice(0, limit);
 }
 
+const QUIET = new Set("a an and are about after again also am any be been being but by can could do does for from had has have how i if in into is it its just me more most my not of on or our over should so some than that the their them then there these they this those to too very was we were what when where which while who why will with would you your feel feeling feels verse verses bible scripture scriptures".split(" "));
+const words = (s: string) => s.toLowerCase().split(/[^a-z]+/).filter((w) => w.length >= 3 && !QUIET.has(w));
+
+/** Two words share a stem: "anxious" and "anxiety", "forgive" and "forgiveness". */
+export function sameStem(a: string, b: string): boolean {
+  let n = 0;
+  while (n < a.length && n < b.length && a[n] === b[n]) n++;
+  return n >= Math.max(4, Math.ceil(0.55 * Math.min(a.length, b.length))) || (a === b);
+}
+
+/**
+ * The verses readers vote for under the topics a question names, best first:
+ * a topic counts when every word of its name ("being anxious", "worry and
+ * anxiety") shares a stem with a word of the query. Fused with search by
+ * meaning, it lifts the verses people actually turn to (Philippians 4:6 for
+ * "when I feel anxious") above ones that only sound alike.
+ */
+export function votedVerses(all: Topic[], query: string, limit = 30): number[] {
+  const q = words(query);
+  if (!q.length) return [];
+  const score = new Map<number, number>();
+  for (const t of all) {
+    const name = words(t.name);
+    if (!name.length || !name.every((w) => q.some((x) => sameStem(w, x)))) continue;
+    // A topic naming more of the question is the surer guide.
+    const weight = name.length;
+    // Scores run to 100 on a few one-passage topics; cap near the 99th percentile so one cannot drown the rest.
+    for (const p of passages(t)) score.set(p.start, (score.get(p.start) ?? 0) + Math.min(p.score, 20) * weight);
+  }
+  return [...score].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([v]) => v);
+}
+
 /** Topics that list a verse, strongest first. */
 export async function topicsForVerse(verse: number, limit = 12): Promise<{ topic: Topic; score: number }[]> {
   const all = await loadTopics();

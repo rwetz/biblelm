@@ -135,6 +135,14 @@ tag(note, name)
 > Scripture; every reference is checked by a test. Each struggle is also in the
 > command palette.
 
+> **As built (review fixes, 23 October):** notes draw their Markdown
+> (`src/lib/markdown.tsx`, React elements only, never raw HTML) and become
+> the text box on a click (`NoteBody`). The verse panel's "Beyond the canon"
+> links the canon and 1 Enoch from a fixed table (`src/lib/companions.ts`):
+> Jude 14-15 quotes 1 Enoch 1:9; Jude 6 and 2 Peter 2:4 echo 1 Enoch 10:4-6;
+> Genesis 6:1-4 and 5:21-24 are retold in 1 Enoch 6 and 1. A place's or
+> person's long verse list opens with the first mention and a chip per book.
+
 ## Atlas, Daily and the interlinear
 
 > **As built:** three study pages beyond the plan.

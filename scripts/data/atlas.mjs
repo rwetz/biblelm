@@ -131,6 +131,14 @@ async function people() {
     partners: link(p.partners),
     children: link(p.children),
   }));
+  // TIPNR folds a tribe into the son of Jacob it is named for, so Judah the
+  // man reads "Israelite tribe, kingdom, and province". Lead with the man.
+  const byId = new Map(out.map((x) => [x.id, x]));
+  for (const x of out) {
+    if (!/^Israelite tribe/i.test(x.brief) || !x.parents.length) continue;
+    const parents = x.parents.map((id) => byId.get(id)?.name).filter(Boolean).join(" and ");
+    x.brief = `Son of ${parents}; the tribe named after him`;
+  }
   out.sort((a, b) => b.verses.length - a.verses.length);
   const p = writeJson("people.json", out);
   console.log(`  people ${out.length} ${kb(p)}`);

@@ -68,5 +68,10 @@ considered and left out: it is CC BY-SA, and this project takes CC BY at most.
 > build fails if that slip ever disappears upstream, so the fix is never
 > applied blind.
 
+> **As built (map, people):** the Scripture map is fitted to the 0.5th to
+> 99.5th percentile of the UMAP layout, the few far outliers pinned to its
+> edge. In people.json a son of Jacob whose TIPNR note describes his tribe
+> leads with the man ("Son of Israel and Leah; the tribe named after him").
+
 Notes are not here: they live in the app data folder (`notes.json`, with
 `backups/`), written by Rust. See [STUDY.md](STUDY.md).

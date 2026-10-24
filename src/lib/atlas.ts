@@ -82,6 +82,25 @@ function byVerse<T extends { verses: number[] }>(list: T[]): Map<number, number[
 /** TIPNR names the unnamed ("a_wife_of_Solomon") so families link up; show them as words. */
 export const personName = (p: Person) => p.name.replace(/_/g, " ");
 
+/**
+ * Names for people shown together, told apart where two share one: "Lamech,
+ * son of Methuselah" beside "Lamech, son of Methushael". Without a parent on
+ * record, the first words of the note.
+ */
+export function distinctNames(group: Person[], byId: Map<string, Person>): Map<string, string> {
+  const count = new Map<string, number>();
+  for (const p of group) count.set(p.name, (count.get(p.name) ?? 0) + 1);
+  return new Map(
+    group.map((p) => {
+      const name = personName(p);
+      if ((count.get(p.name) ?? 0) < 2) return [p.id, name];
+      const parent = p.parents.map((id) => byId.get(id)).find(Boolean);
+      const tag = parent ? `${p.sex === "f" ? "daughter" : "son"} of ${personName(parent)}` : p.brief.split(/[;,.]/)[0].toLowerCase();
+      return [p.id, tag ? `${name}, ${tag}` : name];
+    }),
+  );
+}
+
 export const placesAt = (all: Place[], verse: number) => (byVerse(all).get(verse) ?? []).map((i) => all[i]);
 export const peopleAt = (all: Person[], verse: number) => (byVerse(all).get(verse) ?? []).map((i) => all[i]);
 

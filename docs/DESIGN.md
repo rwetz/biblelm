@@ -58,6 +58,12 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 > (`src/app/Sections.tsx`): a Roman numeral, a name, a line on what is there and
 > a dithered ornament in place of an icon tab.
 
+> **As built (narrow windows):** the reader column is a container: below 36rem
+> its toolbar folds Interlinear, Two columns and the chapter arrows into a
+> More menu, and the translation name and "Parallel" drop to their icons;
+> the verse panel is `clamp(18rem, 34vw, 25rem)` wide. So at the 900 px
+> minimum window, with the panel open, nothing in the toolbar is covered.
+
 ## Typography
 
 | Use | Face | Licence | Notes |

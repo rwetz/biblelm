@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Icon, ScrollArea, SectionLabel, Spinner, Textarea, toast, Tooltip, TooltipContent, TooltipTrigger, cn } from "@nexis/design";
 import { listTranslations, loadTranslation, type Translation, type VerseIndex } from "@/lib/bible";
-import { formatRef, osisOf, parseOsis, type Ref, type Shelf } from "@/lib/canon";
+import { book as bookOf, formatRef, osisOf, parseOsis, type Ref, type Shelf } from "@/lib/canon";
 import { useCatalog, useGraph, useIndex } from "@/lib/hooks";
 import { useFlip } from "@/lib/flip";
 import { rankXrefs, XREF_LEVELS, type XrefRanking } from "@/lib/jev";
@@ -14,8 +14,10 @@ import { wordDiff } from "./diff";
 import { StrongsEntry, VerseWords } from "./WordStudy";
 import { VerseReading } from "@/features/search/JevReading";
 import { usePaintings, usePlates } from "@/art/Art";
-import { depicts, paintingCredit, paintingUrl, plateUrl } from "@/lib/art";
+import { depicts, paintingCredit, paintingUrl, plateCredit, plateUrl } from "@/lib/art";
 import { PlacesAndPeople } from "@/features/atlas/VerseAtlas";
+import { NoteBody } from "@/features/notebooks/NoteBody";
+import { companionLinks } from "@/lib/companions";
 
 const label = (osis: string) => {
   const r = parseOsis(osis);
@@ -177,6 +179,7 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
 
           <SeenInArt refSel={refSel} />
           <PlacesAndPeople osis={osis} />
+          <BeyondCanon refSel={refSel} main={main} onNavigate={onNavigate} />
 
           {tagged && <VerseWords osis={osis} t={tagged} onStudy={setStudy} />}
           {tagged && study && (
@@ -211,6 +214,39 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
 }
 
 /** Paintings and plates that show this verse, each opening in Look. */
+const KIND = { quoted: ["Quotes", "Quoted in"], echoed: ["Echoes", "Echoed in"], retold: ["Retold in", "Retells"] } as const;
+
+/**
+ * Where this verse touches 1 Enoch (src/lib/companions.ts): the passage on the
+ * other side, as printed, and a labelled study note on how they are related.
+ * Shown whether or not the Pseudepigrapha shelf is on; its badge says which
+ * side is off the canon.
+ */
+function BeyondCanon({ refSel, main, onNavigate }: { refSel: Ref; main: Translation; onNavigate: (r: Ref) => void }) {
+  const links = companionLinks(refSel);
+  if (!links.length) return null;
+  return (
+    <section className="space-y-3">
+      <SectionLabel>Beyond the canon</SectionLabel>
+      {links.map(({ link, other }) => {
+        const toEnoch = other.book === "1En";
+        const text = main.range(other).map((v) => v.text).join(" ");
+        return (
+          <div key={formatRef(other)}>
+            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+              {KIND[link.kind][toEnoch ? 0 : 1]}
+              <button type="button" className="font-semibold text-brand hover:underline" onClick={() => onNavigate(other)}>{formatRef(other)}</button>
+              {toEnoch && <Badge variant="outline">Pseudepigrapha</Badge>}
+            </p>
+            {text && <p className="mt-1 font-garamond text-[15px] leading-relaxed">{text}</p>}
+            <p className="mt-1 text-xs italic text-muted-foreground">Study note: {link.note}</p>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
 function SeenInArt({ refSel }: { refSel: Ref }) {
   const paintings = usePaintings();
   const plates = usePlates();
@@ -218,7 +254,7 @@ function SeenInArt({ refSel }: { refSel: Ref }) {
   const v = refSel.verse ?? 0;
   const shown = [
     ...paintings.filter((p) => depicts(p.ref, refSel.book, refSel.chapter, v)).map((p) => ({ kind: "painting" as const, id: p.id, title: p.title, by: paintingCredit(p), src: paintingUrl(p.thumb), colour: p.colour })),
-    ...plates.filter((p) => depicts(p.ref, refSel.book, refSel.chapter, v)).map((p) => ({ kind: "plate" as const, id: p.id, title: p.title, by: "Doré, 1866", src: plateUrl(p.thumb), colour: false })),
+    ...plates.filter((p) => depicts(p.ref, refSel.book, refSel.chapter, v)).map((p) => ({ kind: "plate" as const, id: p.id, title: p.title, by: plateCredit(p), src: plateUrl(p.thumb), colour: false })),
   ];
   if (!shown.length) return null;
   return (
@@ -315,13 +351,21 @@ function CompareAll({ refSel, base }: { refSel: Ref; base: Translation }) {
                         <span key={i} className={cn(d.kind === "add" && "rounded-sm bg-brand/12 text-foreground", d.kind === "del" && "hidden")}>{d.text}</span>
                       ))
                     : tv.text
-                  : <span className="text-muted-foreground">Not in this translation (or numbered differently).</span>}
+                  : <span className="text-muted-foreground">{missing(t, refSel.book)}</span>}
               </p>
             </div>
           );
         })}
     </div>
   );
+}
+
+/** Why a translation has nothing for a verse: no such book, or a different numbering. */
+function missing(t: Translation, book: string): string {
+  if (t.hasBook(book)) return "Not in this translation (or numbered differently).";
+  const nt = bookOf(book)?.testament === "NT";
+  if (nt && !t.books().some((b) => bookOf(b)?.testament === "NT")) return `The ${t.meta.abbr} is the Old Testament only.`;
+  return `This book is not in the ${t.meta.abbr}.`;
 }
 
 /** Notes on the open verse or passage: those touching any of its verses, and a new one on all of it. */
@@ -361,10 +405,11 @@ function Notes({ spans, verses }: { spans: Span[]; verses: string[] }) {
       <SectionLabel>Notes in {nb.title}</SectionLabel>
       {mine.map((n) => (
         <div key={n.id} className="group border-l-2 border-brand/40 bg-muted/30 py-1.5 pl-3 pr-2 transition-colors focus-within:border-brand focus-within:bg-muted/50">
-          <Textarea
+          <NoteBody
             value={n.body}
-            onChange={(e) => updateNote(n.id, { body: e.target.value })}
-            className="min-h-16 resize-y rounded-none border-none bg-transparent p-1 font-garamond text-[15px] leading-relaxed shadow-none focus-visible:border-none focus-visible:ring-0"
+            onChange={(body) => updateNote(n.id, { body })}
+            className="p-1 font-garamond text-[15px] leading-relaxed"
+            editClassName="min-h-16 resize-y rounded-none border-none bg-transparent p-1 font-garamond text-[15px] leading-relaxed shadow-none focus-visible:border-none focus-visible:ring-0"
           />
           <div className="flex items-center gap-2 px-1 text-[11px] text-muted-foreground">
             {(many || n.end || n.more) && <span className="font-garamond text-xs text-brand">{spansLabel(noteSpans(n), label)}</span>}

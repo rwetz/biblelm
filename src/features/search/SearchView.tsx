@@ -3,11 +3,11 @@ import { Badge, Button, Icon, ResultArrival, SectionLabel, Spinner, Stat, cn } f
 import { ArtSpot, PlatePage, usePagePlate } from "@/art/Art";
 import { PAGE_PLATES } from "@/lib/art";
 import type { Translation, Verse, VerseIndex } from "@/lib/bible";
-import { bookName, formatRef, type Ref } from "@/lib/canon";
+import { book, bookName, formatRef, type Ref } from "@/lib/canon";
 import { useIndex, useTopics, useTranslation } from "@/lib/hooks";
 import { search, type SearchResult } from "@/lib/search";
-import { semanticSearch, type Hit } from "@/lib/semantic";
-import { findTopics } from "@/lib/topics";
+import { fuse, semanticSearch, type Hit } from "@/lib/semantic";
+import { findTopics, loadTopics, votedVerses } from "@/lib/topics";
 import { jevAvailable, rerank } from "@/lib/jev";
 import { useStudy, shelfSet } from "@/store/study";
 import { DataMissing, VerseText } from "@/features/read/ReadView";
@@ -315,11 +315,21 @@ function Meaning({ query, t, index, onOpen }: { query: string; t: Translation; i
     setHits(null);
     setError(null);
     setLevels(null);
-    semanticSearch(query, new Set(shelves), 24).then((h) => live && setHits(h), (e) => live && setError(String(e.message ?? e)));
+    // Meaning, fused with the verses readers vote for under the topics the
+    // query names (reciprocal rank fusion): neither list's scores are compared.
+    const on = new Set(shelves);
+    Promise.all([semanticSearch(query, on, 24), loadTopics().catch(() => [])])
+      .then(([sem, topics]) => {
+        const voted = votedVerses(topics, query).filter((v) => on.has(book(index.ref(v).book)?.shelf ?? "protestant"));
+        const byVerse = new Map(sem.map((h) => [h.verse, h]));
+        const order = voted.length ? fuse([sem.map((h) => h.verse), voted]) : sem.map((h) => h.verse);
+        if (live) setHits(order.slice(0, 24).map((v) => byVerse.get(v) ?? { verse: v, score: 0 }));
+      })
+      .catch((e) => live && setError(String(e.message ?? e)));
     return () => {
       live = false;
     };
-  }, [query, shelves]);
+  }, [query, shelves, index]);
   return (
     <section>
       <div className="flex items-center gap-2">

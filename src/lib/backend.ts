@@ -71,14 +71,49 @@ export const backend = {
 // ── the Lab (Python workers) ─────────────────────────────────────────────
 
 /**
- * `invoke` for the Lab's commands. In a browser every Lab command rejects with
- * a clear reason, which the Lab views already surface as their error states.
+ * `invoke` for the Lab's commands. In a browser the corpus can still be read
+ * (from the study texts, below); every other Lab command rejects with a clear
+ * reason, which the Lab views already surface as their error states.
  */
 export function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   if (IN_TAURI) return tauriInvoke<T>(cmd, args);
   if (LAB_DEMO && cmd in labDemo) return labDemo[cmd](args) as Promise<T>;
+  if (cmd in browserCorpus) return browserCorpus[cmd](args) as Promise<T>;
   return Promise.reject(new Error(LAB_NEEDS_DESKTOP));
 }
+
+// In a browser the Lab's Corpus reads the study app's own texts: the same
+// translations, as the plain run of verses the model would train on. Only
+// reading: downloading and training still need the desktop app.
+async function corpusText(id: string): Promise<{ name: string; text: string }> {
+  const { loadTranslation } = await import("./bible");
+  const t = await loadTranslation(id);
+  return { name: t.meta.name, text: t.ownVerses.map((v) => v.text).join("\n") };
+}
+
+const browserCorpus: Record<string, (args?: Record<string, unknown>) => Promise<unknown>> = {
+  async corpus_list() {
+    const { listTranslations } = await import("./bible");
+    return Promise.all(
+      (await listTranslations()).map(async (m) => {
+        const { text } = await corpusText(m.id);
+        return {
+          id: m.id, name: m.name, language: m.language, license: m.licence, verified: true, hasUrl: false, downloaded: true,
+          sizeBytes: new TextEncoder().encode(text).length, charCount: text.length, wordCount: text.split(/\s+/).length,
+          tokenCount: text.length, vocabSize: new Set(text).size,
+        };
+      }),
+    );
+  },
+  async corpus_preview(args) {
+    return (await corpusText(String(args?.version ?? "kjv"))).text.slice(0, 1600);
+  },
+  async corpus_alphabet(args) {
+    const counts = new Map<string, number>();
+    for (const c of (await corpusText(String(args?.version ?? "kjv"))).text) counts.set(c, (counts.get(c) ?? 0) + 1);
+    return [...counts].sort((a, b) => b[1] - a[1]);
+  },
+};
 
 // `pnpm dev` with ?demo in the URL: canned Lab answers, so its screens can be
 // designed and checked in a browser. Never in a build.

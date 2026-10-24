@@ -104,10 +104,14 @@ export function Engraving({
 
 /** A plate beside its passage, with its caption, as in an illustrated Bible. */
 export function PlateFigure({ plate, onOpenRef, className }: { plate: Plate; onOpenRef?: () => void; className?: string }) {
+  const openLook = useStudy((s) => s.openLook);
+  const look = () => openLook({ kind: "plate", id: plate.id });
   return (
     <figure className={cn("my-6 break-inside-avoid", className)}>
-      {/* Never wider than the scan itself: stretching a small plate is what blurs it. */}
-      <Engraving plate={plate} className="mx-auto w-full" style={{ maxWidth: `min(34rem, ${plate.full.width}px)` }} />
+      {/* Never wider than the scan itself: stretching a small plate is what blurs it. Click to look at it full window. */}
+      <button type="button" onClick={look} aria-label={`Look at ${plate.title}`} className="block w-full cursor-zoom-in">
+        <Engraving plate={plate} className="mx-auto w-full" style={{ maxWidth: `min(34rem, ${plate.full.width}px)` }} />
+      </button>
       <figcaption className="mt-2 text-center text-xs text-muted-foreground">
         <span className="font-garamond text-sm italic text-foreground">{plate.title}</span>
         {plate.ref && (
@@ -118,6 +122,8 @@ export function PlateFigure({ plate, onOpenRef, className }: { plate: Plate; onO
             </button>
           </>
         )}
+        {" · "}
+        <button type="button" className="underline-offset-2 hover:underline" onClick={look}>Look</button>
         <span className="block opacity-70">{plateCredit(plate)}</span>
       </figcaption>
     </figure>

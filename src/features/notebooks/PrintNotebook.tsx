@@ -12,6 +12,7 @@ import { useTranslation } from "@/lib/hooks";
 import { VerseText } from "@/features/read/ReadView";
 import { bibleOrder, noteSpans, spansLabel, useNotebooks, type Note, type Notebook } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
+import { Markdown } from "@/lib/markdown";
 
 const label = (osis: string) => {
   const r = parseOsis(osis);
@@ -93,7 +94,7 @@ export function PrintNotebook({ nb, keep, subtitle, onDone }: { nb: Notebook; ke
                   </span>
                 ))}
               </blockquote>
-              <div className="whitespace-pre-wrap font-garamond text-[15px] leading-7">{n.body}</div>
+              <Markdown text={n.body} className="font-garamond text-[15px] leading-7" />
               {n.tags.length > 0 && <p className="mt-1 text-xs">{n.tags.map((x) => `#${x}`).join(" ")}</p>}
             </article>
           );
