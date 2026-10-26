@@ -5,7 +5,7 @@
 //   Timeline  the eras, with conventional dates (approximate, and said so).
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, SectionLabel,Spinner, cn, useReducedMotion } from "@nexis/design";
+import { Button, SectionLabel,Spinner, cn } from "@nexis/design";
 import { m } from "motion/react";
 import type { OrnamentName } from "@/art/ornaments";
 import { Ornament } from "@/art/Art";
@@ -19,6 +19,7 @@ import { useAtlas } from "./VerseAtlas";
 import { Choice, SearchField } from "@/app/controls";
 import { PageMark } from "@/art/SidebarArt";
 import { Sections } from "@/app/Sections";
+import { useStill } from "@/lib/power";
 
 type Tab = "places" | "people" | "timeline";
 
@@ -264,7 +265,7 @@ function EngravedMap({ land, places, selected, onSelect }: { land: Land; places:
   const svg = useRef<SVGSVGElement>(null);
   // Choosing a place glides the map there (and closer in, if it is far out)
   // rather than jumping: half a second, eased.
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   useEffect(() => {
     if (!selected) return;
     const [x, y] = at(selected.lon, selected.lat);
@@ -517,7 +518,7 @@ const ERA_ORNAMENTS: OrnamentName[] = ["sun", "compass", "lamp", "fleuron", "urn
 
 function Timeline({ people, onPerson }: { people: Person[]; onPerson: (id: string) => void }) {
   const [hover, setHover] = useState<string | null>(null);
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const dated = ERAS.filter((e) => !Number.isNaN(e.from));
   const byId = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
   const start = -2100, end = 120;

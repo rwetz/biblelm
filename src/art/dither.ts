@@ -17,11 +17,18 @@ export const BAYER8 = [
   33, 9, 41, 51, 19, 59, 27, 49, 17, 57, 25, 15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21,
 ];
 
+// A decoded hero is tens of MB, so keep only the last few (a Map iterates in
+// insertion order: re-inserting on use makes the first key the least recent).
 const images = new Map<string, Promise<HTMLImageElement>>();
+const KEEP_IMAGES = 12;
 
 export function loadImage(src: string): Promise<HTMLImageElement> {
   let p = images.get(src);
-  if (!p) {
+  if (p) {
+    images.delete(src);
+    images.set(src, p);
+  } else {
+    while (images.size >= KEEP_IMAGES) images.delete(images.keys().next().value!);
     p = new Promise((resolve, reject) => {
       const img = new Image();
       img.decoding = "async";

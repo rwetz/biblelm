@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   fmtShortcut,
   Icon,
   MOD_KEY,
+  MOD_PROP,
+  SHIFT_KEY,
   SidebarNav,
   StatusBar,
   StatusItem,
@@ -24,6 +26,8 @@ import { SidebarArt, SidebarOrnament } from "@/art/SidebarArt";
 import { formatRef, SHELVES, type Shelf } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
 import { refreshGpuInfo } from "@/lib/gpu";
+import { listen } from "@/lib/backend";
+import { setSaverMode, watchPower } from "@/lib/power";
 import { HomeView } from "@/features/home/HomeView";
 import { ReadView, chapterStep, toggleVersePanel } from "@/features/read/ReadView";
 import { SearchView } from "@/features/search/SearchView";
@@ -106,15 +110,126 @@ function useNarrow(): boolean {
   return narrow;
 }
 
+/**
+ * Back and forward through the pages visited (the menu, the keyboard and a
+ * two-finger swipe), like a browser's, without a router.
+ */
+function usePageHistory(page: Page, go: (p: Page) => void) {
+  const back = useRef<Page[]>([]);
+  const ahead = useRef<Page[]>([]);
+  const last = useRef(page);
+  const stepping = useRef(false);
+  useEffect(() => {
+    if (page === last.current) return;
+    if (!stepping.current) {
+      back.current = [...back.current, last.current].slice(-30);
+      ahead.current = [];
+    }
+    stepping.current = false;
+    last.current = page;
+  }, [page]);
+  return useMemo(() => {
+    const step = (from: { current: Page[] }, to: { current: Page[] }) => {
+      const p = from.current.pop();
+      if (!p) return;
+      to.current.push(last.current);
+      stepping.current = true;
+      go(p);
+    };
+    return { back: () => step(back, ahead), forward: () => step(ahead, back) };
+  }, [go]);
+}
+
+/**
+ * A two-finger swipe across a trackpad turns back or forward, unless the
+ * pointer is over something that scrolls sideways or pans (maps, wide
+ * tables). One turn per swipe: the gesture must pause before the next.
+ */
+function useSwipeHistory(history: { back: () => void; forward: () => void }) {
+  useEffect(() => {
+    let dx = 0;
+    let spent = false;
+    let quiet: ReturnType<typeof setTimeout> | undefined;
+    const sideways = (el: Element | null): boolean => {
+      for (; el && el !== document.body; el = el.parentElement) {
+        if (el instanceof HTMLCanvasElement || el instanceof SVGSVGElement) return true;
+        const ox = getComputedStyle(el).overflowX;
+        if ((ox === "auto" || ox === "scroll") && el.scrollWidth > el.clientWidth) return true;
+      }
+      return false;
+    };
+    const onWheel = (e: WheelEvent) => {
+      clearTimeout(quiet);
+      quiet = setTimeout(() => ((dx = 0), (spent = false)), 220);
+      if (spent || e.ctrlKey || Math.abs(e.deltaX) < 2 * Math.abs(e.deltaY)) return;
+      if (sideways(e.target as Element)) return;
+      dx += e.deltaX;
+      if (Math.abs(dx) < 140) return;
+      spent = true;
+      if (dx < 0) history.back();
+      else history.forward();
+    };
+    window.addEventListener("wheel", onWheel, { passive: true });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [history]);
+}
+
 export default function App() {
   const page = useStudy((s) => s.page);
   const showLab = useStudy((s) => s.showLab);
+  const compact = useStudy((s) => s.compact);
+  const saver = useStudy((s) => s.saver);
+  const folded = useStudy((s) => s.sidebarFolded);
+  const setStudy = useStudy((s) => s.set);
   const redLetter = useStudy((s) => s.redLetter);
   const go = useStudy((s) => s.go);
   const [palette, setPalette] = useState(false);
   const narrow = useNarrow();
+  const history = usePageHistory(page, go);
+  useSwipeHistory(history);
+  const commands = useCommands(() => setPalette(true), history);
+
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-compact", compact);
+  }, [compact]);
+  useEffect(() => {
+    watchPower();
+    setSaverMode(saver);
+  }, [saver]);
+
+  // The shortcuts a Mac app is expected to have (Ctrl elsewhere); also the menu bar's.
+  useEffect(() => {
+    const find = () => {
+      go("search");
+      setTimeout(() => window.dispatchEvent(new CustomEvent("biblelm:focus-search")), 60);
+    };
+    const run: Record<string, () => void> = {
+      settings: () => go("settings"),
+      find,
+      palette: () => setPalette(true),
+      sidebar: () => setStudy({ sidebarFolded: !useStudy.getState().sidebarFolded }),
+      back: history.back,
+      forward: history.forward,
+    };
+    const keys: Record<string, string> = { ",": "settings", f: "find", "\\": "sidebar", "[": "back", "]": "forward" };
+    const onKey = (e: KeyboardEvent) => {
+      if (!e[`${MOD_PROP}Key`] || e.altKey || e.shiftKey) return;
+      const name = keys[e.key.toLowerCase()];
+      if (!name) return;
+      e.preventDefault();
+      run[name]();
+    };
+    window.addEventListener("keydown", onKey);
+    const off = listen<string>("menu", (e) => {
+      if (e.payload.startsWith("go-")) go(e.payload.slice(3) as Page);
+      else run[e.payload]?.();
+    });
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      off.then((f) => f());
+    };
+  }, [go, history, setStudy]);
   useCommandPaletteShortcut(() => setPalette((o) => !o));
-  const commands = useCommands(() => setPalette(true));
   const loadNotes = useNotebooks((s) => s.load);
 
   // Hiding the Lab while on it leaves for Home rather than a page with no nav item.
@@ -141,16 +256,16 @@ export default function App() {
           >
             <Icon name="search" size="xs" />
             <span className="flex-1 truncate text-left transition-colors group-hover:text-foreground">Find a page, setting or command</span>
-            <kbd className="hidden font-mono text-[10px] opacity-70 md:inline">{fmtShortcut(MOD_KEY, "Shift", "P")}</kbd>
+            <kbd className="hidden font-mono text-[10px] opacity-70 md:inline">{fmtShortcut(MOD_KEY, SHIFT_KEY, "P")}</kbd>
           </button>
         }
         actions={<ModeToggle />}
       />
       <div className="nexis-shell-body flex min-h-0 flex-1">
         <div className="relative flex shrink-0">
-          <SidebarNav sections={showLab ? NAV : NAV_STUDY} value={page} onChange={go} label="BibleLM" collapsed={narrow} />
-          {!narrow && <SidebarOrnament />}
-          {!narrow && <SidebarArt />}
+          <SidebarNav sections={showLab ? NAV : NAV_STUDY} value={page} onChange={go} label="BibleLM" collapsed={narrow || folded} />
+          {!(narrow || folded) && <SidebarOrnament />}
+          {!(narrow || folded) && <SidebarArt />}
         </div>
         <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <ViewEnter replayKey={page} className="flex min-h-0 flex-1 flex-col">
@@ -206,7 +321,7 @@ function Status() {
   );
 }
 
-function useCommands(openPalette: () => void): PaletteCommand[] {
+function useCommands(openPalette: () => void, history: { back: () => void; forward: () => void }): PaletteCommand[] {
   const study = useStudy();
   const [, setScheme] = useScheme();
   const [catalog] = useCatalog();
@@ -296,6 +411,9 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       setting("Red letter", ["words of christ", "jesus", "red"]),
       setting("Two columns", ["columns", "layout", "printed bible"]),
       setting("Ornaments", ["decorations", "flair", "dither", "emblems", "turn off"]),
+      setting("Compact spacing", ["density", "small screen", "laptop", "margins", "tight"]),
+      setting("Fold the sidebar to icons", ["collapse", "nav", "room"]),
+      setting("Save battery", ["power", "low power", "laptop", "animation", "blur", "motion"]),
       setting("Your name", ["name", "print", "title page", "profile"]),
       // Each shelf by its own books, so "enoch" finds the Pseudepigrapha alone.
       ...SHELVES.map((s) => setting(s.label, ["canon", "shelf", "books", ...SHELF_WORDS[s.id]])),
@@ -314,9 +432,15 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       keywords: ["gpt", "model", "machine", "train"],
       run: () => { study.go("lab"); setTimeout(() => window.dispatchEvent(new CustomEvent("biblelm:lab-tab", { detail: t })), 60); },
     }));
+    const layout: PaletteCommand[] = [
+      { id: "back", label: "Back", group: "Navigate", icon: "chevron-left", shortcut: fmtShortcut(MOD_KEY, "["), run: history.back },
+      { id: "forward", label: "Forward", group: "Navigate", icon: "chevron-right", shortcut: fmtShortcut(MOD_KEY, "]"), run: history.forward },
+      { id: "sidebar", label: study.sidebarFolded ? "Unfold the sidebar" : "Fold the sidebar to icons", group: "Appearance", icon: "sidebar-left", shortcut: fmtShortcut(MOD_KEY, "\\"), keywords: ["collapse", "hide", "nav", "room"], run: () => study.set({ sidebarFolded: !study.sidebarFolded }) },
+      { id: "compact", label: study.compact ? "Roomier spacing" : "Compact spacing", group: "Appearance", icon: "zoom-out", keywords: ["density", "small screen", "laptop", "margins", "tight"], run: () => study.set({ compact: !study.compact }) },
+    ];
     const labToggle: PaletteCommand = { id: "lab-toggle", label: study.showLab ? "Hide the Lab from the sidebar" : "Show the Lab in the sidebar", group: "Lab", icon: "brain", keywords: ["machine", "gpt", "simpler", "study only"], run: () => study.set({ showLab: !study.showLab }) };
     const welcome: PaletteCommand = { id: "welcome", label: "Show the welcome again", group: "Settings", icon: "info", keywords: ["name", "first start", "intro"], run: () => study.set({ welcomed: false }) };
     void openPalette;
-    return [...nav, ...reading, ...settings, welcome, ...(study.showLab ? lab : []), labToggle, ...translations, ...shelves, ...nbs, ...appearance];
-  }, [study, setScheme, catalog, notebooks, setActive, openPalette]);
+    return [...nav, ...reading, ...settings, welcome, ...(study.showLab ? lab : []), labToggle, ...layout, ...translations, ...shelves, ...nbs, ...appearance];
+  }, [study, setScheme, catalog, notebooks, setActive, openPalette, history]);
 }

@@ -86,6 +86,7 @@ export function ReadView() {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
       if (el.closest("input, textarea, [contenteditable]")) return;
+      if (e.metaKey || e.ctrlKey) return; // with the modifier, [ and ] go back and forward (App)
       if (e.key === "]") chapterStep(1);
       if (e.key === "[") chapterStep(-1);
       if (e.key === "Escape") select(null);
@@ -119,7 +120,7 @@ export function ReadView() {
   const lastChapter = location.chapter === chapters[chapters.length - 1];
 
   return (
-    <div className="flex min-h-0 flex-1">
+    <div className="@container/reader relative flex min-h-0 flex-1">
       <div className="@container flex min-w-0 flex-1 flex-col">
         <ReaderToolbar t={main} bookId={bookId} />
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">

@@ -119,7 +119,7 @@ function TodaysPainting({ id }: { id: string }) {
     <section>
       <SectionLabel>To look at today</SectionLabel>
       <button type="button" onClick={() => openLook({ kind: "painting", id })} className="group mt-2 block text-left">
-        <img src={paintingUrl(p.thumb)} alt={`${p.title}, ${paintingCredit(p)}`} className={cn("w-full rounded-sm", !p.colour && "engraving")} />
+        <img src={paintingUrl(p.thumb)} loading="lazy" decoding="async" alt={`${p.title}, ${paintingCredit(p)}`} className={cn("w-full rounded-sm", !p.colour && "engraving")} />
         <p className="mt-2 font-garamond text-lg leading-snug group-hover:underline">{p.title}</p>
         <p className="text-xs text-muted-foreground">
           {paintingCredit(p)}

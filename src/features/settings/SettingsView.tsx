@@ -110,6 +110,25 @@ export function SettingsView() {
             <Field label="Ornaments" hint="The small dithered devices: headpieces, the evangelists' emblems, the mark beside each page in the sidebar." inline>
               <Switch checked={study.ornaments} onCheckedChange={(ornaments) => study.set({ ornaments })} />
             </Field>
+            <Field label="Compact spacing" hint="Tighter margins and lines, for a small screen." inline>
+              <Switch checked={study.compact} onCheckedChange={(compact) => study.set({ compact })} />
+            </Field>
+            <Field label="Fold the sidebar to icons" hint="It folds by itself on a narrow window." inline>
+              <Switch checked={study.sidebarFolded} onCheckedChange={(sidebarFolded) => study.set({ sidebarFolded })} />
+            </Field>
+            <Field label="Save battery" hint="The pictures hold still and glass loses its blur. Auto does this on battery power." inline>
+              <Segmented
+                label="Save battery"
+                size="sm"
+                value={study.saver}
+                onChange={(saver) => study.set({ saver })}
+                segments={[
+                  { id: "auto", label: "Auto" },
+                  { id: "on", label: "Always" },
+                  { id: "off", label: "Never" },
+                ]}
+              />
+            </Field>
             <Field label="Your name" hint="Printed on the title page of a notebook. Stays on this computer." inline>
               <Input value={study.name} onChange={(e) => study.set({ name: e.target.value })} placeholder="Optional" className="h-8 w-56" />
             </Field>

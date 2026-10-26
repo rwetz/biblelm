@@ -75,6 +75,7 @@ export function GalleryView() {
                           src={paintingUrl(painting.thumb)}
                           alt={`${painting.title}, ${paintingCredit(painting)}`}
                           loading="lazy"
+                          decoding="async"
                           className={cn("h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]", !painting.colour && "engraving")}
                           style={{ objectPosition: `${painting.focusX}% ${painting.focusY}%` }}
                         />

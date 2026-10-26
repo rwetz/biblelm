@@ -13,6 +13,36 @@ All notable changes to BibleLM. Format based on
   nav. Hiding it while on it goes Home.
 - **A macOS build**: `tauri.macos.conf.json` bundles an `.app` and a `.dmg`;
   Windows still builds its NSIS installer.
+- **A Go menu on macOS** (Back, Forward, each page, Find, the palette, the
+  sidebar, Settings), and the shortcuts a Mac app is expected to have
+  everywhere: Cmd+, Settings, Cmd+F Find, Cmd+\ folds the sidebar, Cmd+[ and
+  Cmd+] go back and forward through the pages visited (Ctrl elsewhere). A
+  two-finger sideways swipe does the same, except over a map or anything that
+  scrolls sideways.
+- **The window comes back where it was** (app data, `window.json`), unless
+  that place is no longer on a screen.
+- **Compact spacing**, **Fold the sidebar to icons** and **Save battery**
+  (Auto, Always, Never) in Settings. Saving the battery holds the art still,
+  as reduced motion does, and drops the blur behind glass; Auto does it on
+  battery power or in Low Power Mode (`power_state`: pmset on macOS, /sys on
+  Linux, the Battery Status API on Windows). The blur also goes when the
+  system asks for reduced transparency.
+
+### Changed (memory and layout)
+
+- The semantic and phrase-search workers stop after four quiet minutes and
+  give back their index, model and suffix arrays; the next search starts them
+  again.
+- Decoded pictures for dithering are kept for the last 12 only, not every
+  picture ever drawn (a hero is tens of MB decoded).
+- The chiasm finder takes passages of up to 400 verses (a whole book was
+  millions of pairs).
+- The Lab's memory meter knows Apple silicon: it reads Metal's recommended
+  working set as the ceiling and says the memory is shared, where it used to
+  say no GPU and training on CPU (training already used MPS).
+- The verse panel floats over the text when the reader is under 60rem wide,
+  instead of squeezing it.
+- Thumbnails load lazily and decode off the main thread.
 
 ### Changed
 

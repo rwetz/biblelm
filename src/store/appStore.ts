@@ -41,6 +41,8 @@ export interface GpuInfo {
   allocatedMb: number;
   reservedMb: number;
   deviceCount: number;
+  /** Apple silicon: the GPU shares the computer's memory with everything else. */
+  unified?: boolean;
 }
 
 export interface ModelInfo {

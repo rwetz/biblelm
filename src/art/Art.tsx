@@ -4,13 +4,14 @@
 // is dithered live in the theme's ink, so it never brings its own paper.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { cn, useReducedMotion, useTheme } from "@nexis/design";
+import { cn, useTheme } from "@nexis/design";
 import { formatRef } from "@/lib/canon";
 import { heroSrcUrl, heroUrl, loadHeroes, loadLiterary, loadPaintings, loadPlates, paintingCredit, paintingUrl, plateCredit, plateUrl, rotation, type Hero, type Painting as PaintingData, type Plate } from "@/lib/art";
 import { useStudy } from "@/store/study";
 import { compose, cssColor, revealCells, type Composed, type PaintingLook } from "./painting";
 import { BAYER8, paintScattered, scatterSeeds, dither, fadeEdges, inkColor, loadImage, paint, toneGrid, type DitherAlgo, type Edges } from "./dither";
 import { ORNAMENTS, ornamentSrc, type OrnamentName } from "./ornaments";
+import { useStill } from "@/lib/power";
 
 export function usePlates(): Plate[] {
   const [plates, setPlates] = useState<Plate[]>([]);
@@ -175,7 +176,7 @@ export function Dither({
 }) {
   const box = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const { paletteEpoch, resolvedMode } = useTheme();
   // Light: draw the ink dots. Dark: draw the lit dots instead, so light stays
   // light and a night scene is not a negative.
@@ -439,7 +440,7 @@ export function Painting({
 }) {
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const { paletteEpoch, resolvedMode } = useTheme();
   const dark = resolvedMode === "dark";
   const [size, setSize] = useState<[number, number] | null>(null);
@@ -639,7 +640,7 @@ export function DitherHero({
  */
 export function CrossLoader({ size = 48, className, label = "Working" }: { size?: number; className?: string; label?: string }) {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const { paletteEpoch } = useTheme();
   useEffect(() => {
     const cv = canvas.current;

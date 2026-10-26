@@ -60,6 +60,8 @@ pub struct GpuInfo {
     pub allocated_mb: u64,
     pub reserved_mb: u64,
     pub device_count: u32,
+    /// Apple silicon: the GPU shares the computer's memory with everything else.
+    pub unified: bool,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -903,6 +905,7 @@ async fn gpu_info() -> Result<GpuInfo, String> {
                 allocated_mb: v["allocated_mb"].as_u64().unwrap_or(0),
                 reserved_mb: v["reserved_mb"].as_u64().unwrap_or(0),
                 device_count: v["device_count"].as_u64().unwrap_or(0) as u32,
+                unified: v["unified"].as_bool().unwrap_or(false),
             });
             break;
         }
@@ -990,6 +993,146 @@ fn fit_to_screen(win: &tauri::WebviewWindow) {
     ));
 }
 
+/// Where the window was when the app last closed, in logical size and
+/// physical position (app data folder, window.json).
+#[derive(Serialize, Deserialize)]
+struct WindowPlace {
+    x: i32,
+    y: i32,
+    width: f64,
+    height: f64,
+}
+
+fn place_file<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Option<PathBuf> {
+    app.path().app_data_dir().ok().map(|d| d.join("window.json"))
+}
+
+fn save_place<R: tauri::Runtime>(win: &tauri::Window<R>) {
+    if win.is_minimized().unwrap_or(false) || win.is_fullscreen().unwrap_or(false) {
+        return;
+    }
+    let (Ok(pos), Ok(size), Ok(scale)) = (win.outer_position(), win.inner_size(), win.scale_factor()) else {
+        return;
+    };
+    let place = WindowPlace {
+        x: pos.x,
+        y: pos.y,
+        width: size.width as f64 / scale,
+        height: size.height as f64 / scale,
+    };
+    if let (Some(file), Ok(json)) = (place_file(win.app_handle()), serde_json::to_vec(&place)) {
+        if let Some(dir) = file.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let _ = std::fs::write(file, json);
+    }
+}
+
+/// Put the window back where it was, if that place is still on a screen (a
+/// monitor unplugged since would leave it off screen). False: fit it instead.
+fn restore_place(win: &tauri::WebviewWindow) -> bool {
+    let Some(raw) = place_file(win.app_handle()).and_then(|f| std::fs::read(f).ok()) else {
+        return false;
+    };
+    let Ok(p) = serde_json::from_slice::<WindowPlace>(&raw) else {
+        return false;
+    };
+    let Ok(monitors) = win.available_monitors() else {
+        return false;
+    };
+    let slack = 8;
+    let on_screen = monitors.iter().any(|m| {
+        let a = m.work_area();
+        let s = m.scale_factor();
+        let (w, h) = ((p.width * s) as i32, (p.height * s) as i32);
+        p.x >= a.position.x - slack
+            && p.y >= a.position.y - slack
+            && p.x + w <= a.position.x + a.size.width as i32 + slack
+            && p.y + h <= a.position.y + a.size.height as i32 + slack
+    });
+    if !on_screen || p.width < 600.0 || p.height < 400.0 {
+        return false;
+    }
+    let _ = win.set_size(tauri::LogicalSize::new(p.width, p.height));
+    let _ = win.set_position(tauri::PhysicalPosition::new(p.x, p.y));
+    true
+}
+
+/// On battery power or in Low Power Mode. None where the system cannot be
+/// asked here (Windows); the webview's Battery Status API answers there.
+#[tauri::command]
+#[allow(unreachable_code)]
+async fn power_state() -> Option<bool> {
+    #[cfg(target_os = "macos")]
+    {
+        let read = |args: &[&str]| {
+            std::process::Command::new("pmset")
+                .args(args)
+                .output()
+                .ok()
+                .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
+        };
+        let on_battery = read(&["-g", "batt"])?.contains("'Battery Power'");
+        let low_power = read(&["-g"]).is_some_and(|out| {
+            out.lines().any(|l| {
+                let mut w = l.split_whitespace();
+                w.next() == Some("lowpowermode") && w.next() == Some("1")
+            })
+        });
+        return Some(on_battery || low_power);
+    }
+    #[cfg(target_os = "linux")]
+    {
+        for entry in std::fs::read_dir("/sys/class/power_supply").ok()?.flatten() {
+            let p = entry.path();
+            let mains = std::fs::read_to_string(p.join("type")).is_ok_and(|t| t.trim() == "Mains");
+            if mains {
+                return std::fs::read_to_string(p.join("online")).ok().map(|s| s.trim() == "0");
+            }
+        }
+        return None;
+    }
+    None
+}
+
+/// The macOS menu bar: the standard menus, and a Go menu with the app's own
+/// shortcuts. A choice is sent to the page as a "menu" event (App.tsx).
+#[cfg(target_os = "macos")]
+fn mac_menu<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<tauri::menu::Menu<R>> {
+    use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
+    let menu = Menu::default(app)?;
+    let go = Submenu::new(app, "Go", true)?;
+    let groups: [&[(&str, &str, &str)]; 3] = [
+        &[("back", "Back", "CmdOrCtrl+BracketLeft"), ("forward", "Forward", "CmdOrCtrl+BracketRight")],
+        &[
+            ("go-home", "Home", "CmdOrCtrl+1"),
+            ("go-read", "Read", "CmdOrCtrl+2"),
+            ("go-search", "Search", "CmdOrCtrl+3"),
+            ("go-topics", "Topics", "CmdOrCtrl+4"),
+            ("go-atlas", "Atlas", "CmdOrCtrl+5"),
+            ("go-gallery", "Gallery", "CmdOrCtrl+6"),
+            ("go-daily", "Daily", "CmdOrCtrl+7"),
+            ("go-notebooks", "Notebooks", "CmdOrCtrl+8"),
+        ],
+        &[
+            ("find", "Find", "CmdOrCtrl+F"),
+            ("palette", "Command Palette", "CmdOrCtrl+Shift+P"),
+            ("sidebar", "Fold the Sidebar", "CmdOrCtrl+Backslash"),
+            ("settings", "Settings", "CmdOrCtrl+Comma"),
+        ],
+    ];
+    for (i, group) in groups.iter().enumerate() {
+        if i > 0 {
+            go.append(&PredefinedMenuItem::separator(app)?)?;
+        }
+        for (id, text, key) in group.iter() {
+            go.append(&MenuItem::with_id(app, *id, *text, true, Some(*key))?)?;
+        }
+    }
+    menu.append(&go)?;
+    Ok(menu)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -999,7 +1142,16 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
             if let Some(win) = app.get_webview_window("main") {
-                fit_to_screen(&win);
+                if !restore_place(&win) {
+                    fit_to_screen(&win);
+                }
+            }
+            #[cfg(target_os = "macos")]
+            {
+                app.set_menu(mac_menu(app.handle())?)?;
+                app.on_menu_event(|app, event| {
+                    let _ = app.emit("menu", event.id().0.clone());
+                });
             }
             init_roots(app.handle());
             study::init(app.handle());
@@ -1028,7 +1180,21 @@ pub fn run() {
             gpu_info,
             model_status,
             model_import,
+            power_state,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running BibleLM");
+        .on_window_event(|win, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                save_place(win);
+            }
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building BibleLM")
+        .run(|app, event| {
+            // Quitting (Cmd+Q) does not ask the window to close first.
+            if let tauri::RunEvent::ExitRequested { .. } = event {
+                if let Some(win) = app.get_webview_window("main") {
+                    save_place(&win.as_ref().window());
+                }
+            }
+        });
 }

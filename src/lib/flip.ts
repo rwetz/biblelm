@@ -3,13 +3,13 @@
 // decision model reorders a list live. Reduced motion just moves them.
 
 import { useLayoutEffect, useRef } from "react";
-import { useReducedMotion } from "@nexis/design";
+import { useStill } from "./power";
 
 /** Pass a key that changes with the order; attach the returned ref to each item. */
 export function useFlip(order: string) {
   const els = useRef(new Map<string, HTMLElement>());
   const tops = useRef(new Map<string, number>());
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   useLayoutEffect(() => {
     for (const [k, el] of els.current) {
       const top = el.getBoundingClientRect().top;

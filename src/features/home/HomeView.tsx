@@ -158,7 +158,7 @@ export function HomeView() {
         {today && (
           <section className="mt-10 flex items-center gap-5 rounded-xl p-2">
             <button type="button" onClick={() => openLook({ kind: "painting", id: today.id })} className="shrink-0">
-              <img src={paintingUrl(today.thumb)} alt={`${today.title}, ${paintingCredit(today)}`} className="h-28 w-24 rounded-sm object-cover" style={{ objectPosition: `${today.focusX}% ${today.focusY}%` }} />
+              <img src={paintingUrl(today.thumb)} loading="lazy" decoding="async" alt={`${today.title}, ${paintingCredit(today)}`} className="h-28 w-24 rounded-sm object-cover" style={{ objectPosition: `${today.focusX}% ${today.focusY}%` }} />
             </button>
             <div className="min-w-0">
               <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">To look at today</p>

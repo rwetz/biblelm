@@ -24,6 +24,32 @@
   --page-top: clamp(1.5rem, 4.5vh, 3rem);
 }
 
+/* A sideways swipe turns pages in the app (App.tsx), not the webview's history. */
+html,
+body {
+  overscroll-behavior-x: none;
+}
+
+:root[data-compact] {
+  --gutter: clamp(0.75rem, 1.6vw, 1.25rem);
+  --page-top: clamp(1rem, 2.5vh, 1.75rem);
+}
+
+/* Glass without its blur when the system asks for less transparency or the
+   battery is being saved (src/lib/power.ts): a blur over a picture is costly
+   on integrated graphics. The shell's entrance plays only on full power. */
+@media (prefers-reduced-transparency: reduce) {
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+  }
+}
+:root[data-saver] [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+}
+:root[data-saver] :is(.nexis-shell-header, .nexis-shell-body, .nexis-shell-status, .nexis-view-enter, .nexis-content-enter) {
+  animation: none;
+}
+
 /* ── Reading ──────────────────────────────────────────────────────────── */
 
 .scripture {
@@ -33,6 +59,9 @@
   text-wrap: pretty;
   hanging-punctuation: first;
   font-feature-settings: "liga", "dlig", "onum";
+}
+:root[data-compact] .scripture {
+  line-height: 1.6;
 }
 .scripture .vnum {
   font-family: var(--font-sans);

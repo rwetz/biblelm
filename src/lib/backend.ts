@@ -59,7 +59,22 @@ async function jevAvailable(): Promise<boolean> {
   return IN_TAURI ? tauriInvoke<boolean>("jev_available") : LAB_DEMO;
 }
 
+/**
+ * Running on battery (or in Low Power Mode). The desktop app asks the system
+ * (pmset on macOS, /sys on Linux); where it cannot (null, as on Windows), and
+ * in a browser, the Battery Status API answers if the webview has it.
+ */
+async function onBattery(): Promise<boolean | null> {
+  if (IN_TAURI) {
+    const native = await tauriInvoke<boolean | null>("power_state");
+    if (native !== null) return native;
+  }
+  const nav = navigator as Navigator & { getBattery?: () => Promise<{ charging: boolean }> };
+  return nav.getBattery ? !(await nav.getBattery()).charging : null;
+}
+
 export const backend = {
+  onBattery,
   notesLoad,
   notesSave,
   exportMarkdown,

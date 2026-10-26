@@ -4,6 +4,7 @@
 
 import { create } from "zustand";
 import type { Ref, Shelf } from "@/lib/canon";
+import type { SaverMode } from "@/lib/power";
 
 export type Page = "home" | "read" | "search" | "topics" | "atlas" | "gallery" | "daily" | "notebooks" | "lab" | "settings";
 /** A picture opened to look at: a painting or a Doré plate, by id. */
@@ -25,6 +26,12 @@ interface StudyState {
   redLetter: boolean;
   /** The hand-drawn dithered ornaments (headpieces, page marks, the sidebar's). */
   ornaments: boolean;
+  /** Tighter margins and spacing, for a small screen or a preference for more on it. */
+  compact: boolean;
+  /** Folded to its icons by choice (it also folds on a narrow window). */
+  sidebarFolded: boolean;
+  /** Save the battery: the art holds still and glass loses its blur. Auto: on battery power. */
+  saver: SaverMode;
   /** The Lab in the sidebar and the palette; off gives a study-only app and a shorter nav. */
   showLab: boolean;
   /** Your name, for the title page of a printed notebook. Empty: not given. */
@@ -67,7 +74,7 @@ interface StudyState {
   searchFor: (q: string) => void;
   openLook: (t: LookTarget | null) => void;
   openAtlas: (kind: "place" | "person", id: string) => void;
-  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "ornaments" | "showLab" | "name" | "welcomed" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
+  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "ornaments" | "compact" | "sidebarFolded" | "saver" | "showLab" | "name" | "welcomed" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
 }
 
 const KEY = "biblelm:study";
@@ -82,6 +89,9 @@ const DEFAULTS = {
   columns: false,
   redLetter: true,
   ornaments: true,
+  compact: false,
+  sidebarFolded: false,
+  saver: "auto" as SaverMode,
   showLab: true,
   name: "",
   welcomed: false,
@@ -104,8 +114,8 @@ function load(): typeof DEFAULTS {
 
 function save(s: StudyState) {
   try {
-    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, showLab, name, welcomed, interlinear, location, history, devMode, devHero, devPlate } = s;
-    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, showLab, name, welcomed, interlinear, location, history, devMode, devHero, devPlate }));
+    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, devMode, devHero, devPlate } = s;
+    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, devMode, devHero, devPlate }));
   } catch {
     // Storage blocked: preferences just won't persist.
   }
