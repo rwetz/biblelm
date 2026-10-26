@@ -1,8 +1,9 @@
 # BibleLM: notes for coding agents
 
-BibleLM is an **illustrated Bible study tool with an ML lab inside it**. Read
-[docs/ROADMAP.md](docs/ROADMAP.md) first (status and what changed from the
-plan), then the doc for the area you are touching:
+BibleLM is an **illustrated Bible study tool with an ML lab inside it**. The
+2.x roadmap is complete (v2.1.0). Read [docs/ROADMAP.md](docs/ROADMAP.md) first
+(status and what changed from the plan), then the doc for the area you are
+touching:
 
 | Area | Doc |
 |---|---|

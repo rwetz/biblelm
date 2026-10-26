@@ -1,5 +1,9 @@
 # Roadmap to BibleLM 2.0
 
+**Complete.** Every milestone below has shipped (M12 was dropped), the last of
+them in v2.1.0, published 2026-10-25. New work starts from
+[IDEAS.md](IDEAS.md) as a milestone of its own; see [Status](#status).
+
 From "a tiny GPT with a dashboard" to **an illustrated Bible study tool with an
 ML lab inside it.** Each milestone is sized for one agent session on one
 branch, with a definition of done an agent can check. Background:
@@ -166,8 +170,9 @@ M0 ─┬─ M1 ─┬─ M3 ─┬─ M5
 - [x] M19 Woodcuts and the rest of ART.md's Tier 3 (Dürer, Schnorr, Blake, Nuremberg, Luther 1534, evangelists; ART.md)
 - [x] M20 The Pseudepigrapha shelf: 1 Enoch in Charles's translation, a companion text every translation borrows (STUDY.md, DATA.md)
 
-Released as v2.1.0 (2026-10-23): M14 to M20, and the fixes from the
-end-to-end review (docs/evals/e2e-2026-10-23.md).
+Released as v2.1.0 (tagged 2026-10-23, published 2026-10-25): M14 to M20, and
+the fixes from the end-to-end review (docs/evals/e2e-2026-10-23.md). With it
+the roadmap is complete; nothing planned here is left to build.
 
 Still open outside this repo: Axon 0.10 and 0.11 wait on
 [rwetz/axon#1](https://github.com/rwetz/axon/pull/1) (`text-gpt` into `main`);

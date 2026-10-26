@@ -58,6 +58,13 @@ Python) when it is installed; nothing else in the app needs either.
 
 No large hosted model is used: everything else runs on your computer.
 
+## Download
+
+Installers for Windows and macOS are on the
+[latest release](https://github.com/rwetz/biblelm/releases/latest) (v2.1.0).
+The 2.x roadmap is complete; see [docs/ROADMAP.md](docs/ROADMAP.md) and the
+[CHANGELOG](CHANGELOG.md).
+
 ## Run it
 
 ```sh
