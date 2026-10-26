@@ -4,6 +4,22 @@ All notable changes to BibleLM. Format based on
 [Keep a Changelog](https://keepachangelog.com/); this project follows
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Fixed
+
+- **Small screens**: the window opens inside the screen's work area, centred,
+  instead of at 1280 by 840 with its right and bottom edges off screen on a
+  13-inch laptop (the hero and its credit looked cut, the status bar was gone).
+- **The sidebar ornament** is centred in the measured gap between the last nav
+  item and the vignette, and hidden when the gap cannot hold it; it no longer
+  sits over Settings on a window under about 900 pixels tall.
+- **Home's first screen** sets the verse of the day by window height too, so
+  the hero keeps more of its picture on a short window.
+- **The Lab's translations on macOS**: the app looked for `python`, which macOS
+  does not have; it now finds `python3` (Homebrew, python.org or the system's),
+  and says the Lab needs Python 3 when none is found.
+
 ## [2.1.0] — 2026-10-23
 
 ### Added

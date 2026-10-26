@@ -4,7 +4,7 @@
 // other pages, one chosen so it never repeats the page's corner plate. A click
 // opens the passage it depicts.
 
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BOOKS } from "@/lib/canon";
 import { PAGE_PLATES, plateUrl, SIDEBAR_PLATES, type Plate } from "@/lib/art";
 import { useNotebooks } from "@/store/notebooks";
@@ -66,6 +66,7 @@ export function SidebarArt() {
       type="button"
       onClick={() => plate.ref && read(plate.ref, { select: true })}
       aria-label={`${plate.title}. Open the passage`}
+      data-sidebar-art
       className="group absolute inset-x-0 bottom-0 z-20 block text-left outline-none [@media(max-height:680px)]:hidden"
     >
       <Dither
@@ -109,9 +110,40 @@ const pageOrnament = (page: string): OrnamentName => (page === "daily" && new Da
  */
 export function SidebarOrnament() {
   const page = useStudy((s) => s.page);
+  const ref = useRef<HTMLDivElement>(null);
+  const [mid, setMid] = useState<number | null>(null);
+  // Centred in the measured gap between the last nav item and the vignette, so
+  // a taller nav or a short screen never puts it over an item; hidden when the
+  // gap cannot hold it.
+  useLayoutEffect(() => {
+    const box = ref.current?.parentElement;
+    if (!box) return;
+    const measure = () => {
+      const origin = box.getBoundingClientRect().top;
+      const items = box.querySelectorAll("nav button");
+      const top = items.length ? items[items.length - 1].getBoundingClientRect().bottom - origin : 0;
+      const art = box.querySelector("[data-sidebar-art]")?.getBoundingClientRect();
+      const bottom = art && art.height > 0 ? art.top - origin : box.clientHeight;
+      const room = parseFloat(getComputedStyle(document.documentElement).fontSize) * 7; // the 5rem mark and a rem either side
+      setMid(bottom - top >= room ? (top + bottom) / 2 : null);
+    };
+    measure();
+    const resized = new ResizeObserver(measure);
+    resized.observe(box);
+    const changed = new MutationObserver(measure);
+    changed.observe(box, { childList: true });
+    return () => {
+      resized.disconnect();
+      changed.disconnect();
+    };
+  }, []);
   return (
-    // Centred in the gap between the nav (about 23rem tall) and the vignette (about 18.5rem); hidden when there is no gap.
-    <div aria-hidden className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center [@media(max-height:820px)]:hidden" style={{ top: "calc(23rem + (100% - 41.5rem) / 2)" }}>
+    <div
+      ref={ref}
+      aria-hidden
+      className={cn("pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center", mid === null && "hidden")}
+      style={{ top: mid ?? 0 }}
+    >
       <Ornament key={page} name={pageOrnament(page)} className="w-20 text-sidebar-foreground opacity-70" />
     </div>
   );

@@ -128,7 +128,7 @@ describe.skipIf(!HAVE)("the walk, over the built data", () => {
 
     await go("Lab");
     // The test setup plays a Tauri with no backend, so the Lab says where its translations live.
-    await shows("The Lab's translations live in the desktop app.");
+    await shows("The Lab needs Python 3 to list its translations.");
 
     await go("Settings");
     expect(await screen.findByText("Pseudepigrapha", undefined, WAIT)).toBeTruthy();

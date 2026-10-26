@@ -168,7 +168,7 @@ export function CorpusView({ front = false }: { front?: boolean } = {}) {
           >
             {showAdd && <AddForm onAdd={handleAdd} />}
             {languages.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-muted-foreground">{listError ? "The Lab's translations live in the desktop app." : "Loading translations…"}</p>
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">{listError ? (IN_TAURI ? "The Lab needs Python 3 to list its translations. Install it, then reopen BibleLM." : "The Lab's translations live in the desktop app.") : "Loading translations…"}</p>
             ) : (
               languages.map((lang) => (
                 <div key={lang}>
