@@ -157,12 +157,41 @@ to Sub Rosa while the mode is on.
   >   sacred-texts.com refuses automated requests. Slips in a transcription
   >   are mended in code, each checked against the scan, and the build
   >   stops if one is gone (`CONYBEARE_FIXES`, `MACKEY_TITLES`).
-- [ ] **S4 Dossiers and symbols.** A Sub Rosa page (the cabinet): dossiers
+- [x] **S4 Dossiers and symbols.** A Sub Rosa page (the cabinet): dossiers
   with tagged claims, the verses, the plates and the primary sources;
   symbols with their history. First dossiers: the "biblically accurate"
   angels, the words for hell (from the interlinear and Strong's), Lucifer
   (Isaiah 14:12 and the Vulgate), 666 or 616, Boaz and Jachin (1 Kings
   7:21), Azazel, Lilith, Legion, the witch of Endor, the Nephilim.
+
+  > **As built:** `src/lib/dossiers.ts`, written by hand like the Studies,
+  > with two shelves in the cabinet: **Dossiers** and **Symbols**.
+  > - **Twelve dossiers**: the ten planned and two the brief asked for, *Why
+  >   the Masons build Solomon's Temple* and *Solomon and the demons*. The
+  >   words for hell are written from the texts, not drawn from the
+  >   interlinear, which can wait for S5.
+  > - **Eleven symbols**: the cross and crucifix, the Chi-Rho, the fish, IHS,
+  >   St Peter's inverted cross, the pentagram, the inverted pentagram, the
+  >   seal of Solomon, the eye of Providence, the square and compasses, and
+  >   Baphomet (Lévi's plate). The rest are drawn as ornaments, dithered like
+  >   the others: `crucifix`, `petrine`, `ichthys`, `pentagram`,
+  >   `pentagram-inverted`, `hexagram`, `eye`, `square-compasses`
+  >   (`src/art/ornaments.ts`).
+  > - **Every claim is tagged** Scripture, tradition, folklore or modern
+  >   invention, with a key above the list. A Scripture claim always quotes its
+  >   verses (tested), in the reader's own translation; each opens in the
+  >   reader. Under the claims: the plates and paintings that show it (each
+  >   opens in Look), and "Read on" into a library section or a shelf passage.
+  >   A test checks that every verse exists and every section is in the
+  >   library.
+  > - Each dossier and symbol is in the palette under the rose ("Dossier:
+  >   Lucifer"). The cabinet remembers its shelf and what is open
+  >   (`CabinetPlace` in the study store), so going back from a library
+  >   section returns to the dossier that sent you.
+  > - Dates and attributions are kept to what is well established (Irenaeus
+  >   on 616, Tyndale's "scapegoat", Prichard's 1730 exposé for the Hiram
+  >   legend, Taxil's confession, du Simitière's eye on the Great Seal). Where
+  >   the record is unsure the dossier says "about" or "most likely".
 - [ ] **S5 Extras.**
   - A **Goetia bestiary**: the 72 spirits, their seals, rank and the
     *Testament of Solomon*'s demons beside them.

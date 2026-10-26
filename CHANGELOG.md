@@ -33,6 +33,14 @@ All notable changes to BibleLM. Format based on
   Goetia's seventy-two spirits, Dionysius's nine choirs of angels, James's
   Apocalypse of Peter, Dante's *Inferno*, *Paradise Lost*, Mackey's
   *Symbolism of Freemasonry* and five degrees of Pike's *Morals and Dogma*.
+- **Sub Rosa's dossiers and symbols**: two more shelves in the cabinet. Twelve
+  dossiers (biblically accurate angels, the words for hell, Lucifer, 666 or
+  616, Boaz and Jachin, why the Masons build Solomon's Temple, Azazel,
+  Lilith, Legion, the witch of Endor, the Nephilim, Solomon and the demons)
+  and eleven symbols, from the crucifix and the fish to the inverted
+  pentagram, the eye of Providence and Baphomet. Every claim is tagged
+  Scripture, tradition, folklore or modern invention, with its verses quoted,
+  the pictures that show it, and where to read on.
 - **Hide the Lab**: Settings, Lab in the sidebar (or the palette) takes the
   Lab out of the sidebar and the palette, for a study-only app and a shorter
   nav. Hiding it while on it goes Home.

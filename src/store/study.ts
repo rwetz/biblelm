@@ -87,9 +87,15 @@ interface StudyState {
   set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "ornaments" | "compact" | "sidebarFolded" | "saver" | "showLab" | "name" | "welcomed" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
 }
 
+export type CabinetShelf = "library" | "dossiers" | "symbols" | "beside";
+
 export interface CabinetPlace {
+  /** A library text open in the reader (by id), at its section; or null for the shelves. */
   text: string | null;
   section: number;
+  /** The shelf showing, and a dossier or symbol open on it (src/lib/dossiers.ts). */
+  shelf?: CabinetShelf;
+  curio?: string | null;
 }
 
 export interface BeforeSubRosa {

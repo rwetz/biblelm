@@ -33,6 +33,7 @@ import { ReadView, chapterStep, toggleVersePanel } from "@/features/read/ReadVie
 import { SearchView } from "@/features/search/SearchView";
 import { TopicsView } from "@/features/topics/TopicsView";
 import { STRUGGLES } from "@/lib/studies";
+import { CURIOS } from "@/lib/dossiers";
 import { AtlasView } from "@/features/atlas/AtlasView";
 import { GalleryView } from "@/features/gallery/GalleryView";
 import { DailyView } from "@/features/daily/DailyView";
@@ -454,7 +455,16 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
     const welcome: PaletteCommand = { id: "welcome", label: "Show the welcome again", group: "Settings", icon: "info", keywords: ["name", "first start", "intro"], run: () => study.set({ welcomed: false }) };
     // Going under is done only by the rite in Settings; coming out is one step.
     const rose: PaletteCommand = { id: "subrosa-off", label: "Come out from under the rose", group: "Appearance", icon: "contrast", keywords: ["sub rosa", "leave", "normal", "light"], run: () => setSubRosa(false) };
+    // Each dossier and symbol, under the rose only.
+    const curios: PaletteCommand[] = CURIOS.map((c) => ({
+      id: `curio-${c.id}`,
+      label: `${c.kind === "symbol" ? "Symbol" : "Dossier"}: ${c.title}`,
+      group: "Sub Rosa",
+      icon: "incognito",
+      keywords: ["sub rosa", c.lede],
+      run: () => study.openCabinet({ text: null, section: 0, shelf: c.kind === "symbol" ? "symbols" : "dossiers", curio: c.id }),
+    }));
     void openPalette;
-    return [...nav, ...reading, ...settings, welcome, ...(study.showLab ? lab : []), labToggle, ...layout, ...translations, ...shelves, ...nbs, ...appearance, ...(subRosa ? [rose] : [])];
+    return [...nav, ...reading, ...settings, welcome, ...(study.showLab ? lab : []), labToggle, ...layout, ...translations, ...shelves, ...nbs, ...appearance, ...(subRosa ? [rose, ...curios] : [])];
   }, [study, setScheme, subRosa, setSubRosa, catalog, notebooks, setActive, openPalette, history]);
 }
