@@ -125,7 +125,7 @@ export function ReadView() {
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
           {chapterPaintings.length > 0 && <Frontispiece key={`${bookId}.${location.chapter}`} paintings={chapterPaintings} />}
           <article
-            className="mx-auto px-8 pb-24 pt-10"
+            className="mx-auto px-(--gutter) pb-24 pt-(--page-top)"
             style={{ maxWidth: columnsOf(ts!, bookId).length > 1 ? "none" : columns ? "68rem" : "42rem", ["--scripture-face" as string]: FACES[face], ["--scripture-size" as string]: `${textSize}px` }}
           >
             <header className="mb-8 text-center">
@@ -203,8 +203,8 @@ function Frontispiece({ paintings }: { paintings: Painting[] }) {
   const p = paintings[Math.min(i, paintings.length - 1)];
   return (
     <div className="relative">
-      <DitherHero hero={p} height="clamp(20rem, 54vh, 40rem)" width="72rem" fadeFrom={62} caption={false} />
-      <div className="relative z-10 mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-8 text-center text-xs text-muted-foreground">
+      <DitherHero hero={p} height="clamp(15rem, 54vh, 40rem)" width="72rem" fadeFrom={62} caption={false} />
+      <div className="relative z-10 mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-(--gutter) text-center text-xs text-muted-foreground">
         <button type="button" className="font-garamond text-sm italic text-foreground hover:underline" onClick={() => openLook({ kind: "painting", id: p.id })}>
           {p.title}
         </button>

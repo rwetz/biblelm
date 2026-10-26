@@ -34,8 +34,8 @@ export function GalleryView() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <DitherHero hero={hero} height="15rem" clearLeft fadeFrom={36} caption={false}>
-        <div className="mx-auto flex w-full max-w-6xl flex-1 items-end gap-4 px-8 pb-4">
+      <DitherHero hero={hero} height="clamp(10rem, 27vh, 15rem)" clearLeft fadeFrom={36} caption={false}>
+        <div className="mx-auto flex w-full max-w-6xl flex-1 items-end gap-4 px-(--gutter) pb-4">
           <div>
             <h1 className="flex items-center gap-3 font-blackletter text-5xl"><PageMark page="gallery" />Gallery</h1>
             <p className="mt-1 max-w-xl text-sm text-muted-foreground">
@@ -44,7 +44,7 @@ export function GalleryView() {
           </div>
         </div>
       </DitherHero>
-      <div className="mx-auto w-full max-w-6xl px-8 pt-2">
+      <div className="mx-auto w-full max-w-6xl px-(--gutter) pt-2">
         <Sections
           label="Gallery"
           value={show}
@@ -55,7 +55,7 @@ export function GalleryView() {
           ]}
         />
       </div>
-      <div className="mx-auto w-full max-w-6xl px-8 pb-20">
+      <div className="mx-auto w-full max-w-6xl px-(--gutter) pb-20">
         {groups.map(([book, items]) => (
           <section key={book || "none"} className="mt-8">
             <h2 className="font-blackletter text-2xl">{book ? bookName(book) : "Beside the Scriptures"}</h2>

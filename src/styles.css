@@ -14,6 +14,16 @@
   --color-rubric: var(--brand);
 }
 
+/* ── Laptop spacing ───────────────────────────────────────────────────── */
+
+/* Page margins and the space above a page's first line follow the window,
+   so a 1280x720 laptop (a 1080p panel at 150%) keeps its room for text and a
+   wide monitor still breathes. Used as px-(--gutter) and pt-(--page-top). */
+:root {
+  --gutter: clamp(1rem, 2.4vw, 2rem);
+  --page-top: clamp(1.5rem, 4.5vh, 3rem);
+}
+
 /* ── Reading ──────────────────────────────────────────────────────────── */
 
 .scripture {

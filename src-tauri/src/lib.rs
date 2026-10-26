@@ -953,11 +953,12 @@ fn kill_pid(pid: u32) {
     }
 }
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-/// The configured 1280x840 can be larger than a small laptop's screen once the
-/// menu bar and Dock are taken out, and the window then opens with its right
-/// and bottom edges off screen (the hero looks cut, the status bar is gone).
-/// Before it is first shown, shrink it into the work area and centre it there.
+/// Open at most of the screen it is on, whatever that screen is: 90% of the
+/// work area (menu bar, Dock and taskbar taken out), no larger than 1440x960
+/// so a big monitor does not get a sprawling window, and no smaller than the
+/// window's minimum unless the screen itself is. Centred in the work area.
+/// Sizes are logical, so a 1920x1080 panel at 150% is treated as the
+/// 1280x720 it really is.
 fn fit_to_screen(win: &tauri::WebviewWindow) {
     let monitor = match win.current_monitor() {
         Ok(Some(m)) => m,
@@ -966,28 +967,30 @@ fn fit_to_screen(win: &tauri::WebviewWindow) {
             _ => return,
         },
     };
+    let scale = monitor.scale_factor();
     let area = monitor.work_area();
-    let (Ok(outer), Ok(inner)) = (win.outer_size(), win.inner_size()) else {
-        return;
-    };
-    let margin = (16.0 * monitor.scale_factor()) as u32;
-    let w = outer.width.min(area.size.width.saturating_sub(2 * margin));
-    let h = outer.height.min(area.size.height.saturating_sub(2 * margin));
-    if (w, h) == (outer.width, outer.height) {
-        return;
-    }
+    let (aw, ah) = (area.size.width as f64 / scale, area.size.height as f64 / scale);
+    let w = (aw * 0.9).min(1440.0).max(900.0_f64.min(aw - 16.0));
+    let h = (ah * 0.92).min(960.0).max(600.0_f64.min(ah - 16.0));
     // set_size takes the inner size; keep whatever frame the platform adds.
-    let _ = win.set_size(tauri::PhysicalSize::new(
-        w.saturating_sub(outer.width - inner.width),
-        h.saturating_sub(outer.height - inner.height),
-    ));
-    let size = win.outer_size().unwrap_or(tauri::PhysicalSize::new(w, h));
+    let frame = match (win.outer_size(), win.inner_size()) {
+        (Ok(o), Ok(i)) => (
+            o.width.saturating_sub(i.width) as f64 / scale,
+            o.height.saturating_sub(i.height) as f64 / scale,
+        ),
+        _ => (0.0, 0.0),
+    };
+    let _ = win.set_size(tauri::LogicalSize::new(w - frame.0, h - frame.1));
+    let size = win
+        .outer_size()
+        .unwrap_or(tauri::PhysicalSize::new((w * scale) as u32, (h * scale) as u32));
     let _ = win.set_position(tauri::PhysicalPosition::new(
         area.position.x + (area.size.width.saturating_sub(size.width) / 2) as i32,
         area.position.y + (area.size.height.saturating_sub(size.height) / 2) as i32,
     ));
 }
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .manage(AppState {

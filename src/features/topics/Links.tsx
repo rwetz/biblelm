@@ -47,7 +47,7 @@ export function Links({ t, index }: { t: Translation; index: VerseIndex }) {
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto w-full max-w-6xl px-8 py-6">
+      <div className="mx-auto w-full max-w-6xl px-(--gutter) py-6">
         <SectionLabel>Every cross reference at once</SectionLabel>
         <p className="mt-1 text-sm text-muted-foreground">
           The {chapters.length.toLocaleString()} chapters from Genesis to Revelation along the line; each arc joins two chapters readers linked. Hover a book to light its links; click to read.

@@ -67,6 +67,8 @@ const NAV: SidebarNavSection<Page>[] = [
   { title: "Machine", items: [{ id: "lab", label: "Lab", icon: "brain" }] },
   { items: [{ id: "settings", label: "Settings", icon: "settings" }] },
 ];
+/** The sidebar with the Lab hidden (Settings, Lab in the sidebar). */
+const NAV_STUDY = NAV.filter((s) => s.title !== "Machine");
 
 // The paintings, for commands that open one (loaded once at start).
 let paintingsCache: Painting[] = [];
@@ -86,11 +88,12 @@ const VIEWS: Record<Page, () => React.ReactNode> = {
 };
 
 /**
- * Narrower than the desktop window's minimum (900 px), as `pnpm dev` can be:
- * the sidebar folds to its icons and drops its art, so the page keeps room.
+ * Narrower than a small laptop's window (a 1366 or 1280 wide screen with the
+ * verse panel open leaves the text little room beside a full sidebar): the
+ * sidebar folds to its icons and drops its art, so the page keeps room.
  */
 function useNarrow(): boolean {
-  const query = "(max-width: 899px)";
+  const query = "(max-width: 1023px)";
   const [narrow, setNarrow] = useState(() => typeof window !== "undefined" && window.matchMedia?.(query).matches === true);
   useEffect(() => {
     const m = window.matchMedia?.(query);
@@ -105,6 +108,7 @@ function useNarrow(): boolean {
 
 export default function App() {
   const page = useStudy((s) => s.page);
+  const showLab = useStudy((s) => s.showLab);
   const redLetter = useStudy((s) => s.redLetter);
   const go = useStudy((s) => s.go);
   const [palette, setPalette] = useState(false);
@@ -112,6 +116,11 @@ export default function App() {
   useCommandPaletteShortcut(() => setPalette((o) => !o));
   const commands = useCommands(() => setPalette(true));
   const loadNotes = useNotebooks((s) => s.load);
+
+  // Hiding the Lab while on it leaves for Home rather than a page with no nav item.
+  useEffect(() => {
+    if (!showLab && page === "lab") go("home");
+  }, [showLab, page, go]);
 
   useEffect(() => {
     loadNotes();
@@ -139,7 +148,7 @@ export default function App() {
       />
       <div className="nexis-shell-body flex min-h-0 flex-1">
         <div className="relative flex shrink-0">
-          <SidebarNav sections={NAV} value={page} onChange={go} label="BibleLM" collapsed={narrow} />
+          <SidebarNav sections={showLab ? NAV : NAV_STUDY} value={page} onChange={go} label="BibleLM" collapsed={narrow} />
           {!narrow && <SidebarOrnament />}
           {!narrow && <SidebarArt />}
         </div>
@@ -203,7 +212,7 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
   const [catalog] = useCatalog();
   const { notebooks, setActive } = useNotebooks();
   return useMemo(() => {
-    const nav = NAV.flatMap((s) => s.items).map<PaletteCommand>((i) => ({
+    const nav = NAV.flatMap((s) => s.items).filter((i) => study.showLab || i.id !== "lab").map<PaletteCommand>((i) => ({
       id: `go-${i.id}`,
       label: `Go to ${i.label}`,
       group: "Navigate",
@@ -291,6 +300,7 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       // Each shelf by its own books, so "enoch" finds the Pseudepigrapha alone.
       ...SHELVES.map((s) => setting(s.label, ["canon", "shelf", "books", ...SHELF_WORDS[s.id]])),
       setting("Translations", ["kjv", "web", "asv", "version", "bible"]),
+      setting("Lab in the sidebar", ["machine", "gpt", "train", "hide", "simpler", "study only"]),
       setting("Semantic search", ["meaning", "embedding", "machine"]),
       setting("Jev", ["typesafe", "rerank", "api key", "machine help", "bypass"]),
       setting("Developer mode", ["debug", "hero", "plates", "art", "ornaments sheet"]),
@@ -304,8 +314,9 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       keywords: ["gpt", "model", "machine", "train"],
       run: () => { study.go("lab"); setTimeout(() => window.dispatchEvent(new CustomEvent("biblelm:lab-tab", { detail: t })), 60); },
     }));
+    const labToggle: PaletteCommand = { id: "lab-toggle", label: study.showLab ? "Hide the Lab from the sidebar" : "Show the Lab in the sidebar", group: "Lab", icon: "brain", keywords: ["machine", "gpt", "simpler", "study only"], run: () => study.set({ showLab: !study.showLab }) };
     const welcome: PaletteCommand = { id: "welcome", label: "Show the welcome again", group: "Settings", icon: "info", keywords: ["name", "first start", "intro"], run: () => study.set({ welcomed: false }) };
     void openPalette;
-    return [...nav, ...reading, ...settings, welcome, ...lab, ...translations, ...shelves, ...nbs, ...appearance];
+    return [...nav, ...reading, ...settings, welcome, ...(study.showLab ? lab : []), labToggle, ...translations, ...shelves, ...nbs, ...appearance];
   }, [study, setScheme, catalog, notebooks, setActive, openPalette]);
 }

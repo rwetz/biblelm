@@ -38,7 +38,7 @@ function Frontispiece({ hero }: { hero?: Hero }) {
   const mode = useStudy((s) => s.illustrations);
   const show = hero && mode === "full";
   return (
-    <div className="mx-auto grid w-full max-w-[100rem] shrink-0 gap-x-14 gap-y-8 px-8 pb-10 pt-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+    <div className="mx-auto grid w-full max-w-[100rem] shrink-0 gap-x-14 gap-y-8 px-(--gutter) pb-10 pt-(--page-top) lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
       {/* The title has a row of its own, over both columns, so the picture never runs under it. */}
       <div className="col-span-full flex min-w-0 items-center gap-6 pt-2">
         <RoseMark label="BibleLM" dot={2} className="size-28 shrink-0 md:size-36" />
@@ -92,7 +92,7 @@ export function LabView() {
       {home ? (
         <Frontispiece hero={hero} />
       ) : (
-        <DitherHero hero={hero} height="10.5rem" focusY={hero?.focusY ?? 40} clearLeft fadeFrom={50}>
+        <DitherHero hero={hero} height="clamp(7.5rem, 19vh, 10.5rem)" focusY={hero?.focusY ?? 40} clearLeft fadeFrom={50}>
           <div className={cn(LAB_COLUMN, "mt-auto pb-5")}>
             <h1 className="flex items-center gap-3 font-blackletter text-6xl leading-none"><RoseMark dot={2} className="size-14" />The Lab</h1>
             <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">{LEDE}</p>

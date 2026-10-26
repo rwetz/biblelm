@@ -6,6 +6,24 @@ All notable changes to BibleLM. Format based on
 
 ## Unreleased
 
+### Added
+
+- **Hide the Lab**: Settings, Lab in the sidebar (or the palette) takes the
+  Lab out of the sidebar and the palette, for a study-only app and a shorter
+  nav. Hiding it while on it goes Home.
+- **A macOS build**: `tauri.macos.conf.json` bundles an `.app` and a `.dmg`;
+  Windows still builds its NSIS installer.
+
+### Changed
+
+- **Laptop spacing**: the window opens at 90% of the screen's work area (in
+  logical pixels, so a 1080p panel at 150% counts as 1280 by 720), capped at
+  1440 by 960, instead of a fixed 1280 by 840. Page margins and the space above
+  each page follow the window (`--gutter`, `--page-top`), and the hero bands on
+  Home, Read, Gallery, Daily and the Lab shrink on short windows to their old
+  size at about 900 pixels tall. The sidebar folds to icons below 1024 pixels
+  wide (was 900), so the verse panel leaves the text room on small laptops.
+
 ### Fixed
 
 - **Small screens**: the window opens inside the screen's work area, centred,

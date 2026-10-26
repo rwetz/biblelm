@@ -43,7 +43,7 @@ export function TopicsView() {
       {/* The plate keeps the empty index company; once a topic opens, its verses run where the plate would be. */}
       {tab === "topics" && !topic && <CornerPlate plate={plate} corner="br" />}
       <DitherHero hero={mercy} height="8.5rem" clearLeft fadeFrom={30} caption={false}>
-      <div className="mx-auto flex h-full w-full max-w-6xl items-end gap-4 px-8 pb-3 pt-8">
+      <div className="mx-auto flex h-full w-full max-w-6xl items-end gap-4 px-(--gutter) pb-3 pt-8">
         <div>
           <h1 className="flex items-center gap-3 font-blackletter text-4xl"><PageMark page="topics" />Topics</h1>
           <p className="mt-1 text-sm text-muted-foreground">Themes across Scripture, the paths cross references draw, and the shape of a passage.</p>
@@ -51,7 +51,7 @@ export function TopicsView() {
       </div>
       </DitherHero>
       <div className="relative z-10 border-b border-border/60">
-        <div className="mx-auto w-full max-w-6xl px-8 py-2">
+        <div className="mx-auto w-full max-w-6xl px-(--gutter) py-2">
           <Sections
             label="Topics"
             value={tab}
@@ -286,7 +286,7 @@ function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
           }}
         />
       </div>
-      <div className="min-w-0 flex-1 overflow-y-auto px-8 py-6">
+      <div className="min-w-0 flex-1 overflow-y-auto px-(--gutter) py-6">
         {current ? (
           <TopicDetail topic={current} t={t} index={index} kind={kinds?.tags[current.name]?.[0]} place={places?.get(current.name)} />
         ) : (
@@ -351,7 +351,7 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-8 py-6 lg:grid-cols-2">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-(--gutter) py-6 lg:grid-cols-2">
         <section>
           <SectionLabel>Study walk</SectionLabel>
           <p className="mt-2 text-sm text-muted-foreground">

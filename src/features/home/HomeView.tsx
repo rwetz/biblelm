@@ -52,7 +52,7 @@ export function HomeView() {
       {/* The first screen is the picture, the search box and the verse of the
           day, filling the window exactly; your reading and notebooks wait below. */}
       <div className="flex min-h-full shrink-0 flex-col">
-      <DitherHero hero={hero} height="auto" width="84rem" fadeFrom={64} focusY={30} className="min-h-[22rem] flex-1">
+      <DitherHero hero={hero} height="auto" width="84rem" fadeFrom={64} focusY={30} className="min-h-[clamp(13rem,39vh,22rem)] flex-1">
         <div className="mt-auto flex flex-col items-center px-6 pb-10">
           <form
             className="w-full max-w-2xl"
@@ -83,8 +83,8 @@ export function HomeView() {
         </div>
       </DitherHero>
 
-        <section className="mx-auto w-full max-w-3xl shrink-0 px-8 pb-8 text-center">
-          <TrinityMark className="mx-auto mb-3 mt-6 size-14" />
+        <section className="mx-auto w-full max-w-3xl shrink-0 px-(--gutter) pb-8 text-center">
+          <TrinityMark className="mx-auto mb-3 mt-6 size-14 [@media(max-height:760px)]:mt-3 [@media(max-height:760px)]:size-10" />
           <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
           {passage?.verses.length ? (
             <blockquote className="mt-4">
@@ -109,7 +109,7 @@ export function HomeView() {
         </section>
       </div>
 
-      <div className="mx-auto w-full max-w-3xl px-8 pb-20 pt-10">
+      <div className="mx-auto w-full max-w-3xl px-(--gutter) pb-20 pt-(--page-top)">
         <div className="grid gap-6 md:grid-cols-2">
           <section>
             <h2 className="font-garamond text-2xl">Continue reading</h2>

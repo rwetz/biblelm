@@ -210,7 +210,7 @@ function NotebookDetail({ nb }: { nb: Notebook }) {
 
 
   return (
-    <div className="mx-auto max-w-3xl px-8 pb-24 pt-8">
+    <div className="mx-auto max-w-3xl px-(--gutter) pb-24 pt-(--page-top)">
       <header className="flex gap-6">
         {cover && <Engraving plate={cover} className="w-40 shrink-0 self-start" />}
         <div className="min-w-0 flex-1">

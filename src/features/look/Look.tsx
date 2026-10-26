@@ -112,7 +112,7 @@ export function Look() {
             <Icon name="close" />
           </Button>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-8 pb-8 pt-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-(--gutter) pb-8 pt-6">
           <h2 className="font-garamond text-3xl leading-tight">{cur.item.title}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             {painting ? (

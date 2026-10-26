@@ -37,7 +37,7 @@ export function AtlasView() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="border-b border-border/60">
-        <div className="mx-auto w-full max-w-6xl px-8 pb-3 pt-8">
+        <div className="mx-auto w-full max-w-6xl px-(--gutter) pb-3 pt-8">
           <h1 className="flex items-center gap-3 font-blackletter text-4xl"><PageMark page="atlas" />Atlas</h1>
           <p className="mt-1 text-sm text-muted-foreground">The places Scripture names, the people in it, and the ages they lived in.</p>
           <Sections
@@ -438,7 +438,7 @@ function People({ t, index, people, initial }: { t: Translation; index: VerseInd
       </aside>
       <div className="min-w-0 flex-1 overflow-y-auto">
         {person ? (
-          <div className="mx-auto max-w-4xl px-8 py-8">
+          <div className="mx-auto max-w-4xl px-(--gutter) py-8">
             <h2 className="font-garamond text-4xl">{personName(person)}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {[person.era, person.tribe].filter(Boolean).join(" · ")} · named in {person.verses.length} verse{person.verses.length === 1 ? "" : "s"}
@@ -451,7 +451,7 @@ function People({ t, index, people, initial }: { t: Translation; index: VerseInd
             </div>
           </div>
         ) : (
-          <div className="grid h-full place-items-center px-8 text-center">
+          <div className="grid h-full place-items-center px-(--gutter) text-center">
             <div className="max-w-sm">
               <p className="font-garamond text-2xl">Choose a person</p>
               <p className="mt-2 text-sm text-muted-foreground">Their family, their age and every verse that names them. Names come from STEPBible's register of every individual in Scripture.</p>
@@ -524,7 +524,7 @@ function Timeline({ people, onPerson }: { people: Person[]; onPerson: (id: strin
   const pct = (y: number) => ((y - start) / (end - start)) * 100;
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-6xl px-8 py-8">
+      <div className="mx-auto max-w-6xl px-(--gutter) py-8">
         <div className="relative h-20">
           <div className="absolute inset-x-0 top-9 h-px bg-border" />
           {dated.map((e, i) => (

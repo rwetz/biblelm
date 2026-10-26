@@ -59,7 +59,7 @@ export function SettingsView() {
 
   return (
     <PlatePage plate={plate} corner="tr">
-      <div className="relative mx-auto w-full max-w-3xl space-y-6 px-8 pb-24 pt-10">
+      <div className="relative mx-auto w-full max-w-3xl space-y-6 px-(--gutter) pb-24 pt-(--page-top)">
         <h1 className="flex items-center gap-3 font-blackletter text-4xl"><PageMark page="settings" />Settings</h1>
 
         <Panel title="Appearance">
@@ -164,6 +164,9 @@ export function SettingsView() {
 
         <Panel title="Machine help" meta="small models only, always citing real verses">
           <div className="space-y-5">
+            <Field label="Lab in the sidebar" hint="Where you train and look inside a small model of your own. Off keeps the sidebar to study." inline>
+              <Switch checked={study.showLab} onCheckedChange={(showLab) => study.set({ showLab })} />
+            </Field>
             <Field label="Semantic search" hint="A small embedding model (bge-small, MIT) that runs on this computer. Finds verses by meaning." inline>
               <span className="text-xs text-success">On, offline</span>
             </Field>

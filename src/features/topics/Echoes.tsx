@@ -32,7 +32,7 @@ export function Echoes({ t, index }: { t: Translation; index: VerseIndex }) {
   if (all === null) return <p className="p-8 text-sm text-muted-foreground">Not built yet: run node scripts/data/graph.mjs.</p>;
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-8 py-6 lg:grid-cols-[16rem_1fr]">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-(--gutter) py-6 lg:grid-cols-[16rem_1fr]">
         <section>
           <SectionLabel>Which books the New Testament quotes</SectionLabel>
           <p className="mt-1 text-xs text-muted-foreground">Shared runs of words between a New Testament verse and an Old, found by local alignment.</p>
