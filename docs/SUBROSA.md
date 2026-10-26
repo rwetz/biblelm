@@ -204,3 +204,83 @@ to Sub Rosa while the mode is on.
   - Botticelli's map of hell as an **Atlas layer**.
   - In the Lab, a small model trained on the Goetia that writes labelled
     fake spirits (generated text, always labelled).
+
+## Handoff
+
+Where things stand for whoever picks this up next (written 26 October 2026,
+after S4).
+
+**State.** S1 to S4 are done on the branch `feat/sub-rosa`, one commit each,
+pushed but not merged or opened as a PR. S5 has not been started. Typecheck
+is clean and `pnpm test` passes (122 tests). Nothing in Rust changed.
+
+**Where the code is.**
+
+| Part | Files |
+|---|---|
+| The switch, the rite, the theme | `src/features/settings/SubRosaPanel.tsx`, `src/app/subrosa.ts`, `subRosa` in `src/app/theme.ts`, `setSubRosa` and `beforeSubRosa` in `src/store/study.ts` |
+| The art | `scripts/art/curios.mjs` (writes `public/art/curios/`), `ROSE_PLATES`, `ROSE_PAGE_PAINTINGS`, `roseHero` in `src/lib/art.ts`, `useArt` in `src/art/Art.tsx`, credits in [curios-credits.md](curios-credits.md) |
+| The shelf texts | `scripts/data/pseudepigrapha.mjs`, called from `build-bible.mjs`; books in `src/lib/data/books.json`; links in `src/lib/companions.ts` |
+| The library | `scripts/data/library.mjs` (writes `public/data/library*`), `src/lib/library.ts` |
+| Dossiers and symbols | `src/lib/dossiers.ts`, ornaments in `src/art/ornaments.ts` |
+| The cabinet page | `src/features/cabinet/CabinetView.tsx`; page `cabinet` and its nav item and palette commands in `src/app/App.tsx`; `cabinet` (a `CabinetPlace`) in the study store |
+| Tests | `src/lib/dossiers.test.ts`, `src/lib/companions.test.ts`, `src/lib/art.test.ts`, `src/store/study.test.ts`, `scripts/data/pseudepigrapha.test.mjs` |
+
+**Rebuilding the data.** Every output is git-ignored, so a fresh clone needs
+`pnpm data`. After a change to the shelf texts run, in order,
+`pnpm data:bible`, `node scripts/data/graph.mjs` and `pnpm data:embed`
+(about ten minutes at low priority on this laptop): the verse index grows,
+and the communities, embeddings and map are sized to it, so a stale one
+breaks meaning search. `pnpm data:library` rebuilds the library alone, and
+`node scripts/art/curios.mjs --process` re-cuts the art from its cache.
+
+**Sources and their quirks.**
+
+- sacred-texts.com refuses automated requests; don't plan on it.
+- Wikisource is read through its parse API (`wikisource`, `htmlParas` in
+  `scripts/data/lib.mjs`). It rate-limits a burst of pages; `cached` waits
+  and retries on 429 and 503. Wikimedia wants a user agent with contact
+  details, and the one in `lib.mjs` has them.
+- Every Commons file must be tagged public domain or CC0, or `curios.mjs`
+  refuses it. Several paintings hang in Italian state museums, which limit
+  commercial reproduction there; the credits file flags them.
+- Transcription slips are mended in code and checked against the scan
+  (`CONYBEARE_FIXES`, `MACKEY_TITLES`); the build stops if one is gone, so
+  an upstream correction shows up as a failure to remove the fix.
+
+**Testing it by hand.** In a browser (`pnpm dev`), the rite can be skipped by
+setting the store directly in the console:
+
+```js
+const k = "biblelm:study", s = JSON.parse(localStorage.getItem(k) || "{}");
+s.beforeSubRosa = { shelves: s.shelves || ["protestant"], themeId: "scriptorium", mode: "light" };
+s.subRosa = true; s.shelves = ["protestant", "deuterocanon", "apocrypha", "pseudepigrapha"];
+localStorage.setItem(k, JSON.stringify(s)); location.reload();
+```
+
+Set `subRosa` back to false and `shelves` to `beforeSubRosa.shelves` to come
+out. Under the rose: the cabinet is in the sidebar after Notebooks, Tobit 3
+shows Asmodeus beside verse 8, Testament of Solomon 1:24 links to Tobit 3:8,
+and every dossier is in the palette. A hidden browser pane throttles
+animation, so a blank screenshot or a slow seal is not a bug.
+
+**Rules to keep.**
+
+- A text with its own verse numbers reads in the Bible on the Pseudepigrapha
+  shelf; a text without them reads in the library, under "Not Scripture",
+  never in the Bible's reader.
+- Every dossier claim is tagged, and a Scripture claim quotes its verses;
+  the tests enforce both, and the absence of em dashes.
+- The Goetia's rite (the circle, the conjurations, the licence to depart)
+  stays out of the app: a history, not a how-to.
+- Sub Rosa fetches nothing of its own while it is off.
+- Under the rose the sidebar vignette hides below 800 px of window height
+  (`styles.css`), because the rose's plates are inked to their top edge.
+
+**Open for S5.** The 72 seals are printed seven to a plate in de Laurence's
+Goetia (Gutenberg #72679, `images/front-1.jpg` to `front-7.jpg`); the
+bestiary needs them cut out, or individual public-domain seals from Commons.
+The words-for-hell dossier could take its counts from the interlinear and
+Strong's. The Ascension of Isaiah still has no clean public-domain text. The
+Lab's Goetia model is generated text and must be labelled as such on screen
+(principle 1).
