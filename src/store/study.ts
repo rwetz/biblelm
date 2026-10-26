@@ -6,7 +6,7 @@ import { create } from "zustand";
 import { SHELVES, type Ref, type Shelf } from "@/lib/canon";
 import type { SaverMode } from "@/lib/power";
 
-export type Page = "home" | "read" | "search" | "topics" | "atlas" | "gallery" | "daily" | "notebooks" | "lab" | "settings";
+export type Page = "home" | "read" | "search" | "topics" | "atlas" | "gallery" | "daily" | "notebooks" | "lab" | "settings" | "cabinet";
 /** A picture opened to look at: a painting or a Doré plate, by id. */
 export type LookTarget = { kind: "painting" | "plate"; id: string };
 export type Illustrations = "full" | "margins" | "off";
@@ -43,6 +43,8 @@ interface StudyState {
   subRosa: boolean;
   /** What Sub Rosa changed, to put back when it ends: the shelves and the scheme. */
   beforeSubRosa: BeforeSubRosa | null;
+  /** Where you are in the Sub Rosa library: a text (by id) and its section, or the cabinet's shelves. */
+  cabinet: CabinetPlace;
   /** Developer mode: preview any hero or plate to hunt for art bugs (Settings). */
   devMode: boolean;
   /** Developer override for the Home hero (a hero id), else the church year picks. */
@@ -78,9 +80,16 @@ interface StudyState {
   searchFor: (q: string) => void;
   openLook: (t: LookTarget | null) => void;
   openAtlas: (kind: "place" | "person", id: string) => void;
+  /** Open the cabinet, at a library text and section, or at its shelves (text null). */
+  openCabinet: (place: CabinetPlace) => void;
   /** Go under the rose (every shelf comes on, silently) or come back out (the shelves you had). */
   setSubRosa: (on: boolean, theme?: { themeId: string; mode: string }) => BeforeSubRosa | null;
   set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "ornaments" | "compact" | "sidebarFolded" | "saver" | "showLab" | "name" | "welcomed" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
+}
+
+export interface CabinetPlace {
+  text: string | null;
+  section: number;
 }
 
 export interface BeforeSubRosa {
@@ -115,6 +124,7 @@ const DEFAULTS = {
   history: [] as Ref[],
   subRosa: false,
   beforeSubRosa: null as BeforeSubRosa | null,
+  cabinet: { text: null, section: 0 } as CabinetPlace,
   devMode: false,
   devHero: null as string | null,
   devPlate: null as number | null,
@@ -131,8 +141,8 @@ function load(): typeof DEFAULTS {
 
 function save(s: StudyState) {
   try {
-    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, devMode, devHero, devPlate } = s;
-    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, devMode, devHero, devPlate }));
+    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, cabinet, devMode, devHero, devPlate } = s;
+    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, cabinet, devMode, devHero, devPlate }));
   } catch {
     // Storage blocked: preferences just won't persist.
   }
@@ -155,6 +165,10 @@ export const useStudy = create<StudyState>((set, get) => ({
   searchFor: (query) => set({ page: "search", query }),
   openLook: (look) => set({ look }),
   openAtlas: (kind, id) => set({ page: "atlas", atlas: { kind, id } }),
+  openCabinet: (cabinet) => {
+    set({ page: "cabinet", cabinet });
+    save(get());
+  },
   read: (ref, opts) => {
     const chapter = { book: ref.book, chapter: ref.chapter, verse: 0 };
     const history = [chapter, ...get().history.filter((h) => h.book !== ref.book || h.chapter !== ref.chapter)].slice(0, 12);

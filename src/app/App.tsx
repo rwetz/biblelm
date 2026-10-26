@@ -41,6 +41,7 @@ import { ViewBoundary } from "./ViewBoundary";
 import { NotebooksView } from "@/features/notebooks/NotebooksView";
 import { LabView } from "@/features/lab/LabView";
 import { SettingsView } from "@/features/settings/SettingsView";
+import { CabinetView } from "@/features/cabinet/CabinetView";
 import { useNotebooks } from "@/store/notebooks";
 import { loadPaintings, loadRosePaintings, paintingForDay, type Painting } from "@/lib/art";
 import { nextScheme, useScheme } from "@/app/scheme";
@@ -52,7 +53,7 @@ const SHELF_WORDS: Record<Shelf, string[]> = {
   protestant: ["protestant", "66 books"],
   deuterocanon: ["deuterocanon", "catholic", "tobit", "judith", "wisdom", "sirach", "baruch", "maccabees"],
   apocrypha: ["apocrypha", "esdras", "manasseh", "psalm 151", "1611"],
-  pseudepigrapha: ["pseudepigrapha", "enoch", "watchers", "charles"],
+  pseudepigrapha: ["pseudepigrapha", "enoch", "watchers", "charles", "jubilees", "solomon", "nicodemus", "harrowing", "apocalypse of paul", "james"],
 };
 
 const NAV: SidebarNavSection<Page>[] = [
@@ -67,13 +68,17 @@ const NAV: SidebarNavSection<Page>[] = [
       { id: "gallery", label: "Gallery", icon: "image" },
       { id: "daily", label: "Daily", icon: "calendar" },
       { id: "notebooks", label: "Notebooks", icon: "note" },
+      { id: "cabinet", label: "Sub Rosa", icon: "incognito" },
     ],
   },
   { title: "Machine", items: [{ id: "lab", label: "Lab", icon: "brain" }] },
   { items: [{ id: "settings", label: "Settings", icon: "settings" }] },
 ];
-/** The sidebar with the Lab hidden (Settings, Lab in the sidebar). */
-const NAV_STUDY = NAV.filter((s) => s.title !== "Machine");
+/** Pages that are there only while a setting is on: the Lab (Settings, Lab in the sidebar) and the cabinet, under the rose. */
+const shown = (page: Page, showLab: boolean, subRosa: boolean) => (page !== "lab" || showLab) && (page !== "cabinet" || subRosa);
+/** The sidebar as set. */
+const navFor = (showLab: boolean, subRosa: boolean) =>
+  NAV.map((s) => ({ ...s, items: s.items.filter((i) => shown(i.id, showLab, subRosa)) })).filter((s) => s.items.length);
 
 // The paintings, for commands that open one (loaded once at start).
 let paintingsCache: Painting[] = [];
@@ -90,6 +95,7 @@ const VIEWS: Record<Page, () => React.ReactNode> = {
   notebooks: () => <NotebooksView />,
   lab: () => <LabView />,
   settings: () => <SettingsView />,
+  cabinet: () => <CabinetView />,
 };
 
 /**
@@ -187,6 +193,7 @@ export default function App() {
   const subRosa = useStudy((s) => s.subRosa);
   const [palette, setPalette] = useState(false);
   const narrow = useNarrow();
+  const nav = useMemo(() => navFor(showLab, subRosa), [showLab, subRosa]);
   const history = usePageHistory(page, go);
   useSwipeHistory(history);
   const commands = useCommands(() => setPalette(true), history);
@@ -235,10 +242,10 @@ export default function App() {
   useCommandPaletteShortcut(() => setPalette((o) => !o));
   const loadNotes = useNotebooks((s) => s.load);
 
-  // Hiding the Lab while on it leaves for Home rather than a page with no nav item.
+  // Hiding the Lab, or coming out from under the rose, while on its page leaves for Home rather than a page with no nav item.
   useEffect(() => {
-    if (!showLab && page === "lab") go("home");
-  }, [showLab, page, go]);
+    if (!shown(page, showLab, subRosa)) go("home");
+  }, [showLab, subRosa, page, go]);
 
   useEffect(() => {
     loadNotes();
@@ -266,7 +273,7 @@ export default function App() {
       />
       <div className="nexis-shell-body flex min-h-0 flex-1">
         <div className="relative flex shrink-0">
-          <SidebarNav sections={showLab ? NAV : NAV_STUDY} value={page} onChange={go} label="BibleLM" collapsed={narrow || folded} />
+          <SidebarNav sections={nav} value={page} onChange={go} label="BibleLM" collapsed={narrow || folded} />
           {!(narrow || folded) && <SidebarOrnament />}
           {!(narrow || folded) && <SidebarArt />}
         </div>
@@ -331,7 +338,7 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
   const [catalog] = useCatalog();
   const { notebooks, setActive } = useNotebooks();
   return useMemo(() => {
-    const nav = NAV.flatMap((s) => s.items).filter((i) => study.showLab || i.id !== "lab").map<PaletteCommand>((i) => ({
+    const nav = NAV.flatMap((s) => s.items).filter((i) => shown(i.id, study.showLab, subRosa)).map<PaletteCommand>((i) => ({
       id: `go-${i.id}`,
       label: `Go to ${i.label}`,
       group: "Navigate",

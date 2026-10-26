@@ -8,7 +8,8 @@ never refetches.
 
 ```sh
 pnpm data          # everything below, in order (first run: a few minutes)
-pnpm data:bible    # texts, 1 Enoch, verse index, cross references, topics (~10 s)
+pnpm data:bible    # texts, the Pseudepigrapha shelf, verse index, cross references, topics (~10 s)
+pnpm data:library  # the Sub Rosa library: the Goetia, Dionysius, Dante, Milton, Mackey, Pike (~1 min)
 pnpm data:study    # places, people, interlinear, lectionary, communities, allusions (~1 min, ~110 MB of downloads)
 pnpm data:art      # 241 Doré plates, heroes, the Lab's heroes, 25 paintings, 18 woodcuts (~5 min, ~190 MB of downloads)
 pnpm data:embed    # semantic index + Scripture map (~2 min on CPU, 34 MB model)
@@ -19,13 +20,15 @@ node scripts/data/check-semantic.mjs "your query"   # spot-check the index
 |---|---|---|
 | `data/translations.json`, `data/bible/<id>.json` | build-bible | Six translations from eBible.org, each in its own versification. KJV and WEB from USFM (words of Christ marked ⸢ ⸣ in the text), the rest from verse-per-line files |
 | `data/bible/enoch.json` | build-bible (`enoch.mjs`) | 1 Enoch in R. H. Charles's translation (SPCK, 1917; public domain), parsed from Project Gutenberg #77935: 108 chapters, 1,063 verses. A companion text (`companion: true` in translations.json): never chosen as a translation, borrowed by all of them for the Pseudepigrapha shelf (STUDY.md) |
+| `data/bible/jubilees.json`, `conybeare.json`, `james.json` | build-bible (`pseudepigrapha.mjs`) | The rest of the Pseudepigrapha shelf, companion texts like 1 Enoch. Jubilees in Charles's translation (SPCK, 1917) as Sefaria transcribes it, from its API: 50 chapters, 1,758 verses. The Testament of Solomon in Conybeare's translation (Jewish Quarterly Review, 1898), from Wikisource: his 130 numbered paragraphs as the verses of one chapter. From M. R. James's *Apocryphal New Testament* (1924), on Wikisource: the Gospel of Nicodemus (the Acts of Pilate in Greek A, chapters 1 to 16, then the Descent into Hell in Latin A, 17 to 29) and the Apocalypse of Paul (the full Latin, sections 1 to 51, as one chapter). Wikisource pages are read as rendered HTML through its parse API (`wikisource`, `htmlParas` in lib.mjs) |
+| `data/library.json`, `data/library/<id>.json` | library | The Sub Rosa library (SUBROSA.md), read beside the Bible and never as it: the Goetia (Mathers and Crowley, 1904, from de Laurence's 1916 reprint, Gutenberg #72679; the rite left out), Dionysius's *Celestial Hierarchy* (Parker, 1899, Wikisource), James's *Apocalypse of Peter* (Wikisource), Dante's *Inferno* (Longfellow, Gutenberg #1001), *Paradise Lost* (Gutenberg #26), Mackey's *Symbolism of Freemasonry* (1869, Gutenberg #11937) and five degrees of Pike's *Morals and Dogma* (1871, Gutenberg #19447). Each split into the sections it prints |
 | `data/bible/<id>.strongs.json` | build-bible | KJV and WEB: each verse's tagged words, `[[word, "G25"], ...]` |
 | `data/strongs-lexicon.json` | build-bible | Strong's Hebrew and Greek dictionaries, 14,197 entries (Open Scriptures JSON, CC-BY-SA) |
-| `data/refs.json` | build-bible | The verse index: the KJV with Apocrypha, 36,822 verses, then 1 Enoch's 1,063 (37,885 in all). Cross references, topics and embeddings key on it; companion verses come last so no KJV position moves |
+| `data/refs.json` | build-bible | The verse index: the KJV with Apocrypha, 36,822 verses, then 1 Enoch's 1,063, then Jubilees, the Testament of Solomon, Nicodemus and Paul (39,904 in all). Cross references, topics and embeddings key on it; companion verses come last, each after the one before, so adding one never moves a verse already indexed |
 | `data/xrefs.bin` | build-bible | 341,290 OpenBible cross references as Int32 quads `[from, toStart, toEnd, votes]`, sorted by source |
 | `data/topics.json` | build-bible | 6,712 OpenBible topics, passages as `[start, end, score]` triples |
 | `data/topic-kinds.json` | topic-kinds (needs `TYPESAFE_API_KEY`; optional) | Each topic's kind (person, place, virtue, sin...) as tagged by Jev from its name and top verse, with the probability; the Topics index filters by it and hides the chips when it is absent |
-| `data/embeddings.i8`, `.json` | embed | bge-small-en-v1.5 CLS vectors, int8 (scale 400), one per indexed verse (WEB text, KJV where the WEB lacks it, Charles for 1 Enoch) |
+| `data/embeddings.i8`, `.json` | embed | bge-small-en-v1.5 CLS vectors, int8 (scale 400), one per indexed verse (WEB text, KJV where the WEB lacks it, each companion's own text for its books) |
 | `data/map.u16` | embed | UMAP 2D position per verse, 0 to 65535 |
 | `art/dore/*.jpg`, `plates.json` | art/dore | Each plate at 1000 px and 400 px, single-channel JPEG, with its passage |
 | `art/heroes/*.png`, `heroes.json` | art/heroes | 1-bit dithered heroes (Atkinson, Bayer or blue noise), 720 px |

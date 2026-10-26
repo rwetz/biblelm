@@ -185,6 +185,7 @@ export const PAGE_PLATES: Record<string, number> = {
   noResults: 1002, // Schnorr, Abraham told to count the stars
   notebookEmpty: 1005, // Dürer, Jerome's lion asleep
   error: 1007, // Dürer, St Michael fighting the dragon
+  cabinet: 2032, // Sub Rosa only: Le Breton's Byleth, the king who rides a pale horse to trumpets
 };
 
 /** The sidebar vignette on pages that already carry a corner plate, so the two never repeat. */
@@ -194,6 +195,7 @@ export const SIDEBAR_PLATES: Record<string, number> = {
   notebooks: 157, // Baruch
   lab: 1015, // Merian, Ezekiel's vision: the wheels full of eyes, the living creatures
   settings: 1010, // The 1534 Luther Bible's title page, Cranach's workshop
+  cabinet: 2051, // Sub Rosa only: Lévi's Baphomet, the cabinet's best-known stranger
 };
 
 export const plateNumber =(all: Plate[], n: number) => all.find((p) => p.n === n);

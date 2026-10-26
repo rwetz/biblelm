@@ -24,6 +24,15 @@ All notable changes to BibleLM. Format based on
   Martin's Pandemonium; and the demons of the Dictionnaire infernal that
   Scripture names stand beside their verses (Asmodeus at Tobit 3:8, Azazel
   at Leviticus 16:8, Beelzebub at 2 Kings 1:2).
+- **Sub Rosa's texts**: four books join 1 Enoch on the Pseudepigrapha shelf,
+  read in the Bible like it: Jubilees (Charles), the Testament of Solomon
+  (Conybeare), and the Gospel of Nicodemus, with the Harrowing of Hell, and
+  the Apocalypse of Paul (M. R. James). The verse panel's "Beyond the canon"
+  links them to the passages they retell or echo. Under the rose a new page,
+  **Sub Rosa**, holds a library read beside the Bible and never as it: the
+  Goetia's seventy-two spirits, Dionysius's nine choirs of angels, James's
+  Apocalypse of Peter, Dante's *Inferno*, *Paradise Lost*, Mackey's
+  *Symbolism of Freemasonry* and five degrees of Pike's *Morals and Dogma*.
 - **Hide the Lab**: Settings, Lab in the sidebar (or the palette) takes the
   Lab out of the sidebar and the palette, for a study-only app and a shorter
   nav. Hiding it while on it goes Home.

@@ -207,13 +207,13 @@ export function findAnswer(question: string, passages: { ref: string; text: stri
 
 const GENRE: [string, string[]][] = [
   ["Law", ["Gen", "Exod", "Lev", "Num", "Deut"]],
-  ["History", ["Josh", "Judg", "Ruth", "1Sam", "2Sam", "1Kgs", "2Kgs", "1Chr", "2Chr", "Ezra", "Neh", "Esth", "Tob", "Jdt", "AddEsth", "1Macc", "2Macc", "3Macc", "1Esd"]],
+  ["History", ["Jub", "Josh", "Judg", "Ruth", "1Sam", "2Sam", "1Kgs", "2Kgs", "1Chr", "2Chr", "Ezra", "Neh", "Esth", "Tob", "Jdt", "AddEsth", "1Macc", "2Macc", "3Macc", "1Esd"]],
   ["Wisdom and poetry", ["Job", "Ps", "Prov", "Eccl", "Song", "Wis", "Sir", "AddPs", "PrMan", "4Macc"]],
   ["Prophets", ["Isa", "Jer", "Lam", "Ezek", "Dan", "Hos", "Joel", "Amos", "Obad", "Jonah", "Mic", "Nah", "Hab", "Zeph", "Hag", "Zech", "Mal", "Bar", "EpJer", "PrAzar", "Sus", "Bel", "DanGr", "2Esd"]],
-  ["Gospels", ["Matt", "Mark", "Luke", "John"]],
+  ["Gospels", ["Matt", "Mark", "Luke", "John", "GosNic"]],
   ["Acts", ["Acts"]],
   ["Epistles", ["Rom", "1Cor", "2Cor", "Gal", "Eph", "Phil", "Col", "1Thess", "2Thess", "1Tim", "2Tim", "Titus", "Phlm", "Heb", "Jas", "1Pet", "2Pet", "1John", "2John", "3John", "Jude"]],
-  ["Apocalyptic", ["Rev", "1En"]],
+  ["Apocalyptic", ["Rev", "1En", "ApPaul"]],
 ];
 const GENRE_OF = new Map(GENRE.flatMap(([g, books]) => books.map((b) => [b, g] as const)));
 export const genreOf = (osisBook: string) => GENRE_OF.get(osisBook) ?? "Other";

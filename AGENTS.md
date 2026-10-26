@@ -40,11 +40,12 @@ src/
   art/Art.tsx       Engraving, PlateFigure, CornerPlate, DitherHero, ornaments
   features/         home, read (+VersePanel), search, topics (+map, structure,
                     words, links, echoes), atlas, gallery, look, daily, notebooks,
-                    lab (corpus, training, inference, model, inside, lessons), settings
+                    lab (corpus, training, inference, model, inside, lessons), settings,
+                    cabinet (Sub Rosa's page and library reader)
   lib/              canon (shelves), bible (verse store, companion texts), search,
                     xrefs (graph), topics, studies, semantic (+ worker), suffix
                     (+ worker), words, els, atlas, interlinear, lectionary,
-                    plans, fsrs, jev, art, backend
+                    plans, fsrs, jev, art, library, companions, backend
   store/            study (prefs + place), notebooks (your notes)
 src-tauri/src/      lib.rs (Lab workers, paths), study.rs (notes, export, Jev)
 python/biblelm/     the Lab: GPT, training, generation, ONNX, inspect_model

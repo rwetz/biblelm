@@ -205,7 +205,7 @@ export function wholeSentence(verse: (r: Ref) => { raw: string } | undefined, st
 
 const BASE = `${import.meta.env.BASE_URL}data`;
 
-async function getJson<T>(path: string): Promise<T> {
+export async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}/${path}`);
   if (!res.ok) throw new Error(`${path}: ${res.status}. Run "pnpm data" to build the Bible data.`);
   return res.json() as Promise<T>;

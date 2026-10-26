@@ -109,7 +109,7 @@ to Sub Rosa while the mode is on.
   >   not CC BY), Fuseli's *Nightmare* (only a CC BY photograph), the *Hortus
   >   deliciarum* (no usable scan turned up in the first search), Doré's
   >   *Paradise Lost* (the Lab already has it, in `literary.mjs`).
-- [ ] **S3 Texts.** Plain-text importers (parsed as text, never executed),
+- [x] **S3 Texts.** Plain-text importers (parsed as text, never executed),
   each as a companion text or a library text:
   - *Testament of Solomon* (Conybeare, 1898), *Apocalypse of Peter* and
     *Apocalypse of Paul* (James, 1924), *Gospel of Nicodemus* (the
@@ -120,6 +120,43 @@ to Sub Rosa while the mode is on.
   - Dante, *Inferno* (Longfellow, 1867), Milton, *Paradise Lost*;
   - Mackey, *Encyclopedia of Freemasonry* (1873), and Pike, *Morals and
     Dogma* (1871), in excerpts.
+
+  > **As built:** the rule that sorted them: a text with its own verse
+  > numbers reads in the Bible, a text without them in the library.
+  > - **On the Pseudepigrapha shelf** (`scripts/data/pseudepigrapha.mjs`,
+  >   companion texts like 1 Enoch; STUDY.md): Jubilees (Charles's 1917
+  >   translation, from Sefaria, not the 1902 edition, whose only online
+  >   text is OCR with the footnotes run into the verses); the Testament of
+  >   Solomon; the Gospel of Nicodemus and the Apocalypse of Paul. Every
+  >   translation borrows them, the verse panel links them to the canon
+  >   (`companions.ts`), and search, meaning search and the Scripture map
+  >   reach them once the shelf is on, as it is under the rose.
+  > - **In the library** (`scripts/data/library.mjs`, `src/lib/library.ts`):
+  >   the Goetia, Dionysius, James's Apocalypse of Peter (a dossier of
+  >   fragments: the church fathers' quotations, the Akhmim Greek, the
+  >   Bodleian leaf, the Ethiopic), the *Inferno*, *Paradise Lost*, Mackey's
+  >   *Symbolism of Freemasonry* (1869, whole, with his glossary of the
+  >   symbols, in place of the *Encyclopedia*, which is not on Gutenberg or
+  >   Wikisource) and five of Pike's degrees (I to III, XIII, the Royal Arch
+  >   of Solomon, and XIX, where "Lucifer, the Light-bearer" stands). They
+  >   read in the cabinet, the **Sub Rosa** page (`src/features/cabinet`),
+  >   in the sidebar and palette only under the rose: a section at a time,
+  >   headed "Not Scripture", never in the Bible's reader. Its second shelf,
+  >   *Beyond the canon*, opens the Pseudepigrapha books in the reader.
+  > - **The Goetia's rite is left in the book.** The cabinet has the
+  >   prefaces, the 72 spirits (a section each), the vessel of brass, their
+  >   ranks and the glossary of names; the circle, the implements, the
+  >   conjurations and the licence to depart are left out, and the text says
+  >   so (principle 3).
+  > - **Left out:** the *Ascension of Isaiah* (Charles's 1900 edition is
+  >   online only as OCR of a parallel-column page; no clean public-domain
+  >   text turned up); the 72 seals (de Laurence prints them as seven plates
+  >   of figures; they wait for the bestiary in S5); Nicodemus's prologue
+  >   (absent from some manuscripts) and James's notes.
+  > - Sources were Wikisource (its parse API), Gutenberg and Sefaria;
+  >   sacred-texts.com refuses automated requests. Slips in a transcription
+  >   are mended in code, each checked against the scan, and the build
+  >   stops if one is gone (`CONYBEARE_FIXES`, `MACKEY_TITLES`).
 - [ ] **S4 Dossiers and symbols.** A Sub Rosa page (the cabinet): dossiers
   with tagged claims, the verses, the plates and the primary sources;
   symbols with their history. First dossiers: the "biblically accurate"

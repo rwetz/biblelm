@@ -225,7 +225,7 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
 const KIND = { quoted: ["Quotes", "Quoted in"], echoed: ["Echoes", "Echoed in"], retold: ["Retold in", "Retells"] } as const;
 
 /**
- * Where this verse touches 1 Enoch (src/lib/companions.ts): the passage on the
+ * Where this verse touches the Pseudepigrapha shelf (src/lib/companions.ts): the passage on the
  * other side, as printed, and a labelled study note on how they are related.
  * Shown whether or not the Pseudepigrapha shelf is on; its badge says which
  * side is off the canon.
@@ -237,14 +237,14 @@ function BeyondCanon({ refSel, main, onNavigate }: { refSel: Ref; main: Translat
     <section className="space-y-3">
       <SectionLabel>Beyond the canon</SectionLabel>
       {links.map(({ link, other }) => {
-        const toEnoch = other.book === "1En";
+        const beyond = bookOf(other.book)?.shelf === "pseudepigrapha";
         const text = main.range(other).map((v) => v.text).join(" ");
         return (
           <div key={formatRef(other)}>
             <p className="flex items-center gap-2 text-xs text-muted-foreground">
-              {KIND[link.kind][toEnoch ? 0 : 1]}
+              {KIND[link.kind][beyond ? 0 : 1]}
               <button type="button" className="font-semibold text-brand hover:underline" onClick={() => onNavigate(other)}>{formatRef(other)}</button>
-              {toEnoch && <Badge variant="outline">Pseudepigrapha</Badge>}
+              {beyond && <Badge variant="outline">Pseudepigrapha</Badge>}
             </p>
             {text && <p className="mt-1 font-garamond text-[15px] leading-relaxed">{text}</p>}
             <p className="mt-1 text-xs italic text-muted-foreground">Study note: {link.note}</p>

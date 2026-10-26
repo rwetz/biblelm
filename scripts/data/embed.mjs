@@ -26,7 +26,8 @@ const clean = (s) => s.replace(/\[([^\]]*)\]/g, "$1").replace(/[⸢⸣]/g, "").r
 
 function verseTexts(refs) {
   const text = new Map();
-  for (const id of ["kjv", "web", "enoch"]) {
+  const companions = read("translations.json").filter((t) => t.companion).map((t) => t.id);
+  for (const id of ["kjv", "web", ...companions]) {
     for (const b of read(`bible/${id}.json`).books)
       for (const c of b.chapters) for (const [v, t] of c.v) if (t) text.set(`${b.osis}.${c.c}.${v}`, clean(t)); // web overwrites kjv
   }

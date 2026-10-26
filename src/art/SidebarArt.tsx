@@ -99,6 +99,7 @@ export const PAGE_ORNAMENT: Record<string, OrnamentName> = {
   notebooks: "quill",
   lab: "ophan",
   settings: "urn",
+  cabinet: "winged-eye",
 };
 
 /** Daily is the sun by day and the lamp after five. */

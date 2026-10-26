@@ -769,6 +769,35 @@
   "usfm": "ENO"
  },
  {
+  "osis": "Jub",
+  "code": "JUB",
+  "name": "Jubilees",
+  "testament": "OT",
+  "shelf": "pseudepigrapha",
+  "aliases": [
+   "jub",
+   "book of jubilees",
+   "little genesis",
+   "the little genesis"
+  ],
+  "usfm": "JUB"
+ },
+ {
+  "osis": "TSol",
+  "code": "TSO",
+  "name": "Testament of Solomon",
+  "testament": "OT",
+  "shelf": "pseudepigrapha",
+  "aliases": [
+   "tsol",
+   "t sol",
+   "test sol",
+   "testament of solomon",
+   "the testament of solomon"
+  ],
+  "usfm": "TSO"
+ },
+ {
   "osis": "Matt",
   "code": "MAT",
   "name": "Matthew",
@@ -1119,5 +1148,38 @@
    "the revelation"
   ],
   "usfm": "REV"
+ },
+ {
+  "osis": "GosNic",
+  "code": "NIC",
+  "name": "Gospel of Nicodemus",
+  "testament": "NT",
+  "shelf": "pseudepigrapha",
+  "aliases": [
+   "nicodemus",
+   "gos nic",
+   "gosnic",
+   "acts of pilate",
+   "gospel of nicodemus",
+   "descent into hell"
+  ],
+  "usfm": "NIC"
+ },
+ {
+  "osis": "ApPaul",
+  "code": "APL",
+  "name": "Apocalypse of Paul",
+  "testament": "NT",
+  "shelf": "pseudepigrapha",
+  "aliases": [
+   "apocpaul",
+   "ap paul",
+   "appaul",
+   "vision of paul",
+   "visio pauli",
+   "revelation of paul",
+   "apocalypse of paul"
+  ],
+  "usfm": "APL"
  }
 ]

@@ -75,6 +75,18 @@ Your Apocrypha case ("fascinated, but would not study it"): canon is a
 > (`foldAccents`, `Verse.folded`), so "Azazel" finds Charles's "Azâzêl"; a
 > result count names whose text it counted in (`Translation.textsOf`).
 
+> **As built (the shelf grows, Sub Rosa S3):** four more books joined 1 Enoch,
+> each a companion text in the same way: Jubilees (Charles, 1917), the
+> Testament of Solomon (Conybeare, 1898), and from M. R. James's
+> *Apocryphal New Testament* (1924) the Gospel of Nicodemus and the
+> Apocalypse of Paul (DATA.md). Nicodemus and Paul are New Testament books,
+> so they sit after Revelation. Conybeare and James number paragraphs, not
+> verses, so the Testament and Paul are one chapter each. "Beyond the canon"
+> (`src/lib/companions.ts`) now links the canon to all five: Genesis 6 is
+> retold in Enoch and in Jubilees, Mastema asks for Isaac in Jubilees as the
+> Satan asks for Job, Asmodeus at Tobit 3:8 meets Solomon in the Testament,
+> and Psalm 24's gates are the gates of hell in Nicodemus.
+
 ## Notebooks ("instances")
 
 A **notebook** is a study: its own translations, shelves and notes. Example:

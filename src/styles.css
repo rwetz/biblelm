@@ -305,3 +305,12 @@ body {
 :root[data-subrosa] [data-rose] {
   transform: rotate(180deg);
 }
+/* The sidebar carries one more page under the rose (the cabinet), and the
+   rose's plates are inked to their top edge where Doré's open on sky, so the
+   vignette gives way on a taller window than usual (680px): the nav never
+   sits on a figure. */
+@media (max-height: 800px) {
+  :root[data-subrosa] [data-sidebar-art] {
+    display: none;
+  }
+}
