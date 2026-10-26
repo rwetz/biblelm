@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Button, Icon } from "@nexis/design";
 import { TrinityMark } from "@/art/TrinityMark";
 import { DitherHero, Engraving, Fleuron, useHeroes, usePaintings, usePlates } from "@/art/Art";
-import { paintingCredit, paintingForDay, paintingUrl, seasonalHero } from "@/lib/art";
+import { paintingCredit, paintingForDay, paintingUrl, roseHero, seasonalHero } from "@/lib/art";
 import { wholeSentence } from "@/lib/bible";
 import { formatRef, parseOsis, type Ref } from "@/lib/canon";
 import { useCatalog, useTranslation } from "@/lib/hooks";
@@ -35,8 +35,10 @@ export function HomeView() {
   const paintings = usePaintings();
   const today = useMemo(() => paintingForDay(paintings), [paintings]);
   // The hero follows the church year in every scheme (one of the dithered
-  // Doré heroes); the day's painting has its own place below, in Look at today.
-  const hero = useMemo(() => heroes.find((h) => h.id === devHero) ?? seasonalHero(heroes), [heroes, devHero]);
+  // Doré heroes), or under the rose turns daily through its own; the day's
+  // painting has its own place below, in Look at today.
+  const rose = useStudy((s) => s.subRosa);
+  const hero = useMemo(() => heroes.find((h) => h.id === devHero) ?? (rose ? roseHero(heroes) : undefined) ?? seasonalHero(heroes), [heroes, devHero, rose]);
   const openLook = useStudy((s) => s.openLook);
   const { translation, history, read, searchFor, go } = useStudy();
   const [t] = useTranslation(translation);

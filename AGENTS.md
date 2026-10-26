@@ -74,7 +74,7 @@ scripts/data|art/   offline builders (pnpm data); outputs are git-ignored
   `src/lib/art.ts`). Blackletter is for big titles, book names and drop caps
   only; anything smaller or longer is Garamond.
 - Never commit `data/`, `runs/`, `data-src/`, `art-src/`, `public/data`,
-  `public/art/dore|heroes|paintings`, `public/models`, weights or keys.
+  `public/art/dore|heroes|paintings|woodcuts|curios`, `public/models`, weights or keys.
   `TYPESAFE_API_KEY` stays in the user's environment and never reaches the
   webview. No hosted large model (Opus 5.5 or larger) is used: ask first.
 - Importers parse downloads as text; never execute downloaded content.

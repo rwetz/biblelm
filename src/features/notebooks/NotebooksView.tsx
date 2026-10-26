@@ -28,7 +28,7 @@ import {
   cn,
 } from "@nexis/design";
 import { ArtSpot, Dither, Engraving, Ornament, Painting, paintingShadow, usePagePlate, usePaintings, usePlates } from "@/art/Art";
-import { PAGE_PAINTINGS, PAGE_PLATES, paintingCredit, paintingUrl, plateUrl, type Plate } from "@/lib/art";
+import { PAGE_PLATES, pagePainting, paintingCredit, paintingUrl, plateUrl, type Plate } from "@/lib/art";
 import { formatRef, parseOsis, SHELVES, type Shelf } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
 import { bibleOrder, noteSpans, spansLabel, useNotebooks, type Note, type Notebook } from "@/store/notebooks";
@@ -141,7 +141,8 @@ function NotebookRow({ b, active, onClick }: { b: Notebook; active: boolean; onC
 
 function EmptyNotebooks({ plate, onCreate }: { plate?: Plate; onCreate: () => void }) {
   // Saint Jerome at his desk, translating: the scholar's own picture.
-  const jerome = usePaintings().find((p) => p.id === PAGE_PAINTINGS.notebooks);
+  const rose = useStudy((s) => s.subRosa);
+  const jerome = usePaintings().find((p) => p.id === pagePainting("notebooks", rose));
   const art = useStudy((s) => s.illustrations) !== "off";
   if (jerome && art)
     return (

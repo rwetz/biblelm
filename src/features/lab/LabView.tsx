@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Alert, AlertDescription, AlertTitle, cn, Icon, IN_TAURI } from "@nexis/design";
 import { Dither, DitherHero, useRotatingHero } from "@/art/Art";
 import { RoseMark } from "@/art/RoseMark";
-import { heroUrl, type Hero } from "@/lib/art";
+import { heroArtist, heroUrl, type Hero } from "@/lib/art";
 import { useStudy } from "@/store/study";
 import { LAB_NEEDS_DESKTOP } from "@/lib/backend";
 import { LAB_COLUMN } from "./LabSection";
@@ -51,7 +51,7 @@ function Frontispiece({ hero }: { hero?: Hero }) {
         {show && (
           <p className="font-garamond text-sm italic text-muted-foreground/80">
             {hero.title}
-            {hero.work ? `, from ${hero.work}` : ""}, after Gustave Doré
+            {hero.work ? `, from ${hero.work}` : ""}, after {heroArtist(hero)}
           </p>
         )}
       </div>
@@ -62,7 +62,7 @@ function Frontispiece({ hero }: { hero?: Hero }) {
             key={hero.id}
             src={heroUrl(hero)}
             algo={hero.algo === "bayer" ? "bayer" : hero.algo === "blue" ? "blue" : "atkinson"}
-            label={`${hero.title}, after Gustave Doré`}
+            label={`${hero.title}, after ${heroArtist(hero)}`}
             edges={{ top: 0.04, right: 0.04, bottom: 0.12, left: 0.08 }}
             className="absolute inset-0 text-foreground opacity-90 dark:opacity-85"
           />

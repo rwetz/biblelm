@@ -42,7 +42,7 @@ import { NotebooksView } from "@/features/notebooks/NotebooksView";
 import { LabView } from "@/features/lab/LabView";
 import { SettingsView } from "@/features/settings/SettingsView";
 import { useNotebooks } from "@/store/notebooks";
-import { loadPaintings, paintingForDay, type Painting } from "@/lib/art";
+import { loadPaintings, loadRosePaintings, paintingForDay, type Painting } from "@/lib/art";
 import { nextScheme, useScheme } from "@/app/scheme";
 import { useSubRosa, useSubRosaSync } from "@/app/subrosa";
 import { SCHEMES } from "@/app/theme";
@@ -345,7 +345,7 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
       { id: "prev-ch", label: "Previous chapter", group: "Read", icon: "chevron-left", shortcut: "[", run: () => chapterStep(-1) },
       { id: "verse-panel", label: study.selected ? "Hide the verse panel" : "Show the verse panel", group: "Read", icon: "info", shortcut: "P", keywords: ["notes", "cross references", "sidebar"], run: () => { if (study.page !== "read") study.go("read"); toggleVersePanel(); } },
       { id: "interlinear", label: study.interlinear ? "Read without the Hebrew and Greek" : "Read interlinear (Hebrew and Greek)", group: "Read", icon: "text", keywords: ["greek", "hebrew", "original", "strongs"], run: () => { study.set({ interlinear: !study.interlinear }); if (study.page !== "read") study.go("read"); } },
-      { id: "look-today", label: "Look: today's painting", group: "Art", icon: "image", keywords: ["caravaggio", "rembrandt", "visio divina", "gallery"], run: () => { const p = paintingForDay(paintingsCache); if (p) study.openLook({ kind: "painting", id: p.id }); } },
+      { id: "look-today", label: "Look: today's painting", group: "Art", icon: "image", keywords: ["caravaggio", "rembrandt", "visio divina", "gallery"], run: async () => { const p = paintingForDay(study.subRosa ? [...paintingsCache, ...(await loadRosePaintings())] : paintingsCache); if (p) study.openLook({ kind: "painting", id: p.id }); } },
       { id: "columns", label: study.columns ? "Read in one column" : "Read in two columns", group: "Read", icon: "split-vertical", run: () => study.set({ columns: !study.columns }) },
       { id: "red-letter", label: study.redLetter ? "Words of Christ in black" : "Words of Christ in red", group: "Read", icon: "quote", keywords: ["red letter", "jesus"], run: () => study.set({ redLetter: !study.redLetter }) },
       { id: "bigger", label: "Larger text", group: "Read", icon: "zoom-in", run: () => study.set({ textSize: Math.min(28, study.textSize + 1) }) },

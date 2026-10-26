@@ -211,7 +211,7 @@ export function LiveSearch({
       <aside className="hidden md:block">
         {lensPlate && (
           <figure className="sticky top-4">
-            <Dither src={plateUrl(lensPlate.full)} algo="floyd" dot={1} focusY={30} level={level} className="aspect-[4/5] w-full text-foreground" label={`${lensPlate.title}, after Gustave Doré`} />
+            <Dither src={plateUrl(lensPlate.full)} algo="floyd" dot={1} focusY={30} level={level} className="aspect-[4/5] w-full text-foreground" label={`${lensPlate.title}, after ${lensPlate.artist ?? "Gustave Doré"}`} />
             <figcaption className="mt-2 font-garamond text-[13px] italic leading-snug text-muted-foreground">{lensPlate.title}</figcaption>
           </figure>
         )}

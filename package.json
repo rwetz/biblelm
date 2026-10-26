@@ -9,10 +9,10 @@
     "tauri": "tauri",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "data": "node scripts/data/build-bible.mjs && node scripts/data/atlas.mjs && node scripts/data/interlinear.mjs && node scripts/data/daily.mjs && node scripts/data/graph.mjs && node scripts/art/dore.mjs && node scripts/art/heroes.mjs && node scripts/art/literary.mjs && node scripts/art/paintings.mjs && node scripts/art/woodcuts.mjs && node scripts/data/embed.mjs",
+    "data": "node scripts/data/build-bible.mjs && node scripts/data/atlas.mjs && node scripts/data/interlinear.mjs && node scripts/data/daily.mjs && node scripts/data/graph.mjs && node scripts/art/dore.mjs && node scripts/art/heroes.mjs && node scripts/art/literary.mjs && node scripts/art/paintings.mjs && node scripts/art/woodcuts.mjs && node scripts/art/curios.mjs && node scripts/data/embed.mjs",
     "data:bible": "node scripts/data/build-bible.mjs",
     "data:topics": "node scripts/data/topic-kinds.mjs",
-    "data:art": "node scripts/art/dore.mjs && node scripts/art/heroes.mjs && node scripts/art/literary.mjs && node scripts/art/paintings.mjs && node scripts/art/woodcuts.mjs",
+    "data:art": "node scripts/art/dore.mjs && node scripts/art/heroes.mjs && node scripts/art/literary.mjs && node scripts/art/paintings.mjs && node scripts/art/woodcuts.mjs && node scripts/art/curios.mjs",
     "data:study": "node scripts/data/atlas.mjs && node scripts/data/interlinear.mjs && node scripts/data/daily.mjs && node scripts/data/graph.mjs",
     "data:embed": "node scripts/data/embed.mjs"
   },

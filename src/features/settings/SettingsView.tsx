@@ -234,6 +234,13 @@ export function SettingsView() {
               <li>Illustrations: Gustave Doré, La Grande Bible de Tours (1866), public domain, via Wikimedia Commons.</li>
               <li>Woodcuts and engravings: Albrecht Dürer (the Met, CC0), Julius Schnorr von Carolsfeld, William Blake (Yale Center for British Art, CC0), the Nuremberg Chronicle, the 1534 Luther Bible, Matthäus Merian's Vision of Ezekiel (1630) and the four evangelists (Rijksmuseum, CC0); public domain, via Wikimedia Commons.</li>
               <li>Paintings: Caravaggio, Rembrandt, Honthorst and Georges de La Tour, public domain (Wikimedia Commons; the Met and the Rijksmuseum, CC0).</li>
+              {study.subRosa && (
+                <li>
+                  Under the rose: Doré's Inferno, Louis Le Breton's demons for the Dictionnaire infernal (1863), Dürer, Schongauer, Bruegel, Callot, Goya, Blake
+                  and Éliphas Lévi in engraving; Bosch, Bruegel, Memling, Michelangelo, Signorelli, Giotto, Fra Angelico, Lochner, van Eyck, Botticelli, Raphael,
+                  Blake and John Martin in paint. Public domain, via Wikimedia Commons (the Met and the National Gallery of Art, CC0).
+                </li>
+              )}
               <li>Places: OpenBible.info Bible Geocoding Data, CC BY 4.0. Coastlines and rivers: Natural Earth, public domain.</li>
               <li>People and the Hebrew and Greek interlinear: STEPBible (Tyndale House), TIPNR, TAHOT and TAGNT, CC BY 4.0.</li>
               <li>Daily Office: the Book of Common Prayer (1979), public domain; JSON by Reuben Lillie, MIT.</li>

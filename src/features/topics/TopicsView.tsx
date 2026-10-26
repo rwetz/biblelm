@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, Icon, Input, SectionLabel,Spinner, VirtualList, cn } from "@nexis/design";
 import { CornerPlate, DitherHero, usePagePlate, usePaintings } from "@/art/Art";
-import { PAGE_PAINTINGS, PAGE_PLATES } from "@/lib/art";
+import { PAGE_PLATES, pagePainting } from "@/lib/art";
 import type { Translation, VerseIndex } from "@/lib/bible";
 import { formatRef, parseRef, type Ref } from "@/lib/canon";
 import { useGraph, useIndex, useTopics, useTranslation } from "@/lib/hooks";
@@ -30,7 +30,8 @@ export function TopicsView() {
   const [index] = useIndex();
   const plate = usePagePlate(PAGE_PLATES.topics);
   // The Seven Works of Mercy: Matthew 25 acted out in a Naples street.
-  const mercy = usePaintings().find((p) => p.id === PAGE_PAINTINGS.topics);
+  const rose = useStudy((s) => s.subRosa);
+  const mercy = usePaintings().find((p) => p.id === pagePainting("topics", rose));
   useEffect(() => {
     if (walk) setTab("walk");
     else if (studies !== null) setTab("studies");

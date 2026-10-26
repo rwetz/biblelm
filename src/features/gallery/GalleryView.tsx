@@ -5,7 +5,7 @@
 import { useMemo, useState } from "react";
 import {cn } from "@nexis/design";
 import { DitherHero, Engraving, usePaintings, usePlates } from "@/art/Art";
-import { byBibleOrder, PAGE_PAINTINGS, paintingCredit, paintingUrl, plateCredit, type Painting, type Plate } from "@/lib/art";
+import { byBibleOrder, pagePainting, paintingCredit, paintingUrl, plateCredit, type Painting, type Plate } from "@/lib/art";
 import { bookName, formatRef } from "@/lib/canon";
 import { useStudy } from "@/store/study";
 import { PageMark } from "@/art/SidebarArt";
@@ -18,7 +18,8 @@ export function GalleryView() {
   const plates = usePlates();
   const openLook = useStudy((s) => s.openLook);
   const [show, setShow] = useState<Show>("paintings");
-  const hero = paintings.find((p) => p.id === PAGE_PAINTINGS.gallery);
+  const rose = useStudy((s) => s.subRosa);
+  const hero = paintings.find((p) => p.id === pagePainting("gallery", rose));
   const groups = useMemo(() => {
     // A detail cut from a plate already shown (Jerome's lion, Merian's wheel) is not a picture of its own.
     const DETAILS = new Set(["empty notebook", "ophan", "living creature"]);
@@ -39,7 +40,10 @@ export function GalleryView() {
           <div>
             <h1 className="flex items-center gap-3 font-blackletter text-5xl"><PageMark page="gallery" />Gallery</h1>
             <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-              Caravaggio, Rembrandt and their followers in oil; Doré, Dürer, Schnorr and Blake in engraving and woodcut. Each opens beside the passage it shows.
+              {rose
+                ? "Under the rose, hell joins the collection: Bosch, Bruegel and the painters of the Last Judgment in oil; Doré's Inferno, Dürer's Apocalypse and the demons of the Dictionnaire infernal in engraving."
+                : "Caravaggio, Rembrandt and their followers in oil; Doré, Dürer, Schnorr and Blake in engraving and woodcut."}{" "}
+              Each opens beside the passage it shows.
             </p>
           </div>
         </div>

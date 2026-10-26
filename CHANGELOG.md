@@ -15,6 +15,15 @@ All notable changes to BibleLM. Format based on
   (smoked glass, ash and brimstone), every shelf comes on without a word, the
   rose mark hangs head down and the loader's cross is St Peter's. Coming out
   is one click and puts the scheme and shelves back.
+- **Sub Rosa's art** (`scripts/art/curios.mjs`, credits in
+  docs/curios-credits.md): under the rose every page's corner and sidebar
+  plate gives way to Doré's Inferno, Dürer's Apocalypse, Schongauer, Callot,
+  Goya, Blake or Lévi's Baphomet; Home and the Lab turn through dithered hell
+  scenes; the day's painting comes from Bosch, Bruegel, Michelangelo,
+  Memling, Signorelli, Botticelli's map of hell, Blake's dragon and beast and
+  Martin's Pandemonium; and the demons of the Dictionnaire infernal that
+  Scripture names stand beside their verses (Asmodeus at Tobit 3:8, Azazel
+  at Leviticus 16:8, Beelzebub at 2 Kings 1:2).
 - **Hide the Lab**: Settings, Lab in the sidebar (or the palette) takes the
   Lab out of the sidebar and the palette, for a study-only app and a shorter
   nav. Hiding it while on it goes Home.

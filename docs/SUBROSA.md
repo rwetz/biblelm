@@ -69,22 +69,46 @@ to Sub Rosa while the mode is on.
 
 - [x] **S1 The switch.** Rite, theme, shelves on and restored, hanging rose,
   Petrine cross, palette commands.
-- [ ] **S2 Dark art.** `scripts/art/curios.mjs`, built like `paintings.mjs`
-  (Wikimedia Commons PD-Art files; museum CC0 scans where they exist), with
-  credits. While the mode is on, `PAGE_PLATES`, `SIDEBAR_PLATES`, the heroes
-  and the painting of the day draw from this set:
-  - Doré's *Inferno* (1861) and *Paradise Lost* (1866) plates, the engraved
-    tier in place of his Bible;
-  - Bosch (*Garden of Earthly Delights*, the Vienna *Last Judgment*,
-    *Visions of the Hereafter*), Bruegel (*Fall of the Rebel Angels*,
-    *Dulle Griet*), Signorelli's damned at Orvieto, Memling's *Last
-    Judgment*, Michelangelo's *Last Judgment*, Fra Angelico, Giotto's hell
-    in the Scrovegni Chapel, Lochner;
-  - Blake (*The Great Red Dragon* series, Job's *Behemoth and Leviathan*,
-    his Dante), John Martin (*Pandemonium*), Fuseli;
-  - Botticelli's *Map of Hell*; the Codex Gigas devil; the *Hortus
-    deliciarum* hell; Louis Le Breton's engravings for Collin de Plancy's
-    *Dictionnaire infernal* (1863); Lévi's Baphomet (1856).
+- [x] **S2 Dark art.** `scripts/art/curios.mjs` (in `pnpm data:art`) builds
+  `public/art/curios/`: plates, heroes and paintings, every file checked on
+  Commons to be tagged public domain or CC0. Credits in
+  [curios-credits.md](curios-credits.md).
+
+  > **As built:**
+  > - **Plates 2001 to 2051**, engraved: eleven of Doré's *Inferno* plates;
+  >   thirteen of Le Breton's demons for the *Dictionnaire infernal*, the
+  >   ones Scripture names standing beside their verse (Asmodeus at Tobit
+  >   3:8, Azazel at Leviticus 16:8, Beelzebub at 2 Kings 1:2, Baal,
+  >   Astaroth, Adramelech, Belphegor at Baal-peor, Berith at El-berith);
+  >   Dürer's *Apocalypse* (the Four Horsemen, the Whore of Babylon, the
+  >   beast like a lamb, the seven trumpets) and *Knight, Death and the
+  >   Devil*; Schongauer's and Callot's Saint Anthony; Bruegel's *Last
+  >   Judgment* and *Descent into Limbo*; Goya's *Sleep of Reason*; Blake's
+  >   *Behemoth and Leviathan*; Lévi's Baphomet.
+  > - **Heroes**: nine of those plates as dithered tones (the gate of hell,
+  >   Charon, Minos, the Titans, Lucifer, the harpies in the wood, Bruegel's
+  >   two, Callot).
+  >   Home turns through them daily (`roseHero`), and the Lab rotates them in
+  >   place of Milton and Coleridge.
+  > - **Paintings**: twenty, kept as painted. Bosch (the *Garden*, the Vienna
+  >   *Last Judgment*, *Hell* and the *Ascent of the Blessed*), Bruegel (*The
+  >   Fall of the Rebel Angels*, *Dulle Griet*), Memling, Michelangelo,
+  >   Signorelli, Giotto, Fra Angelico, Lochner and van Eyck (the Met, CC0)
+  >   on the Last Judgment; Botticelli's *Map of Hell*; the Cleves *Mouth of
+  >   Hell*; Raphael's *Saint Michael* and *Vision of Ezekiel*; Blake's *Great
+  >   Red Dragon* and *Number of the Beast*; Martin's *Pandemonium*. The
+  >   painting of the day turns through these alone, with no church year.
+  > - **Swapping**: under the rose `usePlates`, `useHeroes` and
+  >   `usePaintings` fetch and add the set, so the reader, Look, the Gallery
+  >   and notebook covers have it. `ROSE_PLATES` maps each `PAGE_PLATES` and
+  >   `SIDEBAR_PLATES` number to its replacement (`pagePlate`), and
+  >   `ROSE_PAGE_PAINTINGS` does the same for the Gallery, Topics and
+  >   Notebooks paintings. The Doré Bible plates still stand beside their
+  >   own passages: the reader keeps its Scripture.
+  > - **Left out**: the Codex Gigas devil (no scan larger than 369 px that is
+  >   not CC BY), Fuseli's *Nightmare* (only a CC BY photograph), the *Hortus
+  >   deliciarum* (no usable scan turned up in the first search), Doré's
+  >   *Paradise Lost* (the Lab already has it, in `literary.mjs`).
 - [ ] **S3 Texts.** Plain-text importers (parsed as text, never executed),
   each as a companion text or a library text:
   - *Testament of Solomon* (Conybeare, 1898), *Apocalypse of Peter* and
