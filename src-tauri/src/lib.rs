@@ -129,7 +129,9 @@ fn scripts_root() -> PathBuf {
 }
 
 /// The Python interpreter to spawn. Prefers the project `.venv`, then a
-/// `BIBLELM_PYTHON` override, then a bare `python` on PATH.
+/// `BIBLELM_PYTHON` override, then a system Python. macOS ships no `python`,
+/// only `python3`, and an app opened from Finder gets a bare PATH without
+/// Homebrew's, so there the usual install locations are tried by path.
 fn python_exe(root: &Path) -> PathBuf {
     if let Ok(p) = std::env::var("BIBLELM_PYTHON") {
         return PathBuf::from(p);
@@ -140,10 +142,21 @@ fn python_exe(root: &Path) -> PathBuf {
         root.join(".venv").join("bin").join("python")
     };
     if venv.exists() {
-        venv
-    } else {
-        PathBuf::from("python")
+        return venv;
     }
+    if cfg!(windows) {
+        return PathBuf::from("python");
+    }
+    [
+        "/opt/homebrew/bin/python3",
+        "/usr/local/bin/python3",
+        "/Library/Frameworks/Python.framework/Versions/Current/bin/python3",
+        "/usr/bin/python3",
+    ]
+    .iter()
+    .map(PathBuf::from)
+    .find(|p| p.exists())
+    .unwrap_or_else(|| PathBuf::from("python3"))
 }
 
 fn data_dir(root: &Path) -> PathBuf {
@@ -941,6 +954,40 @@ fn kill_pid(pid: u32) {
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+/// The configured 1280x840 can be larger than a small laptop's screen once the
+/// menu bar and Dock are taken out, and the window then opens with its right
+/// and bottom edges off screen (the hero looks cut, the status bar is gone).
+/// Before it is first shown, shrink it into the work area and centre it there.
+fn fit_to_screen(win: &tauri::WebviewWindow) {
+    let monitor = match win.current_monitor() {
+        Ok(Some(m)) => m,
+        _ => match win.primary_monitor() {
+            Ok(Some(m)) => m,
+            _ => return,
+        },
+    };
+    let area = monitor.work_area();
+    let (Ok(outer), Ok(inner)) = (win.outer_size(), win.inner_size()) else {
+        return;
+    };
+    let margin = (16.0 * monitor.scale_factor()) as u32;
+    let w = outer.width.min(area.size.width.saturating_sub(2 * margin));
+    let h = outer.height.min(area.size.height.saturating_sub(2 * margin));
+    if (w, h) == (outer.width, outer.height) {
+        return;
+    }
+    // set_size takes the inner size; keep whatever frame the platform adds.
+    let _ = win.set_size(tauri::PhysicalSize::new(
+        w.saturating_sub(outer.width - inner.width),
+        h.saturating_sub(outer.height - inner.height),
+    ));
+    let size = win.outer_size().unwrap_or(tauri::PhysicalSize::new(w, h));
+    let _ = win.set_position(tauri::PhysicalPosition::new(
+        area.position.x + (area.size.width.saturating_sub(size.width) / 2) as i32,
+        area.position.y + (area.size.height.saturating_sub(size.height) / 2) as i32,
+    ));
+}
+
 pub fn run() {
     tauri::Builder::default()
         .manage(AppState {
@@ -948,6 +995,9 @@ pub fn run() {
         })
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
+            if let Some(win) = app.get_webview_window("main") {
+                fit_to_screen(&win);
+            }
             init_roots(app.handle());
             study::init(app.handle());
             Ok(())

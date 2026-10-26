@@ -88,7 +88,7 @@ export function HomeView() {
           <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
           {passage?.verses.length ? (
             <blockquote className="mt-4">
-              <p className="font-garamond text-[2rem] leading-snug text-foreground md:text-[2.4rem]">
+              <p className="font-garamond text-[2rem] leading-snug text-foreground md:text-[clamp(2rem,3.6vh,2.4rem)]">
                 {passage.verses.map((v, i) => (
                   <span key={v.n}>
                     {i > 0 && <sup className="mr-1 font-sans text-[0.4em] font-semibold text-brand">{v.n}</sup>}
