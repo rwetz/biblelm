@@ -3,7 +3,7 @@
 // (your own words) live in store/notebooks.ts and are saved through Rust.
 
 import { create } from "zustand";
-import type { Ref, Shelf } from "@/lib/canon";
+import { SHELVES, type Ref, type Shelf } from "@/lib/canon";
 import type { SaverMode } from "@/lib/power";
 
 export type Page = "home" | "read" | "search" | "topics" | "atlas" | "gallery" | "daily" | "notebooks" | "lab" | "settings";
@@ -39,6 +39,10 @@ interface StudyState {
   /** Whether the first-start welcome (which asks the name) has been seen. */
   welcomed: boolean;
   location: Ref;
+  /** Sub Rosa: the curiosities mode, its own theme and every shelf (src/app/subrosa.ts). */
+  subRosa: boolean;
+  /** What Sub Rosa changed, to put back when it ends: the shelves and the scheme. */
+  beforeSubRosa: BeforeSubRosa | null;
   /** Developer mode: preview any hero or plate to hunt for art bugs (Settings). */
   devMode: boolean;
   /** Developer override for the Home hero (a hero id), else the church year picks. */
@@ -74,8 +78,19 @@ interface StudyState {
   searchFor: (q: string) => void;
   openLook: (t: LookTarget | null) => void;
   openAtlas: (kind: "place" | "person", id: string) => void;
+  /** Go under the rose (every shelf comes on, silently) or come back out (the shelves you had). */
+  setSubRosa: (on: boolean, theme?: { themeId: string; mode: string }) => BeforeSubRosa | null;
   set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "ornaments" | "compact" | "sidebarFolded" | "saver" | "showLab" | "name" | "welcomed" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
 }
+
+export interface BeforeSubRosa {
+  shelves: Shelf[];
+  themeId: string;
+  mode: string;
+}
+
+/** Every shelf, in canon order: what Sub Rosa reads from. */
+export const ALL_SHELVES: Shelf[] = SHELVES.map((s) => s.id);
 
 const KEY = "biblelm:study";
 const DEFAULTS = {
@@ -98,6 +113,8 @@ const DEFAULTS = {
   interlinear: false,
   location: { book: "John", chapter: 1, verse: 0 } as Ref,
   history: [] as Ref[],
+  subRosa: false,
+  beforeSubRosa: null as BeforeSubRosa | null,
   devMode: false,
   devHero: null as string | null,
   devPlate: null as number | null,
@@ -114,8 +131,8 @@ function load(): typeof DEFAULTS {
 
 function save(s: StudyState) {
   try {
-    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, devMode, devHero, devPlate } = s;
-    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, devMode, devHero, devPlate }));
+    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, devMode, devHero, devPlate } = s;
+    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, devMode, devHero, devPlate }));
   } catch {
     // Storage blocked: preferences just won't persist.
   }
@@ -159,6 +176,19 @@ export const useStudy = create<StudyState>((set, get) => ({
     const next = selection.includes(v) ? selection.filter((x) => x !== v) : [...selection, v].sort((a, b) => a - b);
     if (!next.length) return set({ selected: null, selection: [] });
     set({ selected: { ...ref, verseEnd: undefined }, selection: next });
+  },
+  setSubRosa: (on, theme) => {
+    const { subRosa, shelves, beforeSubRosa } = get();
+    if (on === subRosa) return null;
+    if (on) {
+      const before = { shelves, themeId: theme?.themeId ?? "", mode: theme?.mode ?? "" };
+      set({ subRosa: true, beforeSubRosa: before, shelves: ALL_SHELVES });
+      save(get());
+      return before;
+    }
+    set({ subRosa: false, beforeSubRosa: null, shelves: beforeSubRosa?.shelves ?? shelves });
+    save(get());
+    return beforeSubRosa;
   },
   set: (patch) => {
     set(patch);

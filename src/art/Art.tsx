@@ -636,11 +636,13 @@ export function DitherHero({
 
 /**
  * A loader for long work: a cross gathering out of dots and dissolving again,
- * light running down it. Reduced motion shows the cross at rest.
+ * light running down it. Reduced motion shows the cross at rest. Under the
+ * rose it is St Peter's cross: inverted, as he asked to be crucified.
  */
 export function CrossLoader({ size = 48, className, label = "Working" }: { size?: number; className?: string; label?: string }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const reduced = useStill();
+  const petrine = useStudy((s) => s.subRosa);
   const { paletteEpoch } = useTheme();
   useEffect(() => {
     const cv = canvas.current;
@@ -653,7 +655,7 @@ export function CrossLoader({ size = 48, className, label = "Working" }: { size?
     const rgb = inkColor(cv);
     // Brightness: a Latin cross (the beam a third of the way down) in a soft glow.
     const glow = new Float32Array(n * n);
-    const arm = n * 0.08, cx = (n - 1) / 2, beam = n * 0.32;
+    const arm = n * 0.08, cx = (n - 1) / 2, beam = n * (petrine ? 0.68 : 0.32);
     for (let y = 0; y < n; y++)
       for (let x = 0; x < n; x++) {
         const dv = Math.max(Math.abs(x - cx) - arm, n * 0.06 - y, y - n * 0.94, 0);
@@ -683,7 +685,7 @@ export function CrossLoader({ size = 48, className, label = "Working" }: { size?
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [size, reduced, paletteEpoch]);
+  }, [size, reduced, paletteEpoch, petrine]);
   return (
     <canvas
       ref={canvas}

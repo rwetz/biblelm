@@ -24,6 +24,7 @@ import { DeveloperPanel } from "./DeveloperPanel";
 import { useScheme } from "@/app/scheme";
 import { SCHEMES } from "@/app/theme";
 import { PageMark } from "@/art/SidebarArt";
+import { SubRosaPanel } from "./SubRosaPanel";
 
 export function SettingsView() {
   const study = useStudy();
@@ -64,10 +65,16 @@ export function SettingsView() {
 
         <Panel title="Appearance">
           <div className="space-y-5">
-            <Field label="Scheme" hint={SCHEMES.find((x) => x.id === scheme)?.blurb} inline>
-              <Segmented label="Scheme" size="sm" value={scheme} onChange={setScheme} segments={SCHEMES.map((x) => ({ id: x.id, label: x.label }))} />
-            </Field>
-            {scheme !== "tenebrae" && (
+            {study.subRosa ? (
+              <Field label="Scheme" hint="Sub Rosa keeps its own colours until you come out from under the rose." inline>
+                <span className="text-xs text-muted-foreground">Sub Rosa</span>
+              </Field>
+            ) : (
+              <Field label="Scheme" hint={SCHEMES.find((x) => x.id === scheme)?.blurb} inline>
+                <Segmented label="Scheme" size="sm" value={scheme} onChange={setScheme} segments={SCHEMES.map((x) => ({ id: x.id, label: x.label }))} />
+              </Field>
+            )}
+            {!study.subRosa && scheme !== "tenebrae" && (
               <Field label="Follow the system's light and dark" inline>
                 <Switch checked={theme.mode === "system"} onCheckedChange={(on) => theme.setMode(on ? "system" : theme.resolvedMode)} />
               </Field>
@@ -209,6 +216,8 @@ export function SettingsView() {
             {jev && <JevUses />}
           </div>
         </Panel>
+
+        <SubRosaPanel />
 
         <DeveloperPanel />
 

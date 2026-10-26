@@ -297,3 +297,11 @@ body {
   box-shadow: none !important;
   background-color: color-mix(in oklab, var(--input) 75%, transparent);
 }
+
+/* ── Sub Rosa ─────────────────────────────────────────────────────────── */
+
+/* Under the rose (src/app/subrosa.ts). The rose was hung over the table where
+   things were said in confidence, so the mark hangs head down. */
+:root[data-subrosa] [data-rose] {
+  transform: rotate(180deg);
+}

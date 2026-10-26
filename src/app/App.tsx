@@ -44,6 +44,7 @@ import { SettingsView } from "@/features/settings/SettingsView";
 import { useNotebooks } from "@/store/notebooks";
 import { loadPaintings, paintingForDay, type Painting } from "@/lib/art";
 import { nextScheme, useScheme } from "@/app/scheme";
+import { useSubRosa, useSubRosaSync } from "@/app/subrosa";
 import { SCHEMES } from "@/app/theme";
 import { useStudy, type Page } from "@/store/study";
 
@@ -183,11 +184,13 @@ export default function App() {
   const setStudy = useStudy((s) => s.set);
   const redLetter = useStudy((s) => s.redLetter);
   const go = useStudy((s) => s.go);
+  const subRosa = useStudy((s) => s.subRosa);
   const [palette, setPalette] = useState(false);
   const narrow = useNarrow();
   const history = usePageHistory(page, go);
   useSwipeHistory(history);
   const commands = useCommands(() => setPalette(true), history);
+  useSubRosaSync();
 
   useEffect(() => {
     document.documentElement.toggleAttribute("data-compact", compact);
@@ -259,7 +262,7 @@ export default function App() {
             <kbd className="hidden font-mono text-[10px] opacity-70 md:inline">{fmtShortcut(MOD_KEY, SHIFT_KEY, "P")}</kbd>
           </button>
         }
-        actions={<ModeToggle />}
+        actions={subRosa ? undefined : <ModeToggle />}
       />
       <div className="nexis-shell-body flex min-h-0 flex-1">
         <div className="relative flex shrink-0">
@@ -324,6 +327,7 @@ function Status() {
 function useCommands(openPalette: () => void, history: { back: () => void; forward: () => void }): PaletteCommand[] {
   const study = useStudy();
   const [, setScheme] = useScheme();
+  const [subRosa, setSubRosa] = useSubRosa();
   const [catalog] = useCatalog();
   const { notebooks, setActive } = useNotebooks();
   return useMemo(() => {
@@ -383,7 +387,7 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
     const appearance: PaletteCommand[] = [
       ...art,
       { id: "dev", label: study.devMode ? "Turn developer mode off" : "Turn developer mode on", group: "Appearance", icon: "code", keywords: ["debug", "art", "hero", "plates"], run: () => { study.set({ devMode: !study.devMode }); if (!study.devMode) study.go("settings"); } },
-      ...SCHEMES.map((sc) => ({ id: `scheme-${sc.id}`, label: `Scheme: ${sc.label}`, group: "Appearance", icon: "contrast" as const, keywords: ["theme", sc.id === "vellum" ? "light mode" : "dark mode", sc.blurb], run: () => setScheme(sc.id) })),
+      ...(subRosa ? [] : SCHEMES).map((sc) => ({ id: `scheme-${sc.id}`, label: `Scheme: ${sc.label}`, group: "Appearance", icon: "contrast" as const, keywords: ["theme", sc.id === "vellum" ? "light mode" : "dark mode", sc.blurb], run: () => setScheme(sc.id) })),
     ];
     const nbs: PaletteCommand[] = [
       { id: "nb-new", label: "New notebook", group: "Notebooks", icon: "add", run: () => { study.go("notebooks"); window.dispatchEvent(new CustomEvent("biblelm:new-notebook")); } },
@@ -422,6 +426,7 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
       setting("Semantic search", ["meaning", "embedding", "machine"]),
       setting("Jev", ["typesafe", "rerank", "api key", "machine help", "bypass"]),
       setting("Developer mode", ["debug", "hero", "plates", "art", "ornaments sheet"]),
+      setting("Sub Rosa", ["curiosities", "dark", "occult", "angels", "demons", "hell", "goetia", "solomon", "masons", "symbols", "under the rose"]),
       setting("About", ["credits", "licence", "version", "sources"]),
     ];
     const lab: PaletteCommand[] = ([["corpus", "Corpus"], ["train", "Training"], ["generate", "Generate"], ["model", "Model"], ["inside", "Inside the model"], ["lessons", "Lessons"]] as const).map(([t, name]) => ({
@@ -440,7 +445,9 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
     ];
     const labToggle: PaletteCommand = { id: "lab-toggle", label: study.showLab ? "Hide the Lab from the sidebar" : "Show the Lab in the sidebar", group: "Lab", icon: "brain", keywords: ["machine", "gpt", "simpler", "study only"], run: () => study.set({ showLab: !study.showLab }) };
     const welcome: PaletteCommand = { id: "welcome", label: "Show the welcome again", group: "Settings", icon: "info", keywords: ["name", "first start", "intro"], run: () => study.set({ welcomed: false }) };
+    // Going under is done only by the rite in Settings; coming out is one step.
+    const rose: PaletteCommand = { id: "subrosa-off", label: "Come out from under the rose", group: "Appearance", icon: "contrast", keywords: ["sub rosa", "leave", "normal", "light"], run: () => setSubRosa(false) };
     void openPalette;
-    return [...nav, ...reading, ...settings, welcome, ...(study.showLab ? lab : []), labToggle, ...layout, ...translations, ...shelves, ...nbs, ...appearance];
-  }, [study, setScheme, catalog, notebooks, setActive, openPalette, history]);
+    return [...nav, ...reading, ...settings, welcome, ...(study.showLab ? lab : []), labToggle, ...layout, ...translations, ...shelves, ...nbs, ...appearance, ...(subRosa ? [rose] : [])];
+  }, [study, setScheme, subRosa, setSubRosa, catalog, notebooks, setActive, openPalette, history]);
 }

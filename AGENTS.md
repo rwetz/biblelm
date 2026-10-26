@@ -14,6 +14,7 @@ touching:
 | Nexis design, themes, typography | [docs/DESIGN.md](docs/DESIGN.md) |
 | Illustrations | [docs/ART.md](docs/ART.md), [docs/art-credits.md](docs/art-credits.md), [docs/painting-credits.md](docs/painting-credits.md) |
 | Algorithm ideas | [docs/IDEAS.md](docs/IDEAS.md) |
+| Sub Rosa, the curiosities mode | [docs/SUBROSA.md](docs/SUBROSA.md) |
 
 ## Principles
 

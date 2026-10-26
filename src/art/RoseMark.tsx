@@ -128,6 +128,7 @@ export function RoseMark({
   return (
     <canvas
       ref={canvasRef}
+      data-rose=""
       role={label ? "img" : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}

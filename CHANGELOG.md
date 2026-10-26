@@ -8,6 +8,13 @@ All notable changes to BibleLM. Format based on
 
 ### Added
 
+- **Sub Rosa**, the curiosities mode (docs/SUBROSA.md), off by default.
+  Settings, Sub Rosa asks for a rite first: four oaths (*Nihil obstat*), a
+  seal pressed and held while the cross turns over (*Imprimatur*), and
+  *Retro me, Satana* typed out. Under the rose the app wears its own theme
+  (smoked glass, ash and brimstone), every shelf comes on without a word, the
+  rose mark hangs head down and the loader's cross is St Peter's. Coming out
+  is one click and puts the scheme and shelves back.
 - **Hide the Lab**: Settings, Lab in the sidebar (or the palette) takes the
   Lab out of the sidebar and the palette, for a study-only app and a shorter
   nav. Hiding it while on it goes Home.
