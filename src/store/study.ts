@@ -6,6 +6,7 @@ import { create } from "zustand";
 import { SHELVES, type Ref, type Shelf } from "@/lib/canon";
 import type { SaverMode } from "@/lib/power";
 import { answer, type Question, type QuizCards } from "@/lib/quiz";
+import type { SymbolFamily } from "@/lib/symbols";
 
 export type Page = "home" | "read" | "search" | "topics" | "atlas" | "gallery" | "daily" | "notebooks" | "lab" | "settings" | "cabinet";
 /** A picture opened to look at: a painting or a Doré plate, by id. */
@@ -93,7 +94,7 @@ interface StudyState {
   set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "ornaments" | "compact" | "sidebarFolded" | "saver" | "showLab" | "name" | "welcomed" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
 }
 
-export type CabinetShelf = "library" | "dossiers" | "symbols" | "bestiary" | "numbers" | "quiz" | "beside";
+export type CabinetShelf = "library" | "dossiers" | "symbols" | "lodge" | "bestiary" | "numbers" | "quiz" | "beside";
 
 export interface CabinetPlace {
   /** A library text open in the reader (by id), at its section; or null for the shelves. */
@@ -104,6 +105,8 @@ export interface CabinetPlace {
   curio?: string | null;
   /** A Goetia spirit open in the bestiary, by number (src/lib/bestiary.ts). */
   spirit?: number | null;
+  /** The symbols shown, by family (src/lib/symbols.ts); all when unset. */
+  family?: SymbolFamily | null;
 }
 
 export interface BeforeSubRosa {

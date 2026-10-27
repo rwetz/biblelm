@@ -13,6 +13,9 @@
 // at shelf passages, checked too.
 
 import type { OrnamentName } from "@/art/ornaments";
+import { SYMBOLS, type SymbolFamily } from "./symbols";
+
+export { FAMILIES, SYMBOLS, type SymbolFamily } from "./symbols";
 
 export type ClaimTag = "scripture" | "tradition" | "folklore" | "modern";
 
@@ -43,8 +46,17 @@ export interface Curio {
   /** Plates (by number) and paintings (by id) that show it. */
   plates?: number[];
   paintings?: string[];
+  /** A dossier's claims; a symbol may have none and only its facts. */
   claims: Claim[];
   read?: ReadOn[];
+  /** A symbol's families, the first its own (src/lib/symbols.ts). */
+  family?: SymbolFamily[];
+  /** Its code point, hex, when Unicode has it. */
+  unicode?: string;
+  /** Facts, as label and value. */
+  data?: [string, string][];
+  /** Related symbols and dossiers, by id. */
+  see?: string[];
 }
 
 export const DOSSIERS: Curio[] = [
@@ -247,145 +259,6 @@ export const DOSSIERS: Curio[] = [
       { tag: "folklore", text: "The Goetia, a seventeenth-century grimoire, seals 72 spirits in a vessel of brass and has them freed by the men of Babylon." },
     ],
     read: [{ passage: "TSol.1.1-12" }, { library: "goetia", section: "The Vessel of Brass" }],
-  },
-];
-
-export const SYMBOLS: Curio[] = [
-  {
-    id: "cross",
-    kind: "symbol",
-    title: "The cross and the crucifix",
-    lede: "A Roman gallows that became the sign of a faith. The figure on it came later.",
-    mark: "crucifix",
-    plates: [222, 210],
-    claims: [
-      { tag: "scripture", text: "Paul calls the cross foolishness to the Greeks and a stumbling block to the Jews, and glories in it; hanging on a tree was a curse in the Law.", refs: ["1Cor.1.18", "1Cor.1.23", "Gal.3.13", "Gal.6.14"] },
-      { tag: "tradition", text: "One of the earliest pictures of a crucifixion is a mockery: a graffito from Rome of about 200 showing a man worshipping a crucified figure with a donkey's head." },
-      { tag: "tradition", text: "Christians rarely drew the crucifixion until after Constantine ended crucifixion as a punishment. The doors of Santa Sabina in Rome, about 430, have one of the first." },
-      { tag: "tradition", text: "A crucifix bears the body of Christ. Catholic and Orthodox churches keep it; most Protestants after the Reformation preferred the empty cross." },
-    ],
-  },
-  {
-    id: "chi-rho",
-    kind: "symbol",
-    title: "The Chi-Rho",
-    lede: "X and P, the first two letters of Christ in Greek.",
-    mark: "chi-rho",
-    claims: [
-      { tag: "tradition", text: "Chi and Rho are the first letters of Christos. Lactantius and Eusebius tell how Constantine put the sign on his soldiers' shields before the battle of the Milvian Bridge in 312." },
-      { tag: "tradition", text: "It became the standard of the Christian emperors, the labarum, and is often flanked by Alpha and Omega.", refs: ["Rev.1.8"] },
-    ],
-  },
-  {
-    id: "ichthys",
-    kind: "symbol",
-    title: "The fish",
-    lede: "Ichthys, Greek for fish, read as an acrostic.",
-    mark: "ichthys",
-    claims: [
-      { tag: "tradition", text: "The letters of ichthys stand for Iesous Christos Theou Yios Soter: Jesus Christ, Son of God, Saviour. Augustine records the acrostic in the City of God." },
-      { tag: "scripture", text: "Fish run through the Gospels: fishers of men, five loaves and two fishes, and a net of a hundred and fifty three.", refs: ["Matt.4.19", "John.21.11"] },
-      { tag: "folklore", text: "That persecuted Christians drew half a fish in the dust to know each other is a popular story with no ancient source." },
-      { tag: "modern", text: "The fish on the back of cars spread in the 1970s; the fish with legs and \"Darwin\" in it followed in the 1980s." },
-    ],
-  },
-  {
-    id: "ihs",
-    kind: "symbol",
-    title: "IHS",
-    lede: "The first three letters of Jesus in Greek, IHΣ, written in Latin letters.",
-    mark: "ihs",
-    claims: [
-      { tag: "tradition", text: "Bernardino of Siena preached the holy name in the 1420s with IHS in a sunburst; the Jesuits made it their seal." },
-      { tag: "folklore", text: "\"Iesus Hominum Salvator\" (Jesus, Saviour of men) and \"In Hoc Signo\" are later readings of letters that began as an abbreviation." },
-    ],
-  },
-  {
-    id: "petrine",
-    kind: "symbol",
-    title: "The inverted cross",
-    lede: "Upside down, it is St Peter's cross, and a papal emblem, long before it was anyone's protest.",
-    mark: "petrine",
-    claims: [
-      { tag: "scripture", text: "Jesus tells Peter that when he is old another will stretch out his hands and carry him where he would not, \"signifying by what death he should glorify God\".", refs: ["John.21.18-19"] },
-      { tag: "tradition", text: "The Acts of Peter (about 180 to 190) and Origen, quoted by Eusebius, say Peter asked to be crucified head down, not thinking himself worthy to die as his Lord did." },
-      { tag: "tradition", text: "So the inverted cross stands for Peter, and through him for the papacy, in Catholic art." },
-      { tag: "modern", text: "Its use as an anti-Christian sign comes from horror films and heavy metal from the 1970s on." },
-    ],
-  },
-  {
-    id: "pentagram",
-    kind: "symbol",
-    title: "The pentagram",
-    lede: "A five-pointed star drawn in one line: Pythagorean, Christian and Solomonic before it was ever occult.",
-    mark: "pentagram",
-    claims: [
-      { tag: "tradition", text: "The Pythagoreans used it as a sign of health." },
-      { tag: "tradition", text: "In the Testament of Solomon the ring Michael brings is engraved with a pentalpha, and it binds the demons.", refs: ["TSol.1.5"] },
-      { tag: "tradition", text: "Sir Gawain carries it on his shield in the fourteenth-century poem, for the five wounds of Christ and the five joys of Mary among its fives." },
-    ],
-    read: [{ passage: "TSol.1.5-7" }],
-  },
-  {
-    id: "inverted-pentagram",
-    kind: "symbol",
-    title: "The inverted pentagram",
-    lede: "Read as evil when turned point down by a French occultist in the 1850s, and given a goat's head in 1897.",
-    mark: "pentagram-inverted",
-    claims: [
-      { tag: "modern", text: "Éliphas Lévi, in the 1850s, wrote that the star with one point up is the sign of the spirit ruling the elements, and with two points up a sign of evil, the goat of the sabbath." },
-      { tag: "modern", text: "Stanislas de Guaita drew a goat's head inside the inverted star in 1897; the Church of Satan took it as its sigil in the 1960s." },
-      { tag: "modern", text: "The Order of the Eastern Star, a Masonic body for women founded about 1850, has used a star with its point down all along, with no such meaning." },
-    ],
-  },
-  {
-    id: "hexagram",
-    kind: "symbol",
-    title: "The seal of Solomon",
-    lede: "Two triangles interlaced: in legend the seal on Solomon's ring, later the Star of David.",
-    mark: "hexagram",
-    claims: [
-      { tag: "folklore", text: "Medieval Jewish and Islamic lore gave Solomon a ring that commanded demons, and drew its seal as a hexagram or a pentagram." },
-      { tag: "tradition", text: "The Jewish community of Prague used the hexagram as its emblem by the 1500s; the Zionist Congress took it up in 1897, and Israel's flag in 1948." },
-      { tag: "scripture", text: "The Bible gives Solomon wisdom, not a ring.", refs: ["1Kgs.3.12"] },
-    ],
-  },
-  {
-    id: "eye",
-    kind: "symbol",
-    title: "The eye of Providence",
-    lede: "An eye in a triangle in rays: the Trinity watching, in Christian art long before the dollar bill.",
-    mark: "eye",
-    claims: [
-      { tag: "scripture", text: "The eyes of the Lord are in every place, upon them that fear him.", refs: ["Prov.15.3", "Ps.33.18"] },
-      { tag: "tradition", text: "The eye in a triangle appears in Christian painting from the 1500s (Pontormo's Supper at Emmaus, 1525), the triangle for the Trinity." },
-      { tag: "tradition", text: "It went on the reverse of the Great Seal of the United States in 1782, over an unfinished pyramid." },
-      { tag: "tradition", text: "Masonic use dates from the 1790s. It was not a Masonic symbol in origin: the eye on the seal was proposed in 1776 by the artist Pierre Eugène du Simitière, who was not a Mason." },
-    ],
-  },
-  {
-    id: "square-compasses",
-    kind: "symbol",
-    title: "The square and compasses",
-    lede: "The builder's tools, kept by men who no longer build.",
-    mark: "square-compasses",
-    claims: [
-      { tag: "scripture", text: "Wisdom was there \"when he set a compass upon the face of the depth\".", refs: ["Prov.8.27"] },
-      { tag: "tradition", text: "Operative masons' tools; speculative Freemasons from the 1700s read the square as virtue and the compasses as the bounds of desire." },
-    ],
-    read: [{ library: "pike", section: "I. Apprentice" }],
-  },
-  {
-    id: "baphomet",
-    kind: "symbol",
-    title: "Baphomet",
-    lede: "A name from a medieval trial, and a picture from 1856.",
-    plates: [2051],
-    claims: [
-      { tag: "tradition", text: "At the trials of the Knights Templar (1307 to 1312) some brothers, many under torture, confessed to worshipping a head called Baphomet. The name is most likely an Old French form of Mahomet." },
-      { tag: "modern", text: "The winged, goat-headed figure, a torch between its horns and \"solve\" and \"coagula\" on its arms, was drawn by Éliphas Lévi for his Dogme et rituel de la haute magie, 1856." },
-      { tag: "modern", text: "The Satanic Temple unveiled a bronze Baphomet in 2015." },
-    ],
   },
 ];
 

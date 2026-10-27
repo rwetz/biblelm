@@ -27,7 +27,7 @@ argued over, for fun and for boredom first and research second. It is:
    history lesson at once. Verses are real verses with references.
 2. **Public domain or CC-BY, credited.** Art and texts are recorded with
    their provenance like the rest (art-credits.md, painting-credits.md).
-3. **A history, not a how-to.** The grimoires are shown as the historical
+3. **A reference, not a how-to.** The grimoires are shown as the historical
    texts they are, read and illustrated, with their history; the mode adds no
    instructions of its own.
 4. **Off by default, one click out.** Nothing of the mode shows until it is
@@ -36,16 +36,16 @@ argued over, for fun and for boredom first and research second. It is:
 ## Turning it on
 
 Settings, Sub Rosa (`SubRosaPanel` in `src/features/settings`), or "Go under
-the rose" in the palette. Either opens one acknowledgement (`SubRosaAsk`,
-mounted once in the shell): what follows is history and curiosity, not taught
-as true and not meant to stand against Scripture or the faith. One button, "I
-understand", and it is on. Coming out is the same switch or "Come out from
-under the rose" in the palette, one click and no message.
+the rose" in the palette: one click in, one click out, no message either way.
+
+> **As built (after S5):** the acknowledgement that replaced the rite is gone
+> too. Anyone who turns the mode on has asked for it; the tags on every claim
+> already say where each thing comes from.
 
 > **As built (after S4):** S1 shipped a three-step rite (four joking oaths, a
 > seal pressed and held for 2.4 s, and *Retro me, Satana* typed out) and a
 > toast on the way out. It was fun once and a chore for anyone who switches
-> often, so it became the one acknowledgement above.
+> often, so it became one acknowledgement, since removed (below).
 
 ## What it changes
 
@@ -249,25 +249,73 @@ to Sub Rosa while the mode is on.
   > - Every new part is in the palette under the rose (the bestiary, numbers,
   >   the quiz, the map of hell).
 
+- [x] **S6 The symbol database and the lodge.** Asked for after S5: the
+  sigils dithered, many more symbols (the planetary and alchemical ones
+  first), less teaching and less text, more public-domain art, and much more
+  on the Masons. Researched from Wikipedia first.
+
+  > **As built:**
+  > - **Symbols** (`src/lib/symbols.ts`, moved out of `dossiers.ts`) are 74
+  >   `Curio`s of kind "symbol" with `family`, `data` (label and value rows),
+  >   `unicode` and `see`. A symbol may have no claims, only facts; the
+  >   older eleven keep theirs. Facts are kept to what the Wikipedia articles
+  >   state (the alchemical symbol, planet symbols, classical planet,
+  >   astrological symbols, each occult symbol's own article, Freemasonry,
+  >   the Scottish and York Rites, Royal Arch, lodge officers, Boaz and
+  >   Jachin, tracing boards). The Masonic monitors' standard readings of the
+  >   working tools (the gauge's three eights, the trowel's cement) fill what
+  >   those articles leave out.
+  > - **Drawings** are in `src/art/sigils.ts`, merged into `ORNAMENTS`. Each
+  >   is drawn in ink densities like the other ornaments; `ornamentSrc(name,
+  >   dark, glow)` sets it in a radial halo of ink so the dither shows as a
+  >   field of dots round it (`<Ornament glow>`). The zodiac wheel uses the
+  >   system's symbol font for its twelve glyphs, forced to text with U+FE0E;
+  >   everything else is paths.
+  > - **The seals** (`SealMark`, Bestiary.tsx) are composited on a canvas
+  >   into the scheme's ink and paper with the same halo, then dithered with
+  >   `Dither`, in place of the CSS mask. Baphomet's plate is dithered on the
+  >   symbols shelf too.
+  > - **The lodge** is a cabinet shelf (`Lodge.tsx`, `src/lib/lodge.ts`):
+  >   degrees by rite and body, officers, numbers, emblems, tracing boards
+  >   and charts, dates. The Scottish Rite's bodies are the Southern
+  >   Jurisdiction's (Lodge of Perfection 4 to 14, Rose Croix 15 to 18,
+  >   Kadosh 19 to 30, Consistory 31 and 32). Jewels and stations are the
+  >   English and American usage; where they differ the table says which.
+  > - **Art**: plates 2060 to 2075 and thirteen paintings in `curios.mjs`,
+  >   all public domain on Commons: Bowring's three tracing boards (1819) and
+  >   an anonymous set (1832, Museum of Freemasonry), four Library of
+  >   Congress charts and a Fellow Craft print, Splendor Solis's seven
+  >   planetary flasks (each on its planet's sheet), Maier's emblem XXI,
+  >   Khunrath (laboratory, cosmic rose, the Four Three Two One, the Emerald
+  >   Tablet), Dee's Monas title page, Fludd's frontispiece and Anima Mundi,
+  >   and the Mutus Liber's first plate. Two become heroes: the laboratory
+  >   (the symbols) and the 1846 chart (the lodge). John Harris's boards are
+  >   on Commons only at 292 px and were left out; the Wellcome scans are
+  >   CC BY and were left out.
+  > - **Text cut**: the acknowledgement, the "Not Scripture" kickers over the
+  >   library, bestiary and omen, the cabinet's subtitle and footers. The
+  >   Lab's generated spirits keep a label (principle 1 of the app).
+
 ## Handoff
 
 Where things stand for whoever picks this up next (written 26 October 2026,
 after S5).
 
 **State.** S1 to S5 are done on the branch `feat/sub-rosa`, pushed but not
-merged or opened as a PR. The rite of S1 became one acknowledgement. Typecheck
-is clean, `pnpm test` passes (134 tests, none skipped once the data is built)
+merged or opened as a PR. The rite of S1 became one acknowledgement, and after
+S6 none. Typecheck is clean, `pnpm test` passes (137 tests, none skipped once the data is built)
 and `python -m pytest python` passes. Nothing in Rust changed.
 
 **Where the code is.**
 
 | Part | Files |
 |---|---|
-| The switch, the acknowledgement, the theme | `src/features/settings/SubRosaPanel.tsx`, `src/app/subrosa.ts`, `subRosa` in `src/app/theme.ts`, `setSubRosa` and `beforeSubRosa` in `src/store/study.ts` |
+| The switch and the theme | `src/features/settings/SubRosaPanel.tsx`, `src/app/subrosa.ts`, `subRosa` in `src/app/theme.ts`, `setSubRosa` and `beforeSubRosa` in `src/store/study.ts` |
 | The art | `scripts/art/curios.mjs` (writes `public/art/curios/`), `ROSE_PLATES`, `ROSE_PAGE_PAINTINGS`, `roseHero` in `src/lib/art.ts`, `useArt` in `src/art/Art.tsx`, credits in [curios-credits.md](curios-credits.md) |
 | The shelf texts | `scripts/data/pseudepigrapha.mjs`, called from `build-bible.mjs`; books in `src/lib/data/books.json`; links in `src/lib/companions.ts` |
 | The library | `scripts/data/library.mjs` (writes `public/data/library*`), `src/lib/library.ts` |
-| Dossiers and symbols | `src/lib/dossiers.ts`, ornaments in `src/art/ornaments.ts` |
+| Dossiers and symbols | `src/lib/dossiers.ts`, `src/lib/symbols.ts`; drawings in `src/art/sigils.ts` and `src/art/ornaments.ts`; `Symbols.tsx`, `Claims.tsx` |
+| The lodge | `src/lib/lodge.ts`, `Lodge.tsx` |
 | Bestiary, numbers, quiz | `src/lib/bestiary.ts`, `src/lib/gematria.ts`, `src/lib/quiz.ts`; `Bestiary.tsx`, `Numbers.tsx`, `Quiz.tsx` in `src/features/cabinet`; seals in `SEALS` in `scripts/art/curios.mjs` |
 | The omen and the map of hell | `src/lib/omen.ts`, `src/features/home/Omen.tsx`; `src/lib/hell.ts`, `src/features/atlas/HellMap.tsx` |
 | The Lab's spirits | `goetia` in `PRESETS` and `goetia_spirits` in `python/biblelm/corpus.py`; `GOETIA_CORPUS` in `src/lib/backend.ts`; labels in `InferenceView.tsx` |
@@ -309,7 +357,7 @@ localStorage.setItem(k, JSON.stringify(s)); location.reload();
 Set `subRosa` back to false and `shelves` to `beforeSubRosa.shelves` to come
 out. Under the rose: the cabinet is in the sidebar after Notebooks, Tobit 3
 shows Asmodeus beside verse 8, Testament of Solomon 1:24 links to Tobit 3:8,
-every dossier is in the palette, the cabinet has seven shelves, and the Atlas
+every dossier is in the palette, the cabinet has eight shelves, and the Atlas
 has Hell. A hidden browser pane throttles animation, so a blank screenshot is
 not a bug.
 

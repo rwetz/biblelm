@@ -1,28 +1,27 @@
-// Sub Rosa, the cabinet: shown only under the rose. Its shelves hold the
-// library (the Goetia, Dionysius, Dante, Milton and the Masons: books read
-// beside the Bible, never as it), the dossiers and the symbols (each claim
-// tagged Scripture, tradition, folklore or modern invention, src/lib/dossiers.ts)
-// the bestiary (the Goetia's spirits and the Testament of Solomon's demons,
-// Bestiary.tsx), numbers (gematria and the Bible codes, Numbers.tsx), the quiz (Quiz.tsx) and the books of the Pseudepigrapha shelf, which open in the reader. A
-// library text reads here, section by section, in its own pages, so nothing
-// of it is ever set as Scripture. See docs/SUBROSA.md.
+// Sub Rosa, the cabinet: shown only under the rose. Its shelves: the library
+// (the Goetia, Dionysius, Dante, Milton and the Masons, read beside the Bible,
+// never as it), the dossiers (tagged claims, src/lib/dossiers.ts), the symbols
+// (a database, Symbols.tsx), the lodge (Freemasonry, Lodge.tsx), the bestiary
+// (Bestiary.tsx), numbers (Numbers.tsx), the quiz (Quiz.tsx) and the books of
+// the Pseudepigrapha shelf, which open in the reader. See docs/SUBROSA.md.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Badge, Button, cn, Icon, Spinner } from "@nexis/design";
-import { CornerPlate, DitherHero, Engraving, Fleuron, Ornament, useHeroes, usePagePlate, usePaintings, usePlates } from "@/art/Art";
+import { Button, cn, Icon, Spinner } from "@nexis/design";
+import { CornerPlate, DitherHero, Fleuron, Ornament, useHeroes, usePagePlate } from "@/art/Art";
 import { PageMark } from "@/art/SidebarArt";
 import { Sections } from "@/app/Sections";
-import { PAGE_PLATES, paintingCredit, paintingUrl, plateCredit } from "@/lib/art";
-import { BOOKS, bookName, formatRef, type Ref } from "@/lib/canon";
-import { loadTranslation, type Translation } from "@/lib/bible";
-import { curio, DOSSIERS, SYMBOLS, TAGS, type ClaimTag, type Curio, type ReadOn } from "@/lib/dossiers";
+import { PAGE_PLATES } from "@/lib/art";
+import { BOOKS, bookName } from "@/lib/canon";
+import { curio, DOSSIERS, SYMBOLS, type Curio } from "@/lib/dossiers";
 import { byline, headingOf, loadLibrary, loadLibraryText, type LibraryEntry, type LibraryText } from "@/lib/library";
-import { studyRef } from "@/lib/studies";
 import { useStudy, type CabinetPlace, type CabinetShelf } from "@/store/study";
 import { DataMissing } from "@/features/read/ReadView";
 import { BestiaryShelf, SpiritView } from "./Bestiary";
+import { ClaimList, Pictures, ReadOnList, TagCounts, TagKey } from "./Claims";
+import { LodgeShelf } from "./Lodge";
 import { NumbersShelf } from "./Numbers";
 import { QuizShelf } from "./Quiz";
+import { SymbolsShelf, SymbolView } from "./Symbols";
 
 /** The books beside the Bible, in the reader: the Pseudepigrapha shelf, with a line on each. */
 const BESIDE: Record<string, string> = {
@@ -32,6 +31,9 @@ const BESIDE: Record<string, string> = {
   GosNic: "Pilate's trial, then the Harrowing of Hell: Satan and Hell argue as the gates break.",
   ApPaul: "Paul's third heaven, and the hell that Dante knew of.",
 };
+
+/** A shelf's own hero, where it has one; Callot's Saint Anthony otherwise. */
+const SHELF_HERO: Partial<Record<CabinetShelf, string>> = { lodge: "hero-masonic-chart-1846", symbols: "hero-khunrath-laboratory" };
 
 export function CabinetView() {
   const place = useStudy((s) => s.cabinet);
@@ -44,32 +46,59 @@ export function CabinetView() {
   if (error) return <DataMissing message={error} />;
   if (!library) return <div className="grid flex-1 place-items-center"><Spinner /></div>;
   const shelf = place.shelf ?? "library";
-  // Every move keeps the shelf, so "back" lands where you were.
-  const to = (p: Partial<CabinetPlace>) => openCabinet({ text: null, section: 0, shelf, curio: null, spirit: null, ...p });
+  // Every move keeps the shelf and the symbol filter, so "back" lands where you were.
+  const to = (p: Partial<CabinetPlace>) => openCabinet({ text: null, section: 0, shelf, curio: null, spirit: null, family: place.family ?? null, ...p });
   const entry = place.text ? library.find((t) => t.id === place.text) : undefined;
   if (entry) return <LibraryReader key={entry.id} entry={entry} section={Math.min(place.section, entry.sections.length - 1)} onPlace={(section) => to({ text: entry.id, section, curio: place.curio, spirit: place.spirit })} onClose={() => to({ curio: place.curio, spirit: place.spirit })} />;
   if (place.spirit) return <SpiritView key={place.spirit} n={place.spirit} onSpirit={(n) => to({ spirit: n })} onClose={() => to({})} onRead={(text, section) => to({ text, section, spirit: place.spirit })} />;
   const open = place.curio ? curio(place.curio) : undefined;
-  if (open) return <CurioView key={open.id} c={open} library={library} onClose={() => to({})} onRead={(text, section) => to({ text, section, curio: open.id })} />;
-  return <Cabinet library={library} shelf={shelf} onShelf={(s) => to({ shelf: s })} onOpen={(text) => to({ text })} onCurio={(id) => to({ curio: id })} onSpirit={(n) => to({ spirit: n })} />;
+  const onRead = (text: string, section: number) => to({ text, section, curio: open?.id });
+  if (open?.kind === "symbol")
+    return <SymbolView key={open.id} c={open} library={library} back={shelf === "lodge" ? "The lodge" : "Symbols"} onClose={() => to({})} onOpen={(id) => to({ curio: id })} onRead={onRead} />;
+  if (open) return <CurioView key={open.id} c={open} library={library} onClose={() => to({})} onRead={onRead} />;
+  return (
+    <Cabinet
+      library={library}
+      shelf={shelf}
+      place={place}
+      onShelf={(s) => to({ shelf: s })}
+      onOpen={(text) => to({ text })}
+      onCurio={(id) => to({ curio: id })}
+      onSpirit={(n) => to({ spirit: n })}
+      onFamily={(family) => to({ family })}
+    />
+  );
 }
 
-function Cabinet({ library, shelf, onShelf, onOpen, onCurio, onSpirit }: { library: LibraryEntry[]; shelf: CabinetShelf; onShelf: (s: CabinetShelf) => void; onOpen: (id: string) => void; onCurio: (id: string) => void; onSpirit: (n: number) => void }) {
+function Cabinet({
+  library,
+  shelf,
+  place,
+  onShelf,
+  onOpen,
+  onCurio,
+  onSpirit,
+  onFamily,
+}: {
+  library: LibraryEntry[];
+  shelf: CabinetShelf;
+  place: CabinetPlace;
+  onShelf: (s: CabinetShelf) => void;
+  onOpen: (id: string) => void;
+  onCurio: (id: string) => void;
+  onSpirit: (n: number) => void;
+  onFamily: (f: CabinetPlace["family"]) => void;
+}) {
   const heroes = useHeroes();
-  const hero = heroes.find((h) => h.id === "hero-callot-anthony");
+  const hero = heroes.find((h) => h.id === SHELF_HERO[shelf]) ?? heroes.find((h) => h.id === "hero-callot-anthony");
   const plate = usePagePlate(PAGE_PLATES.cabinet);
   const read = useStudy((s) => s.read);
   const beside = BOOKS.filter((b) => b.shelf === "pseudepigrapha");
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <DitherHero hero={hero} height="clamp(10rem, 27vh, 15rem)" clearLeft fadeFrom={36} caption={false}>
+      <DitherHero hero={hero} height="clamp(9rem, 24vh, 13rem)" clearLeft fadeFrom={36} caption={false}>
         <div className="mx-auto flex w-full max-w-6xl flex-1 items-end gap-4 px-(--gutter) pb-4">
-          <div>
-            <h1 className="flex items-center gap-3 font-blackletter text-5xl"><PageMark page="cabinet" />Sub Rosa</h1>
-            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-              The cabinet: what the curious have read beside the Bible. None of it is Scripture; all of it was written about Scripture, or in its name.
-            </p>
-          </div>
+          <h1 className="flex items-center gap-3 font-blackletter text-5xl"><PageMark page="cabinet" />Sub Rosa</h1>
         </div>
       </DitherHero>
       <div className="mx-auto w-full max-w-6xl px-(--gutter) pt-2">
@@ -78,13 +107,14 @@ function Cabinet({ library, shelf, onShelf, onOpen, onCurio, onSpirit }: { libra
           value={shelf}
           onChange={onShelf}
           sections={[
-            { id: "library", name: "Library", gist: `${library.length} books read beside the Bible`, mark: "quill" },
-            { id: "dossiers", name: "Dossiers", gist: `${DOSSIERS.length} questions, sorted`, mark: "lamp" },
-            { id: "symbols", name: "Symbols", gist: `${SYMBOLS.length} signs and their history`, mark: "eye" },
-            { id: "bestiary", name: "Bestiary", gist: "the 72 spirits and their seals", mark: "hexagram" },
+            { id: "library", name: "Library", gist: `${library.length} books`, mark: "quill" },
+            { id: "dossiers", name: "Dossiers", gist: `${DOSSIERS.length} questions`, mark: "lamp" },
+            { id: "symbols", name: "Symbols", gist: `${SYMBOLS.length} signs`, mark: "eye" },
+            { id: "lodge", name: "The lodge", gist: "degrees, officers, numbers", mark: "square-compasses" },
+            { id: "bestiary", name: "Bestiary", gist: "72 spirits and their seals", mark: "hexagram" },
             { id: "numbers", name: "Numbers", gist: "gematria and the Bible codes", mark: "pentagram" },
-            { id: "quiz", name: "Scripture or myth?", gist: "what the Bible does not say", mark: "crucifix" },
-            { id: "beside", name: "Beyond the canon", gist: `${beside.length} books on the Pseudepigrapha shelf`, mark: "seraph" },
+            { id: "quiz", name: "Scripture or myth?", gist: "a quiz", mark: "crucifix" },
+            { id: "beside", name: "Beyond the canon", gist: `${beside.length} books`, mark: "seraph" },
           ]}
         />
       </div>
@@ -95,6 +125,10 @@ function Cabinet({ library, shelf, onShelf, onOpen, onCurio, onSpirit }: { libra
           <NumbersShelf />
         ) : shelf === "quiz" ? (
           <QuizShelf />
+        ) : shelf === "lodge" ? (
+          <LodgeShelf onSymbol={onCurio} />
+        ) : shelf === "symbols" ? (
+          <SymbolsShelf family={place.family ?? null} onFamily={onFamily} onOpen={onCurio} />
         ) : shelf === "dossiers" ? (
           <>
             <TagKey />
@@ -110,20 +144,6 @@ function Cabinet({ library, shelf, onShelf, onOpen, onCurio, onSpirit }: { libra
               ))}
             </ul>
           </>
-        ) : shelf === "symbols" ? (
-          <ul className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-x-6 gap-y-8">
-            {SYMBOLS.map((c) => (
-              <li key={c.id}>
-                <button type="button" onClick={() => onCurio(c.id)} className="group block w-full text-left">
-                  <span className="grid h-32 place-items-center">
-                    <SymbolArt c={c} className="h-28" />
-                  </span>
-                  <span className="mt-2 block font-garamond text-xl leading-tight group-hover:underline">{c.title}</span>
-                  <span className="mt-1 block font-garamond text-[14px] leading-snug text-muted-foreground">{c.lede}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
         ) : shelf === "library" ? (
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-x-8 gap-y-7">
             {library.map((t) => (
@@ -141,21 +161,16 @@ function Cabinet({ library, shelf, onShelf, onOpen, onCurio, onSpirit }: { libra
             ))}
           </ul>
         ) : (
-          <>
-            <p className="mb-5 max-w-2xl font-garamond text-[15px] text-muted-foreground">
-              These read in the Bible itself, on the Pseudepigrapha shelf, with a badge on every verse. Under the rose the shelf is on.
-            </p>
-            <ul className="grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-x-8 gap-y-6">
-              {beside.map((b) => (
-                <li key={b.osis}>
-                  <button type="button" onClick={() => read({ book: b.osis, chapter: 1, verse: 0 })} className="group block w-full text-left">
-                    <span className="block font-blackletter text-2xl leading-tight group-hover:underline">{bookName(b.osis)}</span>
-                    <span className="mt-1 block font-garamond text-[15px] leading-snug text-foreground/85">{BESIDE[b.osis]}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
+          <ul className="grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-x-8 gap-y-6">
+            {beside.map((b) => (
+              <li key={b.osis}>
+                <button type="button" onClick={() => read({ book: b.osis, chapter: 1, verse: 0 })} className="group block w-full text-left">
+                  <span className="block font-blackletter text-2xl leading-tight group-hover:underline">{bookName(b.osis)}</span>
+                  <span className="mt-1 block font-garamond text-[15px] leading-snug text-foreground/85">{BESIDE[b.osis]}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
       <CornerPlate plate={plate} />
@@ -163,175 +178,38 @@ function Cabinet({ library, shelf, onShelf, onOpen, onCurio, onSpirit }: { libra
   );
 }
 
-/** What the four tags mean, set before the dossiers. */
-function TagKey() {
-  return (
-    <p className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-      {(Object.keys(TAGS) as ClaimTag[]).map((t) => (
-        <span key={t} className="flex items-center gap-1.5">
-          <Tag tag={t} /> {TAGS[t].gist}
-        </span>
-      ))}
-    </p>
-  );
-}
-
-const TAG_VARIANT: Record<ClaimTag, "brand" | "secondary" | "outline"> = { scripture: "brand", tradition: "secondary", folklore: "outline", modern: "outline" };
-
-function Tag({ tag }: { tag: ClaimTag }) {
-  return (
-    <Badge variant={TAG_VARIANT[tag]} className={cn("shrink-0", tag === "modern" && "border-dashed")}>
-      {TAGS[tag].label}
-    </Badge>
-  );
-}
-
-/** How a dossier's claims divide among the tags, as a line of small counts. */
-function TagCounts({ c }: { c: Curio }) {
-  const n = (t: ClaimTag) => c.claims.filter((x) => x.tag === t).length;
-  return (
-    <span className="mt-1.5 block text-[11px] text-muted-foreground">
-      {(Object.keys(TAGS) as ClaimTag[])
-        .filter((t) => n(t))
-        .map((t) => `${n(t)} ${TAGS[t].label.toLowerCase()}`)
-        .join(", ")}
-    </span>
-  );
-}
-
-/** A symbol drawn as an ornament, or its plate where it is a picture (Baphomet). */
-function SymbolArt({ c, className }: { c: Curio; className?: string }) {
-  const plates = usePlates();
-  if (c.mark) return <Ornament name={c.mark} label={c.title} className={className} />;
-  const plate = plates.find((p) => p.n === c.plates?.[0]);
-  return plate ? <Engraving plate={plate} size="thumb" className={cn("w-auto object-contain", className)} /> : null;
-}
-
-/**
- * A dossier or a symbol: its claims in order, each under its tag with the
- * verses that bear it out quoted from your translation, then the art and
- * where to read on.
- */
+/** A dossier: its claims in order under their tags, then the art and where to read on. */
 function CurioView({ c, library, onClose, onRead }: { c: Curio; library: LibraryEntry[]; onClose: () => void; onRead: (text: string, section: number) => void }) {
-  const translation = useStudy((s) => s.translation);
-  const read = useStudy((s) => s.read);
-  const openLook = useStudy((s) => s.openLook);
-  const [t, setT] = useState<Translation | null>(null);
-  const plates = usePlates();
-  const paintings = usePaintings();
-  useEffect(() => {
-    let live = true;
-    loadTranslation(translation).then((x) => live && setT(x), () => {});
-    return () => {
-      live = false;
-    };
-  }, [translation]);
-  const art = [
-    ...(c.plates ?? []).flatMap((n) => plates.filter((p) => p.n === n).map((p) => ({ key: p.id, kind: "plate" as const, id: p.id, title: p.title, by: plateCredit(p), plate: p }))),
-    ...(c.paintings ?? []).flatMap((id) => paintings.filter((p) => p.id === id).map((p) => ({ key: p.id, kind: "painting" as const, id: p.id, title: p.title, by: paintingCredit(p), src: paintingUrl(p.thumb) }))),
-  ];
-  const back = c.kind === "symbol" ? "Symbols" : "Dossiers";
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <article className="mx-auto max-w-[44rem] px-(--gutter) pb-24 pt-(--page-top)">
         <Button variant="ghost" size="sm" onClick={onClose} className="mb-4">
-          <Icon name="chevron-left" /> {back}
+          <Icon name="chevron-left" /> Dossiers
         </Button>
         <header className="mb-8 text-center">
-          {c.kind === "symbol" && <SymbolArt c={c} className="mx-auto mb-4 h-36" />}
-          {c.kind === "dossier" && c.mark && <Ornament name={c.mark} className="mx-auto mb-3 h-16 text-muted-foreground" />}
+          {c.mark && <Ornament name={c.mark} glow algo="floyd" dot={2} className="mx-auto mb-3 h-24" />}
           <h1 className="font-blackletter text-5xl leading-tight">{c.title}</h1>
           <p className="mx-auto mt-3 max-w-xl font-garamond text-lg italic text-muted-foreground">{c.lede}</p>
         </header>
         <TagKey />
-        <ol className="mt-6 space-y-6">
-          {c.claims.map((x, i) => (
-            <li key={i} className="space-y-2">
-              <div className="flex items-start gap-3">
-                <Tag tag={x.tag} />
-                <p className="font-garamond text-[17px] leading-relaxed">{x.text}</p>
-              </div>
-              {t && x.refs && (
-                <div className="ml-4 space-y-2 border-l border-border pl-4">
-                  {x.refs.map((r) => {
-                    const ref = studyRef(r);
-                    return ref ? <Quote key={r} r={ref} t={t} onOpen={() => read(ref, { select: true })} /> : null;
-                  })}
-                </div>
-              )}
-            </li>
-          ))}
-        </ol>
-        {art.length > 0 && (
+        <ClaimList claims={c.claims} className="mt-6" />
+        {!!(c.plates?.length || c.paintings?.length) && (
           <section className="mt-12">
             <h2 className="font-garamond text-xl">In the pictures</h2>
-            <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-5">
-              {art.map((a) => (
-                <button key={a.key} type="button" onClick={() => openLook({ kind: a.kind, id: a.id })} className="group text-left">
-                  {a.kind === "plate" ? (
-                    <Engraving plate={a.plate} size="thumb" className="aspect-[4/5] w-full rounded-sm object-cover" />
-                  ) : (
-                    <img src={a.src} alt="" loading="lazy" decoding="async" className="aspect-[4/5] w-full rounded-sm object-cover" />
-                  )}
-                  <span className="mt-1 block font-garamond text-sm leading-tight group-hover:underline">{a.title}</span>
-                  <span className="text-xs text-muted-foreground">{a.by}</span>
-                </button>
-              ))}
-            </div>
+            <Pictures plates={c.plates} paintings={c.paintings} className="mt-3" />
           </section>
         )}
         {c.read && c.read.length > 0 && (
           <section className="mt-10">
             <h2 className="font-garamond text-xl">Read on</h2>
-            <ul className="mt-2 space-y-1.5">
-              {c.read.map((r, i) => (
-                <li key={i}>
-                  <ReadOnLink r={r} library={library} onRead={onRead} onPassage={(ref) => read(ref)} />
-                </li>
-              ))}
-            </ul>
+            <div className="mt-2">
+              <ReadOnList read={c.read} library={library} onRead={onRead} />
+            </div>
           </section>
         )}
         <Fleuron />
-        <p className="text-center text-xs text-muted-foreground">A study note, written by hand. The verses are quoted as your translation prints them.</p>
       </article>
     </div>
-  );
-}
-
-function ReadOnLink({ r, library, onRead, onPassage }: { r: ReadOn; library: LibraryEntry[]; onRead: (text: string, section: number) => void; onPassage: (ref: Ref) => void }) {
-  if ("passage" in r) {
-    const ref = studyRef(r.passage);
-    if (!ref) return null;
-    return (
-      <button type="button" onClick={() => onPassage(ref)} className="font-garamond text-[16px] text-brand hover:underline">
-        {formatRef(ref)}
-      </button>
-    );
-  }
-  const text = library.find((x) => x.id === r.library);
-  const section = text?.sections.findIndex((s) => s.title === r.section) ?? -1;
-  if (!text || section < 0) return null;
-  return (
-    <button type="button" onClick={() => onRead(text.id, section)} className="font-garamond text-[16px] hover:underline">
-      <span className="italic">{text.title}</span>, {r.section}
-    </button>
-  );
-}
-
-function Quote({ r, t, onOpen }: { r: Ref; t: Translation; onOpen: () => void }) {
-  return (
-    <blockquote>
-      <button type="button" onClick={onOpen} className="text-xs font-semibold text-brand hover:underline">{formatRef(r)}</button>
-      <p className="scripture !text-[16px] !leading-7">
-        {t.range(r).map((v) => (
-          <span key={v.verse}>
-            {r.verseEnd && <sup className="vnum">{v.verse}</sup>}
-            {v.text}{" "}
-          </span>
-        ))}
-      </p>
-    </blockquote>
   );
 }
 
@@ -381,8 +259,7 @@ function LibraryReader({ entry, section, onPlace, onClose }: { entry: LibraryEnt
             <Icon name="chevron-left" /> The cabinet
           </Button>
           <header className="mb-8 text-center">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Not Scripture</p>
-            <h1 className="mt-2 font-blackletter text-5xl leading-tight">{entry.title}</h1>
+            <h1 className="font-blackletter text-5xl leading-tight">{entry.title}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{byline(entry)}</p>
             <Ornament name="vine" className="mx-auto my-5 w-full max-w-[22rem]" />
             <h2 className="font-garamond text-2xl">{entry.sections[section].title}</h2>

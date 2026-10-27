@@ -708,6 +708,7 @@ export function Ornament({
   label,
   level,
   reveal,
+  glow = false,
   className,
 }: {
   name: OrnamentName;
@@ -717,11 +718,13 @@ export function Ornament({
   /** How much of it is resolved, 0 to 1 (see Dither). */
   level?: number;
   reveal?: boolean;
+  /** Stand it in a halo of dots: the cabinet's symbols. */
+  glow?: boolean;
   className?: string;
 }) {
   const dark = useTheme().resolvedMode === "dark";
   const off = useStudy((s) => s.illustrations === "off" || !s.ornaments);
-  const src = useMemo(() => ornamentSrc(name, dark), [name, dark]);
+  const src = useMemo(() => ornamentSrc(name, dark, glow), [name, dark, glow]);
   if (off) return null;
   const o = ORNAMENTS[name];
   return <Dither src={src} algo={algo} dot={dot} focusY={50} label={label} level={level} reveal={reveal} className={cn("shrink-0 text-foreground", className)} style={{ aspectRatio: `${o.w} / ${o.h}` }} />;

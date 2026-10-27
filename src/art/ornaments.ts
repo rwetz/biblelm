@@ -3,6 +3,9 @@
 // the plates. Each ornament is drawn in ink densities (0 paper, 1 solid ink);
 // `ornamentSrc` turns those into grays for the scheme: dark ink on white by
 // day, light on black by night, where Dither draws the lit dots instead.
+// The cabinet's symbols are drawn in sigils.ts and merged in here.
+
+import { SIGILS, type SigilName } from "./sigils";
 
 export type OrnamentName =
   | "fleuron"
@@ -31,7 +34,8 @@ export type OrnamentName =
   | "pentagram-inverted"
   | "hexagram"
   | "eye"
-  | "square-compasses";
+  | "square-compasses"
+  | SigilName;
 
 /** Ink density 0..1 as a gray for this scheme. */
 type Ink = (density: number) => string;
@@ -109,6 +113,7 @@ const star = (k: Ink, down = false) => {
 };
 
 const DRAWINGS: Record<OrnamentName, Drawing> = {
+  ...SIGILS,
   // A printer's flower: a bud between two curling leaves, between rules of dots.
   fleuron: {
     w: 120,
@@ -605,11 +610,17 @@ export const ORNAMENTS: Readonly<Record<OrnamentName, Pick<Drawing, "w" | "h" | 
 /** The emblem of each Gospel. */
 export const EVANGELIST: Record<string, OrnamentName> = { Matt: "angel", Mark: "lion", Luke: "ox", John: "eagle" };
 
+/** A glow of ink behind a symbol, densest at its heart, so the dither shows as a field of dots around it. */
+const halo = (k: Ink, w: number, h: number) =>
+  `<defs><radialGradient id="halo" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="${k(0.42)}"/><stop offset="0.6" stop-color="${k(0.16)}"/><stop offset="1" stop-color="${k(0)}"/></radialGradient></defs>` +
+  `<ellipse cx="${w / 2}" cy="${h / 2}" rx="${w * 0.6}" ry="${h * 0.6}" fill="url(#halo)"/>`;
+
 /**
  * The ornament as an SVG data URL in grays for the scheme. Rasterised large
  * (four times its drawing units) so Dither samples it smoothly at any size.
+ * With `glow` it stands in a halo of ink (the cabinet's symbols and seals).
  */
-export function ornamentSrc(name: OrnamentName, dark: boolean): string {
+export function ornamentSrc(name: OrnamentName, dark: boolean, glow = false): string {
   const d = DRAWINGS[name];
   const k: Ink = (density) => {
     const x = Math.max(0, Math.min(1, density));
@@ -618,6 +629,6 @@ export function ornamentSrc(name: OrnamentName, dark: boolean): string {
   };
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${d.w} ${d.h}" width="${d.w * 4}" height="${d.h * 4}">` +
-    `<rect width="${d.w}" height="${d.h}" fill="${k(0)}"/>${d.draw(k)}</svg>`;
+    `<rect width="${d.w}" height="${d.h}" fill="${k(0)}"/>${glow ? halo(k, d.w, d.h) : ""}${d.draw(k)}</svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }

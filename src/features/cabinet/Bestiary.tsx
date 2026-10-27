@@ -1,12 +1,13 @@
 // The cabinet's bestiary (src/lib/bestiary.ts): the Goetia's seventy-two
 // spirits by seal, rank and legions, and the Testament of Solomon's demons
 // that came before them. A spirit opens on its seal and the Goetia's own words
-// for it, headed "Not Scripture"; a demon of the Testament opens in the reader,
+// for it; a demon of the Testament opens in the reader,
 // where it stands on the Pseudepigrapha shelf.
 
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, cn, Icon, Spinner } from "@nexis/design";
-import { Fleuron } from "@/art/Art";
+import { Badge, Button, cn, Icon, Spinner, useTheme } from "@nexis/design";
+import { Dither, Fleuron } from "@/art/Art";
+import { loadImage } from "@/art/dither";
 import { formatRef } from "@/lib/canon";
 import { loadBestiary, loadSeals, rankLine, RANKS, sealUrl, SOLOMON_DEMONS, solomonDemonFor, type Rank, type Seal, type Spirit } from "@/lib/bestiary";
 import { loadLibraryText, type LibraryText } from "@/lib/library";
@@ -26,18 +27,61 @@ function useBestiary() {
   return { spirits, seals, error };
 }
 
-/** A seal drawn in the page's ink: the PNG is a mask, so it follows the theme and never takes the accent. */
-export function SealMark({ seal, k = 0, label, className }: { seal?: Seal; k?: number; label: string; className?: string }) {
-  if (!seal) return <span aria-hidden className={cn("block rounded-full border border-dashed border-border", className)} />;
-  const url = `url("${sealUrl(seal, k)}")`;
-  return (
-    <span
-      role="img"
-      aria-label={label}
-      className={cn("block bg-foreground/85", className)}
-      style={{ maskImage: url, WebkitMaskImage: url, maskSize: "contain", WebkitMaskSize: "contain", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat", maskPosition: "center", WebkitMaskPosition: "center" }}
-    />
-  );
+// A seal's ink on paper of the scheme, in a halo of ink, for Dither: dark ink
+// on white by day, light on black by night (as ornamentSrc does).
+const sealSrcs = new Map<string, Promise<string>>();
+function sealSrc(url: string, dark: boolean): Promise<string> {
+  const key = `${url}|${dark}`;
+  let p = sealSrcs.get(key);
+  if (!p) {
+    p = loadImage(url).then((img) => {
+      const w = img.naturalWidth, h = img.naturalHeight;
+      const g = (d: number) => {
+        const v = Math.round(255 * (dark ? d : 1 - d));
+        return `rgb(${v},${v},${v})`;
+      };
+      const ink = document.createElement("canvas");
+      ink.width = w;
+      ink.height = h;
+      const ic = ink.getContext("2d")!;
+      ic.drawImage(img, 0, 0);
+      ic.globalCompositeOperation = "source-in";
+      ic.fillStyle = g(1);
+      ic.fillRect(0, 0, w, h);
+      const cv = document.createElement("canvas");
+      cv.width = w;
+      cv.height = h;
+      const ctx = cv.getContext("2d")!;
+      ctx.fillStyle = g(0);
+      ctx.fillRect(0, 0, w, h);
+      const halo = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w * 0.6);
+      halo.addColorStop(0, g(0.42));
+      halo.addColorStop(0.6, g(0.16));
+      halo.addColorStop(1, g(0));
+      ctx.fillStyle = halo;
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(ink, 0, 0);
+      return cv.toDataURL("image/png");
+    });
+    sealSrcs.set(key, p);
+  }
+  return p;
+}
+
+/** A seal dithered live in the page's ink, in a halo of dots; never the accent. */
+export function SealMark({ seal, k = 0, label, dot = 1.5, className }: { seal?: Seal; k?: number; label: string; dot?: number; className?: string }) {
+  const dark = useTheme().resolvedMode === "dark";
+  const url = seal ? sealUrl(seal, k) : null;
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    if (url) sealSrc(url, dark).then((s) => live && setSrc(s), () => {});
+    return () => {
+      live = false;
+    };
+  }, [url, dark]);
+  if (!seal || !src) return <span aria-hidden className={cn("block", !seal && "rounded-full border border-dashed border-border", className)} />;
+  return <Dither src={src} algo="floyd" dot={dot} focusY={50} label={label} className={cn("aspect-square text-foreground", className)} />;
 }
 
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
@@ -63,11 +107,7 @@ export function BestiaryShelf({ onSpirit }: { onSpirit: (n: number) => void }) {
   const shown = rank ? spirits.filter((s) => s.ranks.includes(rank)) : spirits;
   return (
     <>
-      <p className="max-w-2xl font-garamond text-[15px] text-muted-foreground">
-        The seventy-two spirits of the Goetia, each with the seal the book draws for it, its rank and its legions, as the book gives them. A catalogue, not a
-        ceremony: the book's rite is left in the book.
-      </p>
-      <div className="mt-4 flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-1.5">
         <Chip on={!rank} onClick={() => setRank(null)}>All {spirits.length}</Chip>
         {RANKS.map(({ rank: r, plural }) => {
           const n = spirits.filter((s) => s.ranks.includes(r)).length;
@@ -93,8 +133,7 @@ export function BestiaryShelf({ onSpirit }: { onSpirit: (n: number) => void }) {
       <section className="mt-16">
         <h2 className="font-blackletter text-3xl">Before the Goetia</h2>
         <p className="mt-2 max-w-2xl font-garamond text-[15px] text-muted-foreground">
-          The Testament of Solomon, a Greek book of the early centuries after Christ, has Solomon build the Temple with demons, each questioned for its name, its
-          work and the angel that frustrates it. The Goetia's catalogue grew out of books like it. Each opens in the reader, on the Pseudepigrapha shelf.
+          Greek, early centuries AD: each demon questioned by Solomon for its name, its work and the angel that frustrates it.
         </p>
         <ul className="mt-5 grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-x-8 gap-y-5">
           {SOLOMON_DEMONS.map((d) => {
@@ -144,7 +183,7 @@ export function SpiritView({ n, onSpirit, onClose, onRead }: { n: number; onSpir
         <header className="mb-8 text-center">
           <div className="flex justify-center gap-6">
             {(seal?.files ?? [""]).map((_, k) => (
-              <SealMark key={k} seal={seal} k={k} label={`The seal of ${s.name}${seal && seal.files.length > 1 ? `, ${k + 1} of ${seal.files.length}` : ""}`} className="size-40" />
+              <SealMark key={k} seal={seal} k={k} label={`The seal of ${s.name}${seal && seal.files.length > 1 ? `, ${k + 1} of ${seal.files.length}` : ""}`} dot={2} className="size-40" />
             ))}
           </div>
           <p className="mt-5 text-xs uppercase tracking-widest text-muted-foreground">The {ordinal(n)} spirit</p>
@@ -159,7 +198,7 @@ export function SpiritView({ n, onSpirit, onClose, onRead }: { n: number; onSpir
           </div>
         </header>
         <section>
-          <p className="text-center text-xs uppercase tracking-widest text-muted-foreground">Not Scripture: the Goetia, 1904</p>
+          <p className="text-center text-xs uppercase tracking-widest text-muted-foreground">The Goetia, 1904</p>
           {!paras ? (
             <div className="grid place-items-center py-10"><Spinner /></div>
           ) : (

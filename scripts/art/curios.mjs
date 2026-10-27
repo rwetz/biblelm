@@ -85,6 +85,23 @@ export const PLATES = [
   { n: 2049, id: "callot-anthony", title: "The Temptation of Saint Anthony", by: ["Jacques Callot", "1635"], file: "Jacques Callot, The Temptation of Saint Anthony (second version), 1635, NGA 60896.jpg", role: "Home rotation", hero: { focusY: 40 } },
   { n: 2050, id: "durer-knight-death-devil", title: "Knight, Death and the Devil", by: ["Albrecht Dürer", "1513"], file: "Knight, Death, and the Devil MET DP815737.jpg", trim: true, role: "settings sidebar" },
   { n: 2051, id: "levi-baphomet", title: "Baphomet", by: ["Éliphas Lévi, Dogme et rituel de la haute magie", "1856"], file: "Baphomet.png", trim: true, role: "model corner" },
+  // Alchemy and the hermetic books, for the symbols
+  { n: 2060, id: "maier-squared-circle", title: "Make a Circle of a Man and Woman", by: ["Michael Maier, Atalanta Fugiens, emblem XXI", "1617"], about: "The squared circle: the philosopher's stone", file: "Michael Maier Atalanta Fugiens Emblem 21.jpeg", role: "symbols" },
+  { n: 2061, id: "khunrath-laboratory", title: "The Oratory and the Laboratory", by: ["Heinrich Khunrath, Amphitheatrum sapientiae aeternae", "1595"], file: "Alchemist's Laboratory, Heinrich Khunrath, Amphitheatrum sapientiae aeternae, 1595.jpg", role: "symbols", hero: { focusY: 45 } },
+  { n: 2062, id: "khunrath-rose", title: "The Cosmic Rose", by: ["Heinrich Khunrath, Amphitheatrum sapientiae aeternae", "1595"], file: "Amphitheatrum sapientiae aeternae - The cosmic rose.jpg", role: "symbols" },
+  { n: 2063, id: "khunrath-four-three-two-one", title: "The Four, the Three, the Two and the One", by: ["Heinrich Khunrath, Amphitheatrum sapientiae aeternae", "1595"], file: "The Four, the Three, the Two, and the One.jpg", role: "symbols" },
+  { n: 2064, id: "emerald-tablet", title: "The Emerald Tablet", by: ["Heinrich Khunrath, Amphitheatrum sapientiae aeternae", "1606"], file: "Emerald tablet.jpg", role: "symbols" },
+  { n: 2065, id: "dee-monas", title: "Monas Hieroglyphica", by: ["John Dee", "1564"], about: "The title page, with the monad", file: "Monas Hieroglyphica.jpg", role: "symbols" },
+  { n: 2066, id: "fludd-utriusque", title: "The Macrocosm and the Microcosm", by: ["Robert Fludd, Utriusque cosmi historia", "1617"], file: "Robert Fludd Utriusque cosmi.jpg", role: "symbols" },
+  { n: 2067, id: "fludd-anima-mundi", title: "The Soul of the World", by: ["Robert Fludd, Utriusque cosmi historia", "1617"], file: "Anima Mundi (by Robert Fludd, Utriusque Cosmi Historia, 1617).png", role: "symbols" },
+  { n: 2068, id: "mutus-liber", title: "Jacob's Ladder", by: ["Mutus Liber, plate 1", "1677"], about: "The Mute Book: an alchemy told in fifteen plates and no words", file: "Mutus liber 1677 1.jpg", role: "symbols" },
+  // The Masons' charts, for the lodge
+  { n: 2070, id: "masonic-chart-1846", title: "Masonic Chart", by: ["American lithograph", "1846"], about: "The emblems of the three degrees", file: "Masonic chart LCCN2004670261.jpg", role: "lodge", hero: { focusY: 40 } },
+  { n: 2071, id: "masonic-chart-1872", title: "Masonic Chart", by: ["American lithograph", "1872"], file: "Masonic chart LCCN2003656410.jpg", role: "lodge" },
+  { n: 2072, id: "masonic-chart-1876", title: "The Masonic Chart", by: ["American lithograph", "1876"], file: "The masonic chart LCCN2002710037.jpg", role: "lodge" },
+  { n: 2073, id: "emblematic-chart-1877", title: "Emblematic Chart and Masonic History", by: ["Ramsey, Millett and Hudson", "1877"], file: "Emblematic chart and Masonic history of F(ree) and A(ccepted) M(asons) - Ramsey, Millet, & Hudson Steam. Lith. Co. LCCN91784508.jpg", role: "lodge" },
+  { n: 2074, id: "fellow-craft", title: "Fellow Craft", by: ["American print", "19th century"], about: "The winding stair to the middle chamber", file: "Fellow craft LCCN2003671743.jpg", role: "lodge" },
+  { n: 2075, id: "tracing-board-engraving", title: "A Tracing Board", by: ["Engraving", "1850-1900"], file: "VM 16145-003 - Engraving of a Masonic tracing board - 1850-1900.jpg", role: "lodge" },
 ];
 
 /** The paintings, as painted. `place` is where it hangs (Italian state museums restrict commercial reproduction). */
@@ -109,6 +126,19 @@ export const PAINTINGS = [
   { id: "blake-great-red-dragon", title: "The Great Red Dragon and the Woman Clothed with the Sun", artist: "William Blake", year: "c. 1805", ref: "Rev.12.3-4", place: "National Gallery of Art, Washington", medium: "watercolour", file: "William Blake - The Great Red Dragon and the Woman Clothed with the Sun - Google Art Project.jpg" },
   { id: "blake-number-of-the-beast", title: "The Number of the Beast is 666", artist: "William Blake", year: "c. 1805", ref: "Rev.13.18", place: "Rosenbach Museum and Library, Philadelphia", medium: "watercolour", file: "The number of the beast is 666 Philadelphia, Rosenbach Museum and Library.jpg" },
   { id: "martin-pandemonium", title: "Pandemonium", artist: "John Martin", year: "1841", ref: null, about: "Milton's capital of hell, raised by the fallen angels (Paradise Lost, Book I)", place: "Musée du Louvre, Paris", file: "John Martin Le Pandemonium Louvre.JPG" },
+  // Tracing boards: the emblems of each degree, laid out for the lecture
+  ...["First", "Second", "Third"].map((d, i) => ({ id: `bowring-tracing-board-${i + 1}`, title: `${d} Degree Tracing Board`, artist: "Josiah Bowring", year: "1819", ref: null, about: `The emblems of the ${d.toLowerCase()} degree, for the lecture`, place: "Museum of Freemasonry, London", medium: "oil on canvas", file: `Josiah Bowring (1757-1832) - ${d} Degree Tracing Board - D2009-41${"i".repeat(i + 1)} - Museum of Freemasonry.jpg` })),
+  ...["First", "Second", "Third"].map((d, i) => ({ id: `tracing-board-1832-${i + 1}`, title: `${d} Degree Tracing Board`, artist: "Unknown artist", year: "1832", ref: null, about: `The emblems of the ${d.toLowerCase()} degree`, place: "Museum of Freemasonry, London", medium: "oil on canvas", file: `Unknown artist - ${d} Degree Tracing Board - D2009-90${"i".repeat(i + 1)} - Museum of Freemasonry.jpg` })),
+  // Splendor Solis: the seven planets' flasks
+  ...[
+    [12, "saturn", "Saturn", "Dragon and child"],
+    [13, "jupiter", "Jupiter", "Three birds"],
+    [14, "mars", "Mars", "Triple-headed bird"],
+    [15, "sun", "Sun", "Triple-headed dragon"],
+    [16, "venus", "Venus", "Peacock's Tail"],
+    [17, "mercury", "Mercure", "The White Queen"],
+    [18, "moon", "Moon", "The Red King"],
+  ].map(([n, id, planet, what]) => ({ id: `splendor-solis-${id}`, title: `${planet === "Mercure" ? "Mercury" : planet}: ${what}`, artist: "Splendor Solis", year: "16th century", ref: null, about: `The flask of ${planet === "Mercure" ? "Mercury" : planet}, a stage of the work, its planet's chariot above`, place: "Splendor Solis, illuminated manuscript", medium: "illumination", file: `Splendor Solis. Image ${n} - ${planet} - ${what}.jpg` })),
 ];
 
 /**

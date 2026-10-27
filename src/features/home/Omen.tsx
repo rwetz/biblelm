@@ -1,6 +1,6 @@
 // Under the rose, Home's verse of the day gives way to the day's omen
 // (src/lib/omen.ts): a verse of signs and endings, or a spirit of the Goetia
-// with its seal and the book's own words, marked as not Scripture.
+// with its seal and the book's own words.
 
 import { useEffect, useMemo, useState } from "react";
 import type { Translation } from "@/lib/bible";
@@ -75,7 +75,7 @@ function SpiritOfTheDay({ n }: { n: number }) {
         <span className="block text-xs text-muted-foreground">{rankLine(spirit)}, {spirit.legions} legions</span>
       </button>
       {lede && <p className="mx-auto mt-4 max-w-xl font-garamond text-lg leading-snug text-foreground/85">{lede}</p>}
-      <p className="mt-2 text-[11px] text-muted-foreground">Not Scripture: the Goetia, 1904</p>
+      <p className="mt-2 text-[11px] text-muted-foreground">The Goetia, 1904</p>
     </>
   );
 }

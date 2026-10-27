@@ -86,7 +86,7 @@ export function HellMap() {
               </li>
             ))}
           </ol>
-          <p className="mt-4 text-xs text-muted-foreground">Dante's hell, not Scripture's: a poem of the 1300s, drawn in the 1480s.</p>
+          <p className="mt-4 text-xs text-muted-foreground">Dante's Inferno (1300s), drawn by Botticelli in the 1480s.</p>
         </aside>
       </div>
     </div>

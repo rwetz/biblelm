@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "web", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev"], "port": 1420 }
+    { "name": "web", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev"], "port": 1420 },
+    { "name": "web-alt", "runtimeExecutable": "pnpm", "runtimeArgs": ["exec", "vite", "--port", "1431"], "port": 1431 }
   ]
 }

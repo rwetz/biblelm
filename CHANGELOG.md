@@ -8,10 +8,40 @@ All notable changes to BibleLM. Format based on
 
 ### Added
 
+- **Sub Rosa's symbols are a database** (`src/lib/symbols.ts`): 74 signs in
+  six families (planets and metals, alchemy, magic and the occult, Masonic,
+  Christian, ancient), each drawn (`src/art/sigils.ts`) and dithered in a halo
+  of dots, filtered by family or by a word, opening on a sheet of facts, any
+  tagged claims, its pictures and its neighbours. New: the seven planets and
+  their metals, the zodiac, the four elements, sulfur, salt, antimony, the
+  squared circle, the ouroboros, Dee's monad, the unicursal hexagram, the
+  caduceus and the rod of Asclepius, the Rose Cross, the Leviathan cross, the
+  Sigillum Dei, the square of Saturn, the tree of life, the Sator square,
+  Abracadabra, the triquetra, the vesica piscis, the seed of life, the ankh,
+  the eye of Horus, the tau, Alpha and Omega, the shield of the Trinity, the
+  cross pattée, and 26 Masonic emblems.
+- **The lodge**, a cabinet shelf on Freemasonry (`src/lib/lodge.ts`): the
+  Craft, York Rite and Scottish Rite degrees by body (4 to 33 named), the
+  officers with their stations and jewels, the numbers (3, 5, 7, 15, 24, 33,
+  47, Anno Lucis), the emblems, the tracing boards and charts, and the dates.
+- **More public-domain art** for both: Bowring's tracing boards (1819) and a
+  set of 1832, the Library of Congress's Masonic charts (1846 to 1877),
+  Splendor Solis's seven planetary flasks, Maier's squared circle, Khunrath's
+  laboratory and cosmic rose, the Emerald Tablet, Dee's Monas, Fludd and the
+  Mutus Liber. Khunrath's laboratory heads the symbols, the 1846 chart the lodge.
+
+### Changed
+
+- **Sub Rosa says less.** The acknowledgement before going under is gone; so
+  are the "Not Scripture" kickers over the library, the bestiary and the omen,
+  the cabinet's subtitle and the footers that repeated what the tags show.
+  Generated text from the Lab is still labelled.
+- **The Goetia's seals are dithered** like the rest of the art, ink in a halo
+  of dots, instead of drawn flat through a mask.
+
 - **Sub Rosa**, the curiosities mode (docs/SUBROSA.md), off by default.
-  Settings, Sub Rosa (or "Go under the rose" in the palette) asks for one
-  acknowledgement first: what follows is history and curiosity, not meant to
-  stand against Scripture or the faith. Under the rose the app wears its own theme
+  Settings, Sub Rosa (or "Go under the rose" in the palette) turns it on at
+  once. Under the rose the app wears its own theme
   (smoked glass, ash and brimstone), every shelf comes on without a word, the
   rose mark hangs head down and the loader's cross is St Peter's. Coming out
   is one click and puts the scheme and shelves back.
