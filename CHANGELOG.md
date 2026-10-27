@@ -61,6 +61,18 @@ All notable changes to BibleLM. Format based on
   Linux, the Battery Status API on Windows). The blur also goes when the
   system asks for reduced transparency.
 
+- **Sub Rosa's extras** (docs/SUBROSA.md, S5). The cabinet gains three
+  shelves: a **Bestiary** of the Goetia's 72 spirits, each with its seal,
+  rank and legions as the book gives them, and the Testament of Solomon's
+  demons before them; **Numbers**, gematria and isopsephy worked by rule
+  (Nero Caesar 666 and 616, Iesous 888) beside the Bible codes run against
+  Moby-Dick; and **Scripture or myth?**, 22 things people think the Bible
+  says, answered with the verses and brought back on the memory scheduler.
+  Home's verse of the day becomes the day's omen, a verse of signs or a
+  spirit of the day. The Atlas has Botticelli's map of hell, marked from the
+  gate to Lucifer, each mark opening its canto. The Lab can train on the
+  Goetia's catalogue and invent spirits, every one labelled as invented.
+
 ### Changed (memory and layout)
 
 - The semantic and phrase-search workers stop after four quiet minutes and

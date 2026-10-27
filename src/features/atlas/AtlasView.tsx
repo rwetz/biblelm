@@ -3,6 +3,7 @@
 //             (OpenBible.info) sized by how often Scripture names it.
 //   People    every named person (STEPBible TIPNR) with their family.
 //   Timeline  the eras, with conventional dates (approximate, and said so).
+//   Hell      under the rose only: Botticelli's map of Dante's hell (HellMap).
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, SectionLabel,Spinner, cn } from "@nexis/design";
@@ -20,18 +21,24 @@ import { Choice, SearchField } from "@/app/controls";
 import { PageMark } from "@/art/SidebarArt";
 import { Sections } from "@/app/Sections";
 import { useStill } from "@/lib/power";
+import { HellMap } from "./HellMap";
 
-type Tab = "places" | "people" | "timeline";
+type Tab = "places" | "people" | "timeline" | "hell";
 
 export function AtlasView() {
   const atlas = useStudy((s) => s.atlas);
   const translation = useStudy((s) => s.translation);
-  const [tab, setTab] = useState<Tab>(atlas?.kind === "person" ? "people" : "places");
+  const tabOf = (kind?: string): Tab => (kind === "person" ? "people" : kind === "hell" ? "hell" : "places");
+  const [tab, setTab] = useState<Tab>(tabOf(atlas?.kind));
   const [t, error] = useTranslation(translation);
   const [index] = useIndex();
   const { places, people } = useAtlas();
+  const rose = useStudy((s) => s.subRosa);
   useEffect(() => {
-    if (atlas) setTab(atlas.kind === "person" ? "people" : "places");
+    if (!rose && tab === "hell") setTab("places");
+  }, [rose, tab]);
+  useEffect(() => {
+    if (atlas) setTab(tabOf(atlas.kind));
   }, [atlas]);
 
   if (error) return <DataMissing message={error} />;
@@ -50,11 +57,14 @@ export function AtlasView() {
               { id: "places", name: "Places", gist: "the engraved map", mark: "compass" },
               { id: "people", name: "People", gist: "families and verses", mark: "angel" },
               { id: "timeline", name: "Timeline", gist: "the ages, in order", mark: "sun" },
+              ...(rose ? [{ id: "hell" as const, name: "Hell", gist: "Botticelli's map of Dante", mark: "pentagram-inverted" as const }] : []),
             ]}
           />
         </div>
       </div>
-      {!t || !index || !places || !people ? (
+      {tab === "hell" ? (
+        <HellMap />
+      ) : !t || !index || !places || !people ? (
         <div className="grid flex-1 place-items-center"><Spinner /></div>
       ) : !places.length && !people.length ? (
         <DataMissing message="places.json and people.json are missing: run node scripts/data/atlas.mjs" />

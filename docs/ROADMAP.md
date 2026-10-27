@@ -182,7 +182,7 @@ The curiosities mode, off by default (docs/SUBROSA.md).
 - [x] S2 Dark art (Doré's Inferno and Paradise Lost, Bosch, Bruegel, Blake, the Dictionnaire infernal)
 - [x] S3 Texts (Testament of Solomon, the Goetia, the apocalypses of Peter and Paul, Dante, Milton, Mackey, Pike)
 - [x] S4 Dossiers and symbols
-- [ ] S5 Extras (bestiary, daily omen, gematria, the quiz, the map of hell)
+- [x] S5 Extras (bestiary, daily omen, gematria, the quiz, the map of hell, the Lab's spirits)
 
 Still open outside this repo: Axon 0.10 and 0.11 wait on
 [rwetz/axon#1](https://github.com/rwetz/axon/pull/1) (`text-gpt` into `main`);

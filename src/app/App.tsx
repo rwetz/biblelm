@@ -469,6 +469,10 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
       keywords: ["sub rosa", c.lede],
       run: () => study.openCabinet({ text: null, section: 0, shelf: c.kind === "symbol" ? "symbols" : "dossiers", curio: c.id }),
     }));
+    curios.push({ id: "curio-hell", label: "The map of hell (Botticelli)", group: "Sub Rosa", icon: "incognito", keywords: ["sub rosa", "dante", "inferno", "circles", "atlas"], run: () => study.openAtlas("hell", "") });
+    curios.push({ id: "curio-quiz", label: "Scripture or myth? A quiz", group: "Sub Rosa", icon: "incognito", keywords: ["sub rosa", "quiz", "myths", "apple", "lucifer", "flashcards"], run: () => study.openCabinet({ text: null, section: 0, shelf: "quiz" }) });
+    curios.push({ id: "curio-numbers", label: "Gematria: the number of a name", group: "Sub Rosa", icon: "incognito", keywords: ["sub rosa", "isopsephy", "666", "616", "bible codes", "els"], run: () => study.openCabinet({ text: null, section: 0, shelf: "numbers" }) });
+    curios.push({ id: "curio-bestiary", label: "The bestiary: the Goetia's 72 spirits", group: "Sub Rosa", icon: "incognito", keywords: ["sub rosa", "goetia", "seals", "demons", "testament of solomon"], run: () => study.openCabinet({ text: null, section: 0, shelf: "bestiary" }) });
     void openPalette;
     return [...nav, ...reading, ...settings, welcome, ...(study.showLab ? lab : []), labToggle, ...layout, ...translations, ...shelves, ...nbs, ...appearance, rose, ...(subRosa ? curios : [])];
   }, [study, setScheme, subRosa, setSubRosa, askSubRosa, catalog, notebooks, setActive, openPalette, history]);

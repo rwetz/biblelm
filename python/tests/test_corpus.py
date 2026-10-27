@@ -39,3 +39,24 @@ def test_clean_strips_boilerplate_and_crlf():
 def test_alphabet_counts_every_symbol_commonest_first(tmp_path):
     corpus.corpus_path(tmp_path, "t").write_text("aab\nb a", encoding="utf-8")
     assert corpus.alphabet(tmp_path, "t") == [["a", 3], ["b", 2], ["\n", 1], [" ", 1]]
+
+
+def test_goetia_spirits_keeps_the_catalogue_only():
+    lines = ["Preface and the rest.", ""]
+    for n in range(1, 73):
+        lines += [f"({n}.) NAME{n}.—The Spirit number {n} is a Duke.[{n}] He ruleth", "over 30 Legions.", ""]
+        if n == 3:
+            lines += ["[Transcriber’s Note: seals.]", ""]
+    lines += ["THESE be the 72 Mighty Kings.", "", "THE MAGICAL CIRCLE.", "The rite."]
+    text = corpus.goetia_spirits("\n".join(lines))
+    paras = text.strip().split("\n\n")
+    assert len(paras) == 72
+    assert paras[0] == "The Spirit number 1 is a Duke. He ruleth over 30 Legions."
+    assert "Transcriber" not in text and "CIRCLE" not in text and "rite" not in text and "Preface" not in text
+
+
+def test_goetia_spirits_refuses_a_short_catalogue():
+    import pytest
+
+    with pytest.raises(ValueError):
+        corpus.goetia_spirits("(1.) BAEL.—One.\n\nTHESE be the 72")

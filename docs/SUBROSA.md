@@ -188,7 +188,7 @@ to Sub Rosa while the mode is on.
   >   on 616, Tyndale's "scapegoat", Prichard's 1730 exposé for the Hiram
   >   legend, Taxil's confession, du Simitière's eye on the Great Seal). Where
   >   the record is unsure the dossier says "about" or "most likely".
-- [ ] **S5 Extras.**
+- [x] **S5 Extras.**
   - A **Goetia bestiary**: the 72 spirits, their seals, rank and the
     *Testament of Solomon*'s demons beside them.
   - The **daily omen** in place of the verse of the day (an apocalypse verse
@@ -201,14 +201,63 @@ to Sub Rosa while the mode is on.
   - In the Lab, a small model trained on the Goetia that writes labelled
     fake spirits (generated text, always labelled).
 
+  > **As built:**
+  > - **The bestiary** is a cabinet shelf (`Bestiary.tsx`,
+  >   `src/lib/bestiary.ts`). Its facts are read from the book by rule
+  >   (`spiritsOf` in `scripts/data/library.mjs`, written to
+  >   `public/data/bestiary.json`): ranks and seal metals from the Goetia's
+  >   own table "Respective Rank", legions from each spirit's text. Parsing the
+  >   prose for ranks was tried first and caught "four noble Kings" and "a
+  >   goodly Knight"; the table has none of that. The seals are not cut from
+  >   de Laurence's plates: Commons has a public-domain series from the 1904
+  >   edition (Category:Ars Goetia sigils), one file per seal and two where the
+  >   book prints two (Paimon, Beleth, Bathin, Bune, Vepar, Vual, Seere);
+  >   Decarabia's comes from the 1916 reprint. `curios.mjs` keeps their ink as
+  >   alpha and the app draws them through a CSS mask in the page's ink, never
+  >   the accent. A spirit opens on its seal, rank, legions and metal and the
+  >   Goetia's own words under "Not Scripture". Sixteen of the Testament's
+  >   demons follow the 72, each at the verse where it first stands before
+  >   Solomon (a test checks the verse names it); Asmodeus is the one both
+  >   books share (Goetia 32, Tobit 3:8).
+  > - **The daily omen** (`src/lib/omen.ts`, `Omen.tsx` on Home) alternates
+  >   by day: a verse of signs and endings from a list of 33, in your
+  >   translation, then a spirit of the day with its seal and first lines.
+  >   Every spirit and every verse comes round within a year (tested).
+  > - **Numbers** is a cabinet shelf (`Numbers.tsx`, `src/lib/gematria.ts`):
+  >   standard Hebrew values, Milesian Greek, and Roman numerals for the
+  >   Latin polemics, with seven worked examples whose numbers are computed
+  >   (Nero Caesar 666 and 616, Iesous 888, Lateinos, Abrasax 365, YHWH 26,
+  >   Vicarius Filii Dei). The Bible codes are the Lab's lesson (`Codes`),
+  >   shown here as well.
+  > - **Scripture or myth?** is a cabinet shelf (`Quiz.tsx`,
+  >   `src/lib/quiz.ts`): 22 claims, each answered with its verses and, for a
+  >   myth, its origin tag. Answers are FSRS cards (wrong is "again", right is
+  >   "good") kept in the study store's `quiz`, a preference like the
+  >   cabinet's place, not in the notes file.
+  > - **Hell** is a fourth Atlas section under the rose (`HellMap.tsx`,
+  >   `src/lib/hell.ts`): thirteen marks placed by eye on Botticelli's bands,
+  >   each with a line from the canto (checked against Longfellow), the Doré
+  >   plates of that canto and a link to it in the cabinet.
+  > - **The Lab's spirits**: a corpus preset `goetia` in
+  >   `python/biblelm/corpus.py`, the same Gutenberg book cut to the 72
+  >   spirits (`goetia_spirits`, parsed as text, refusing anything but 72;
+  >   about 39,000 characters). It is listed only under the rose. With it
+  >   chosen, Generate offers "The Seventy-third Spirit is" and labels the
+  >   output "Invented by BibleLM's model: a spirit that never was. Not the
+  >   Goetia, not Scripture."; the KJV judge is hidden. Nothing in Rust
+  >   changed: the corpus list comes from Python.
+  > - Every new part is in the palette under the rose (the bestiary, numbers,
+  >   the quiz, the map of hell).
+
 ## Handoff
 
 Where things stand for whoever picks this up next (written 26 October 2026,
-after S4).
+after S5).
 
-**State.** S1 to S4 are done on the branch `feat/sub-rosa`, one commit each,
-pushed but not merged or opened as a PR. S5 has not been started. Typecheck
-is clean and `pnpm test` passes (122 tests). Nothing in Rust changed.
+**State.** S1 to S5 are done on the branch `feat/sub-rosa`, pushed but not
+merged or opened as a PR. The rite of S1 became one acknowledgement. Typecheck
+is clean, `pnpm test` passes (134 tests, none skipped once the data is built)
+and `python -m pytest python` passes. Nothing in Rust changed.
 
 **Where the code is.**
 
@@ -219,8 +268,11 @@ is clean and `pnpm test` passes (122 tests). Nothing in Rust changed.
 | The shelf texts | `scripts/data/pseudepigrapha.mjs`, called from `build-bible.mjs`; books in `src/lib/data/books.json`; links in `src/lib/companions.ts` |
 | The library | `scripts/data/library.mjs` (writes `public/data/library*`), `src/lib/library.ts` |
 | Dossiers and symbols | `src/lib/dossiers.ts`, ornaments in `src/art/ornaments.ts` |
+| Bestiary, numbers, quiz | `src/lib/bestiary.ts`, `src/lib/gematria.ts`, `src/lib/quiz.ts`; `Bestiary.tsx`, `Numbers.tsx`, `Quiz.tsx` in `src/features/cabinet`; seals in `SEALS` in `scripts/art/curios.mjs` |
+| The omen and the map of hell | `src/lib/omen.ts`, `src/features/home/Omen.tsx`; `src/lib/hell.ts`, `src/features/atlas/HellMap.tsx` |
+| The Lab's spirits | `goetia` in `PRESETS` and `goetia_spirits` in `python/biblelm/corpus.py`; `GOETIA_CORPUS` in `src/lib/backend.ts`; labels in `InferenceView.tsx` |
 | The cabinet page | `src/features/cabinet/CabinetView.tsx`; page `cabinet` and its nav item and palette commands in `src/app/App.tsx`; `cabinet` (a `CabinetPlace`) in the study store |
-| Tests | `src/lib/dossiers.test.ts`, `src/lib/companions.test.ts`, `src/lib/art.test.ts`, `src/store/study.test.ts`, `scripts/data/pseudepigrapha.test.mjs` |
+| Tests | `dossiers.test.ts`, `bestiary.test.ts`, `omen.test.ts`, `gematria.test.ts`, `quiz.test.ts`, `companions.test.ts`, `art.test.ts` in `src/lib`; `src/store/study.test.ts`; `scripts/data/pseudepigrapha.test.mjs`; `python/tests/test_corpus.py` |
 
 **Rebuilding the data.** Every output is git-ignored, so a fresh clone needs
 `pnpm data`. After a change to the shelf texts run, in order,
@@ -244,8 +296,8 @@ breaks meaning search. `pnpm data:library` rebuilds the library alone, and
   (`CONYBEARE_FIXES`, `MACKEY_TITLES`); the build stops if one is gone, so
   an upstream correction shows up as a failure to remove the fix.
 
-**Testing it by hand.** In a browser (`pnpm dev`), the rite can be skipped by
-setting the store directly in the console:
+**Testing it by hand.** In a browser (`pnpm dev`), Settings or the palette's
+"Go under the rose" turns it on; it can also be set in the console:
 
 ```js
 const k = "biblelm:study", s = JSON.parse(localStorage.getItem(k) || "{}");
@@ -257,8 +309,9 @@ localStorage.setItem(k, JSON.stringify(s)); location.reload();
 Set `subRosa` back to false and `shelves` to `beforeSubRosa.shelves` to come
 out. Under the rose: the cabinet is in the sidebar after Notebooks, Tobit 3
 shows Asmodeus beside verse 8, Testament of Solomon 1:24 links to Tobit 3:8,
-and every dossier is in the palette. A hidden browser pane throttles
-animation, so a blank screenshot or a slow seal is not a bug.
+every dossier is in the palette, the cabinet has seven shelves, and the Atlas
+has Hell. A hidden browser pane throttles animation, so a blank screenshot is
+not a bug.
 
 **Rules to keep.**
 
@@ -273,10 +326,7 @@ animation, so a blank screenshot or a slow seal is not a bug.
 - Under the rose the sidebar vignette hides below 800 px of window height
   (`styles.css`), because the rose's plates are inked to their top edge.
 
-**Open for S5.** The 72 seals are printed seven to a plate in de Laurence's
-Goetia (Gutenberg #72679, `images/front-1.jpg` to `front-7.jpg`); the
-bestiary needs them cut out, or individual public-domain seals from Commons.
-The words-for-hell dossier could take its counts from the interlinear and
-Strong's. The Ascension of Isaiah still has no clean public-domain text. The
-Lab's Goetia model is generated text and must be labelled as such on screen
-(principle 1).
+**Still open.** The words-for-hell dossier could take its counts from the
+interlinear and Strong's. The Ascension of Isaiah still has no clean
+public-domain text. The hell map's marks are placed by eye; if a band is
+read differently, move its `x` and `y` in `src/lib/hell.ts`.

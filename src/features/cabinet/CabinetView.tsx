@@ -2,7 +2,8 @@
 // library (the Goetia, Dionysius, Dante, Milton and the Masons: books read
 // beside the Bible, never as it), the dossiers and the symbols (each claim
 // tagged Scripture, tradition, folklore or modern invention, src/lib/dossiers.ts)
-// and the books of the Pseudepigrapha shelf, which open in the reader. A
+// the bestiary (the Goetia's spirits and the Testament of Solomon's demons,
+// Bestiary.tsx), numbers (gematria and the Bible codes, Numbers.tsx), the quiz (Quiz.tsx) and the books of the Pseudepigrapha shelf, which open in the reader. A
 // library text reads here, section by section, in its own pages, so nothing
 // of it is ever set as Scripture. See docs/SUBROSA.md.
 
@@ -19,6 +20,9 @@ import { byline, headingOf, loadLibrary, loadLibraryText, type LibraryEntry, typ
 import { studyRef } from "@/lib/studies";
 import { useStudy, type CabinetPlace, type CabinetShelf } from "@/store/study";
 import { DataMissing } from "@/features/read/ReadView";
+import { BestiaryShelf, SpiritView } from "./Bestiary";
+import { NumbersShelf } from "./Numbers";
+import { QuizShelf } from "./Quiz";
 
 /** The books beside the Bible, in the reader: the Pseudepigrapha shelf, with a line on each. */
 const BESIDE: Record<string, string> = {
@@ -41,15 +45,16 @@ export function CabinetView() {
   if (!library) return <div className="grid flex-1 place-items-center"><Spinner /></div>;
   const shelf = place.shelf ?? "library";
   // Every move keeps the shelf, so "back" lands where you were.
-  const to = (p: Partial<CabinetPlace>) => openCabinet({ text: null, section: 0, shelf, curio: null, ...p });
+  const to = (p: Partial<CabinetPlace>) => openCabinet({ text: null, section: 0, shelf, curio: null, spirit: null, ...p });
   const entry = place.text ? library.find((t) => t.id === place.text) : undefined;
-  if (entry) return <LibraryReader key={entry.id} entry={entry} section={Math.min(place.section, entry.sections.length - 1)} onPlace={(section) => to({ text: entry.id, section, curio: place.curio })} onClose={() => to({ curio: place.curio })} />;
+  if (entry) return <LibraryReader key={entry.id} entry={entry} section={Math.min(place.section, entry.sections.length - 1)} onPlace={(section) => to({ text: entry.id, section, curio: place.curio, spirit: place.spirit })} onClose={() => to({ curio: place.curio, spirit: place.spirit })} />;
+  if (place.spirit) return <SpiritView key={place.spirit} n={place.spirit} onSpirit={(n) => to({ spirit: n })} onClose={() => to({})} onRead={(text, section) => to({ text, section, spirit: place.spirit })} />;
   const open = place.curio ? curio(place.curio) : undefined;
   if (open) return <CurioView key={open.id} c={open} library={library} onClose={() => to({})} onRead={(text, section) => to({ text, section, curio: open.id })} />;
-  return <Cabinet library={library} shelf={shelf} onShelf={(s) => to({ shelf: s })} onOpen={(text) => to({ text })} onCurio={(id) => to({ curio: id })} />;
+  return <Cabinet library={library} shelf={shelf} onShelf={(s) => to({ shelf: s })} onOpen={(text) => to({ text })} onCurio={(id) => to({ curio: id })} onSpirit={(n) => to({ spirit: n })} />;
 }
 
-function Cabinet({ library, shelf, onShelf, onOpen, onCurio }: { library: LibraryEntry[]; shelf: CabinetShelf; onShelf: (s: CabinetShelf) => void; onOpen: (id: string) => void; onCurio: (id: string) => void }) {
+function Cabinet({ library, shelf, onShelf, onOpen, onCurio, onSpirit }: { library: LibraryEntry[]; shelf: CabinetShelf; onShelf: (s: CabinetShelf) => void; onOpen: (id: string) => void; onCurio: (id: string) => void; onSpirit: (n: number) => void }) {
   const heroes = useHeroes();
   const hero = heroes.find((h) => h.id === "hero-callot-anthony");
   const plate = usePagePlate(PAGE_PLATES.cabinet);
@@ -76,12 +81,21 @@ function Cabinet({ library, shelf, onShelf, onOpen, onCurio }: { library: Librar
             { id: "library", name: "Library", gist: `${library.length} books read beside the Bible`, mark: "quill" },
             { id: "dossiers", name: "Dossiers", gist: `${DOSSIERS.length} questions, sorted`, mark: "lamp" },
             { id: "symbols", name: "Symbols", gist: `${SYMBOLS.length} signs and their history`, mark: "eye" },
+            { id: "bestiary", name: "Bestiary", gist: "the 72 spirits and their seals", mark: "hexagram" },
+            { id: "numbers", name: "Numbers", gist: "gematria and the Bible codes", mark: "pentagram" },
+            { id: "quiz", name: "Scripture or myth?", gist: "what the Bible does not say", mark: "crucifix" },
             { id: "beside", name: "Beyond the canon", gist: `${beside.length} books on the Pseudepigrapha shelf`, mark: "seraph" },
           ]}
         />
       </div>
       <div className="mx-auto w-full max-w-6xl px-(--gutter) pb-24 pt-6">
-        {shelf === "dossiers" ? (
+        {shelf === "bestiary" ? (
+          <BestiaryShelf onSpirit={onSpirit} />
+        ) : shelf === "numbers" ? (
+          <NumbersShelf />
+        ) : shelf === "quiz" ? (
+          <QuizShelf />
+        ) : shelf === "dossiers" ? (
           <>
             <TagKey />
             <ul className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-x-8 gap-y-7">

@@ -5,6 +5,7 @@
 import { create } from "zustand";
 import { SHELVES, type Ref, type Shelf } from "@/lib/canon";
 import type { SaverMode } from "@/lib/power";
+import { answer, type Question, type QuizCards } from "@/lib/quiz";
 
 export type Page = "home" | "read" | "search" | "topics" | "atlas" | "gallery" | "daily" | "notebooks" | "lab" | "settings" | "cabinet";
 /** A picture opened to look at: a painting or a Doré plate, by id. */
@@ -45,6 +46,8 @@ interface StudyState {
   beforeSubRosa: BeforeSubRosa | null;
   /** Where you are in the Sub Rosa library: a text (by id) and its section, or the cabinet's shelves. */
   cabinet: CabinetPlace;
+  /** Sub Rosa's quiz, "Scripture or myth?": a scheduler card per question answered (src/lib/quiz.ts). */
+  quiz: QuizCards;
   /** Developer mode: preview any hero or plate to hunt for art bugs (Settings). */
   devMode: boolean;
   /** Developer override for the Home hero (a hero id), else the church year picks. */
@@ -63,7 +66,8 @@ interface StudyState {
   /** Hand-offs between pages (not persisted). */
   topic: string | null;
   /** A person or place to open in the Atlas. */
-  atlas: { kind: "place" | "person"; id: string } | null;
+  /** What the Atlas opens on: a place, a person, or (under the rose) the map of hell. */
+  atlas: { kind: "place" | "person" | "hell"; id: string } | null;
   walk: Ref | null;
   /** A struggle to open in Topics, Studies (src/lib/studies.ts). */
   studies: string | null;
@@ -79,15 +83,17 @@ interface StudyState {
   openStudies: (id?: string) => void;
   searchFor: (q: string) => void;
   openLook: (t: LookTarget | null) => void;
-  openAtlas: (kind: "place" | "person", id: string) => void;
+  openAtlas: (kind: "place" | "person" | "hell", id: string) => void;
   /** Open the cabinet, at a library text and section, or at its shelves (text null). */
   openCabinet: (place: CabinetPlace) => void;
+  /** Record an answer to a quiz question: wrong brings it back soon, right later. */
+  answerQuiz: (q: Question, right: boolean) => void;
   /** Go under the rose (every shelf comes on, silently) or come back out (the shelves you had). */
   setSubRosa: (on: boolean, theme?: { themeId: string; mode: string }) => BeforeSubRosa | null;
   set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "ornaments" | "compact" | "sidebarFolded" | "saver" | "showLab" | "name" | "welcomed" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
 }
 
-export type CabinetShelf = "library" | "dossiers" | "symbols" | "beside";
+export type CabinetShelf = "library" | "dossiers" | "symbols" | "bestiary" | "numbers" | "quiz" | "beside";
 
 export interface CabinetPlace {
   /** A library text open in the reader (by id), at its section; or null for the shelves. */
@@ -96,6 +102,8 @@ export interface CabinetPlace {
   /** The shelf showing, and a dossier or symbol open on it (src/lib/dossiers.ts). */
   shelf?: CabinetShelf;
   curio?: string | null;
+  /** A Goetia spirit open in the bestiary, by number (src/lib/bestiary.ts). */
+  spirit?: number | null;
 }
 
 export interface BeforeSubRosa {
@@ -131,6 +139,7 @@ const DEFAULTS = {
   subRosa: false,
   beforeSubRosa: null as BeforeSubRosa | null,
   cabinet: { text: null, section: 0 } as CabinetPlace,
+  quiz: {} as QuizCards,
   devMode: false,
   devHero: null as string | null,
   devPlate: null as number | null,
@@ -147,8 +156,8 @@ function load(): typeof DEFAULTS {
 
 function save(s: StudyState) {
   try {
-    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, cabinet, devMode, devHero, devPlate } = s;
-    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, cabinet, devMode, devHero, devPlate }));
+    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, cabinet, quiz, devMode, devHero, devPlate } = s;
+    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, cabinet, quiz, devMode, devHero, devPlate }));
   } catch {
     // Storage blocked: preferences just won't persist.
   }
@@ -171,6 +180,10 @@ export const useStudy = create<StudyState>((set, get) => ({
   searchFor: (query) => set({ page: "search", query }),
   openLook: (look) => set({ look }),
   openAtlas: (kind, id) => set({ page: "atlas", atlas: { kind, id } }),
+  answerQuiz: (q, right) => {
+    set({ quiz: answer(get().quiz, q, right) });
+    save(get());
+  },
   openCabinet: (cabinet) => {
     set({ page: "cabinet", cabinet });
     save(get());

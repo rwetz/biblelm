@@ -101,24 +101,36 @@ export function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<
 // translations, as the plain run of verses the model would train on. Only
 // reading: downloading and training still need the desktop app.
 async function corpusText(id: string): Promise<{ name: string; text: string }> {
+  if (id === GOETIA_CORPUS) {
+    // The same cut python/biblelm/corpus.py makes: the 72 spirits, a paragraph each.
+    const { loadLibraryText } = await import("./library");
+    const g = await loadLibraryText("goetia");
+    return { name: "The Goetia: the 72 spirits", text: g.sections.filter((s) => /^\d+\. /.test(s.title)).map((s) => s.paras.join(" ")).join("\n\n") };
+  }
   const { loadTranslation } = await import("./bible");
   const t = await loadTranslation(id);
   return { name: t.meta.name, text: t.ownVerses.map((v) => v.text).join("\n") };
 }
 
+/** Sub Rosa's corpus (docs/SUBROSA.md): the Goetia's catalogue of spirits, for a model that invents new ones. */
+export const GOETIA_CORPUS = "goetia";
+
 const browserCorpus: Record<string, (args?: Record<string, unknown>) => Promise<unknown>> = {
   async corpus_list() {
     const { listTranslations } = await import("./bible");
+    const goetia = { id: GOETIA_CORPUS, name: "The Goetia: the 72 spirits", language: "English", licence: "Public domain" };
+    const sources = [...(await listTranslations()), goetia];
     return Promise.all(
-      (await listTranslations()).map(async (m) => {
-        const { text } = await corpusText(m.id);
+      sources.map(async (m) => {
+        const text = await corpusText(m.id).then((c) => c.text, () => null);
+        if (text === null) return null;
         return {
           id: m.id, name: m.name, language: m.language, license: m.licence, verified: true, hasUrl: false, downloaded: true,
           sizeBytes: new TextEncoder().encode(text).length, charCount: text.length, wordCount: text.split(/\s+/).length,
           tokenCount: text.length, vocabSize: new Set(text).size,
         };
       }),
-    );
+    ).then((list) => list.filter(Boolean));
   },
   async corpus_preview(args) {
     return (await corpusText(String(args?.version ?? "kjv"))).text.slice(0, 1600);

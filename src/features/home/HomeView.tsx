@@ -11,6 +11,7 @@ import { useStudy } from "@/store/study";
 import { VerseText } from "@/features/read/ReadView";
 import { QueryReading } from "@/features/search/JevReading";
 import { SearchField } from "@/app/controls";
+import { Omen } from "./Omen";
 
 // A year of well-loved verses, one a day (the list is references only; the
 // words come from whichever translation you read).
@@ -87,25 +88,31 @@ export function HomeView() {
 
         <section className="mx-auto w-full max-w-3xl shrink-0 px-(--gutter) pb-8 text-center">
           <TrinityMark className="mx-auto mb-3 mt-6 size-14 [@media(max-height:760px)]:mt-3 [@media(max-height:760px)]:size-10" />
-          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
-          {passage?.verses.length ? (
-            <blockquote className="mt-4">
-              <p className="font-garamond text-[2rem] leading-snug text-foreground md:text-[clamp(2rem,3.6vh,2.4rem)]">
-                {passage.verses.map((v, i) => (
-                  <span key={v.n}>
-                    {i > 0 && <sup className="mr-1 font-sans text-[0.4em] font-semibold text-brand">{v.n}</sup>}
-                    <VerseText raw={v.raw} />{" "}
-                  </span>
-                ))}
-              </p>
-              <footer className="mt-4">
-                <button type="button" onClick={() => read(passage.ref, { select: true })} className="font-garamond text-lg text-brand hover:underline">
-                  {formatRef(passage.ref)}
-                </button>
-              </footer>
-            </blockquote>
+          {rose ? (
+            <Omen t={t} />
           ) : (
-            <p className="mt-4 text-sm text-muted-foreground">Loading…</p>
+            <>
+              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
+              {passage?.verses.length ? (
+                <blockquote className="mt-4">
+                  <p className="font-garamond text-[2rem] leading-snug text-foreground md:text-[clamp(2rem,3.6vh,2.4rem)]">
+                    {passage.verses.map((v, i) => (
+                      <span key={v.n}>
+                        {i > 0 && <sup className="mr-1 font-sans text-[0.4em] font-semibold text-brand">{v.n}</sup>}
+                        <VerseText raw={v.raw} />{" "}
+                      </span>
+                    ))}
+                  </p>
+                  <footer className="mt-4">
+                    <button type="button" onClick={() => read(passage.ref, { select: true })} className="font-garamond text-lg text-brand hover:underline">
+                      {formatRef(passage.ref)}
+                    </button>
+                  </footer>
+                </blockquote>
+              ) : (
+                <p className="mt-4 text-sm text-muted-foreground">Loading…</p>
+              )}
+            </>
           )}
           <Fleuron />
         </section>

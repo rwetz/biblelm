@@ -8,6 +8,9 @@
 //              Schongauer, Bruegel's designs, Callot, Goya, Blake, Lévi.
 //   heroes     a grayscale tone of some of those plates, dithered live on
 //              Home and in the Lab (like scripts/art/literary.mjs).
+//   seals      the 72 seals of the Goetia, as drawn in the 1904 edition, for
+//              the cabinet's bestiary: ink kept as alpha so the app draws
+//              them in the theme's ink (a CSS mask), never in the accent.
 //   paintings  kept as painted, resized only (like scripts/art/paintings.mjs):
 //              Bosch, Bruegel, Memling, Michelangelo, Signorelli, Botticelli's
 //              map of hell, Blake's dragon and beast, John Martin.
@@ -107,6 +110,87 @@ export const PAINTINGS = [
   { id: "blake-number-of-the-beast", title: "The Number of the Beast is 666", artist: "William Blake", year: "c. 1805", ref: "Rev.13.18", place: "Rosenbach Museum and Library, Philadelphia", medium: "watercolour", file: "The number of the beast is 666 Philadelphia, Rosenbach Museum and Library.jpg" },
   { id: "martin-pandemonium", title: "Pandemonium", artist: "John Martin", year: "1841", ref: null, about: "Milton's capital of hell, raised by the fallen angels (Paradise Lost, Book I)", place: "Musée du Louvre, Paris", file: "John Martin Le Pandemonium Louvre.JPG" },
 ];
+
+/**
+ * The Goetia's seals by spirit number: the Commons series from the 1904
+ * edition (Category:Ars Goetia sigils), public domain. Some spirits have two
+ * seals in the book; both are kept, in its order.
+ */
+export const SEALS = {
+  1: ["01-Bael seal.png"],
+  2: ["02-Agares seal.png"],
+  3: ["03-Vassago seal.png"],
+  4: ["04-Samigina seal.png"],
+  5: ["05-Marbas seal.png"],
+  6: ["06-Valefor seal.png"],
+  7: ["07-Amon seal.png"],
+  8: ["08-Barbatos seal.png"],
+  9: ["09-Paimon seal01.png","09-Paimon seal02.png"],
+  10: ["10-Buer seal.png"],
+  11: ["11-Gusion seal.png"],
+  12: ["12-Sitri seal.png"],
+  13: ["13-Beleth seal01.png","13-Beleth seal02.png"],
+  14: ["14-Leraie seal.png"],
+  15: ["15-Eligos seal.png"],
+  16: ["16-Zepar seal.png"],
+  17: ["17-Botis seal.png"],
+  18: ["18-Bathin seal01.png","18-Bathin seal02.png"],
+  19: ["19-Sallos seal.png"],
+  20: ["20-Purson seal.png"],
+  21: ["21-Marax seal.png"],
+  22: ["22-Ipos seal.png"],
+  23: ["23-Aim seal.png"],
+  24: ["24-Naberius seal.png"],
+  25: ["25-Glasya-Labolas seal.png"],
+  26: ["26-Bune seal01.png","26-Bune seal02.png"],
+  27: ["27-Ronove seal.png"],
+  28: ["28-Berith seal.png"],
+  29: ["29-Astaroth seal.png"],
+  30: ["30-Forneus seal.png"],
+  31: ["31-Foras seal.png"],
+  32: ["32-Asmoday seal.png"],
+  33: ["33-Gaap seal.png"],
+  34: ["34-Furfur seal.png"],
+  35: ["35-Marchosias seal.png"],
+  36: ["36-Stolas seal.png"],
+  37: ["37-Phenex seal.png"],
+  38: ["38-Halphus seal.png"],
+  39: ["39-Malphas.png"],
+  40: ["40-Raum seal.png"],
+  41: ["41-Focalor seal.png"],
+  42: ["42-Vepar seal01.png","42-Vepar seal02.png"],
+  43: ["43-Sabnock seal.png"],
+  44: ["44-Shax seal.png"],
+  45: ["45-Vine seal.png"],
+  46: ["46-Bifrons seal.png"],
+  47: ["47-Vual seal01.png","47-Vual seal02.png"],
+  48: ["48-Haagenti seal.png"],
+  49: ["49-Crocell seal.png"],
+  50: ["50-Furcas seal.png"],
+  51: ["51-Balam seal.png"],
+  52: ["52-Alloces seal.png"],
+  53: ["53-Camio seal.png"],
+  54: ["54-Murmur seal.png"],
+  55: ["55-Orobas seal.png"],
+  56: ["56-Gremory seal.png"],
+  57: ["57-Ose seal.png"],
+  58: ["58-Amy seal.png"],
+  59: ["59-Orias seal.png"],
+  60: ["60-Vapula seal.png"],
+  61: ["61-Zagan seal.png"],
+  62: ["62-Valac seal.png"],
+  63: ["63-Andras seal.png"],
+  64: ["64-Haures seal.png"],
+  65: ["65-Andrealphus seal.png"],
+  66: ["66-Cimeies seal.png"],
+  67: ["67-Amdusias seal.png"],
+  68: ["68-Belial seal.png"],
+  69: ["Decarabia seal.png"],
+  70: ["70-Seere seal01.png","70-Seere seal02.png"],
+  71: ["71-Dantalion seal.png"],
+  72: ["72-Andromalius seal.png"],
+};
+const SEAL_SIZE = 360;
 
 const PAINT_WIDTH = 2000;
 const THUMB = 520;
@@ -239,6 +323,23 @@ async function renderPainting(p, img) {
   return { m, full: { file, width: shown.info.width, height: shown.info.height, dir: DIR }, thumb: { file: thumbFile, width: thumb.info.width, height: thumb.info.height, dir: DIR } };
 }
 
+/** A seal as ink on nothing: the darkness of each pixel becomes its alpha. */
+async function renderSeal(n, k, img) {
+  const file = `seal-${String(n).padStart(2, "0")}${k ? `-${k + 1}` : ""}.png`;
+  const { data, info } = await sharp(readFileSync(img))
+    .flatten({ background: "#ffffff" })
+    .grayscale()
+    .trim({ threshold: 40 })
+    .resize({ width: SEAL_SIZE, height: SEAL_SIZE, fit: "contain", background: "#ffffff" })
+    .normalise()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const rgba = Buffer.alloc(info.width * info.height * 4);
+  for (let i = 0; i < data.length; i++) rgba[i * 4 + 3] = 255 - data[i];
+  await sharp(rgba, { raw: { width: info.width, height: info.height, channels: 4 } }).png({ compressionLevel: 9, palette: true }).toFile(join(OUT, file));
+  return file;
+}
+
 async function main() {
   const processOnly = process.argv.includes("--process");
   mkdirSync(SRC, { recursive: true });
@@ -259,6 +360,17 @@ async function main() {
     credits.push(`| ${p.title} | ${p.by[0]}, ${p.by[1]} | ${p.ref ?? p.about ?? "-"} | ${p.role}${p.hero ? ", hero" : ""} | ${d.licence} | [Commons](${d.page}) |`);
     console.log(`  plate ${p.n} ${p.id}${p.hero ? " + hero" : ""}`);
   }
+  const seals = [];
+  for (const [n, files] of Object.entries(SEALS)) {
+    const out = [];
+    for (const [k, f] of files.entries()) {
+      const d = await download(f, processOnly);
+      out.push(await renderSeal(+n, k, d.img));
+      if (k === 0) credits.push(`| Seal of spirit ${n} | The Goetia, 1904 (Decarabia from de Laurence's 1916 reprint) | Goetia ${n} | bestiary | ${d.licence} | [Commons](${d.page}) |`);
+    }
+    seals.push({ n: +n, files: out, dir: DIR });
+  }
+  console.log(`  ${seals.length} seals`);
   for (const p of PAINTINGS) {
     let d;
     try {
@@ -295,6 +407,7 @@ async function main() {
   writeFileSync(join(OUT, "plates.json"), JSON.stringify(plates));
   writeFileSync(join(OUT, "heroes.json"), JSON.stringify(heroes));
   writeFileSync(join(OUT, "paintings.json"), JSON.stringify(paintings));
+  writeFileSync(join(OUT, "seals.json"), JSON.stringify(seals));
   writeFileSync(
     join(ROOT, "docs", "curios-credits.md"),
     `# Sub Rosa art credits\n\nThe art shown only under the rose (docs/SUBROSA.md): every work public domain; every scan a Wikimedia Commons file tagged\n` +
@@ -303,7 +416,7 @@ async function main() {
       `Generated by \`scripts/art/curios.mjs\`; do not edit by hand.\n\n` +
       `| Work | Artist | Passage or subject | Used for | Licence | Source |\n|---|---|---|---|---|---|\n${credits.join("\n")}\n`,
   );
-  console.log(`  ${plates.length} plates, ${heroes.length} heroes, ${paintings.length} paintings -> public/art/curios/`);
+  console.log(`  ${plates.length} plates, ${heroes.length} heroes, ${paintings.length} paintings, ${seals.length} seals -> public/art/curios/`);
 }
 
 main().catch((e) => {

@@ -280,7 +280,9 @@ async function goetia() {
     part("Respective Rank", rank, circle),
     part("Explanation of Certain Names", names, triangle),
   ];
+  const bestiary = spiritsOf(spirits, sections.find((x) => x.title === "Respective Rank").paras);
   return {
+    bestiary,
     id: "goetia",
     title: "The Goetia",
     sub: "The Lesser Key of Solomon, Book I",
@@ -292,6 +294,37 @@ async function goetia() {
     note: "Text from L. W. de Laurence's reprint (Chicago, 1916) of the 1904 edition.",
     sections,
   };
+}
+
+const RANK = { KINGS: "King", DUKES: "Duke", "PRINCES AND PRELATES": "Prince", MARQUISES: "Marquis", PRESIDENTS: "President", "EARLS, or COUNTS": "Earl", KNIGHTS: "Knight" };
+
+/**
+ * The bestiary's facts, by rule from the book itself: each spirit's ranks and
+ * the metal of its seal from the table "Respective Rank" ("(Seal in Gold.)
+ * KINGS.—(1.) Bael; (9.) Paimon; ..."), and its legions from the first "n
+ * Legions" in its own section. The build stops if a spirit is missing either.
+ */
+export function spiritsOf(spirits, rankParas) {
+  const ranks = new Map();
+  for (const p of rankParas) {
+    const m = /^\(Seal in ([^)]+?)\.\) (.+?)\.—(.*)$/.exec(p);
+    if (!m || !RANK[m[2]]) continue;
+    for (const [, n] of m[3].matchAll(/\((\d+)\.\)/g)) {
+      const r = ranks.get(+n) ?? { ranks: [], metals: [] };
+      r.ranks.push(RANK[m[2]]);
+      const metal = m[1].replace(/ alike equal$/, "");
+      if (!r.metals.includes(metal)) r.metals.push(metal);
+      ranks.set(+n, r);
+    }
+  }
+  return spirits.map((s, i) => {
+    const n = i + 1;
+    const [, name, aka] = /^\d+\. ([^,]+?)(?:,? (?:or )?(.+))?$/.exec(s.title) ?? [];
+    const legions = /(\d+) Legions/.exec(s.paras.join(" "))?.[1];
+    const r = ranks.get(n);
+    if (!r || !legions || !name) throw new Error(`Goetia: spirit ${n} (${s.title}) has no rank or legions`);
+    return { n, name, ...(aka ? { aka: aka.split(/,? or |, /) } : {}), ranks: r.ranks, metals: r.metals, legions: +legions, section: s.title };
+  });
 }
 
 // ── Wikisource: Dionysius, James's Apocalypse of Peter ───────────────────
@@ -370,6 +403,10 @@ async function apocalypseOfPeter() {
 async function main() {
   const texts = [await goetia(), await dionysius(), await apocalypseOfPeter(), await inferno(), await paradiseLost(), await mackey(), await pike()];
   const catalogue = [];
+  const { bestiary } = texts[0];
+  delete texts[0].bestiary;
+  writeJson("bestiary.json", bestiary);
+  console.log(`  bestiary             ${bestiary.length} spirits`);
   for (const t of texts) {
     for (const s of t.sections) if (!s.paras.length) throw new Error(`${t.title}: "${s.title}" is empty`);
     const p = writeJson(`library/${t.id}.json`, t);
