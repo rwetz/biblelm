@@ -178,7 +178,7 @@ the roadmap is complete; nothing planned here is left to build.
 
 The curiosities mode, off by default (docs/SUBROSA.md).
 
-- [x] S1 The switch: the rite in Settings, the Sub Rosa theme, every shelf on and restored
+- [x] S1 The switch: one acknowledgement in Settings or the palette, the Sub Rosa theme, every shelf on and restored
 - [x] S2 Dark art (Doré's Inferno and Paradise Lost, Bosch, Bruegel, Blake, the Dictionnaire infernal)
 - [x] S3 Texts (Testament of Solomon, the Goetia, the apocalypses of Peter and Paul, Dante, Milton, Mackey, Pike)
 - [x] S4 Dossiers and symbols

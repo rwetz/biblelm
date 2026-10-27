@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { saidTheWords } from "@/features/settings/SubRosaPanel";
 import { ALL_SHELVES, useStudy } from "./study";
 
 describe("Sub Rosa", () => {
@@ -19,11 +18,5 @@ describe("Sub Rosa", () => {
     useStudy.getState().setSubRosa(true, { themeId: "scriptorium", mode: "light" });
     expect(useStudy.getState().setSubRosa(true, { themeId: "subrosa", mode: "dark" })).toBeNull();
     expect(useStudy.getState().beforeSubRosa?.themeId).toBe("scriptorium");
-  });
-
-  it("takes the words without minding case or commas", () => {
-    expect(saidTheWords("retro me satana")).toBe(true);
-    expect(saidTheWords("Retro me, Satana!")).toBe(true);
-    expect(saidTheWords("retro me")).toBe(false);
   });
 });

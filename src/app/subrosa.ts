@@ -1,10 +1,11 @@
 // Sub Rosa ("under the rose", said of what is told in confidence): the
-// curiosities mode. Off by default and reached only through the rite in
-// Settings (SubRosaPanel). Going under puts on its own theme and every shelf,
+// curiosities mode. Off by default; going under asks for one acknowledgement
+// (SubRosaAsk, from Settings or the palette). It puts on its own theme and every shelf,
 // without a word about the shelves; coming back out restores the scheme and
 // the shelves you had. See docs/SUBROSA.md.
 
 import { useEffect } from "react";
+import { create } from "zustand";
 import { useTheme } from "@nexis/design";
 import { useStudy } from "@/store/study";
 import { SCRIPTORIUM_ID, SUBROSA_ID } from "./theme";
@@ -27,6 +28,9 @@ export function useSubRosa(): [boolean, (on: boolean) => void] {
   };
   return [on, set];
 }
+
+/** Whether the acknowledgement before going under is open. One for the app, so Settings and the palette share it. */
+export const useSubRosaAsk = create<{ asking: boolean; ask: (open: boolean) => void }>((set) => ({ asking: false, ask: (asking) => set({ asking }) }));
 
 /**
  * Keeps the page and the mode agreeing: `data-subrosa` on <html> for the

@@ -33,23 +33,19 @@ argued over, for fun and for boredom first and research second. It is:
 4. **Off by default, one click out.** Nothing of the mode shows until it is
    on; the rest of the app is unchanged.
 
-## Turning it on: the rite
+## Turning it on
 
-Settings, Sub Rosa (`SubRosaPanel` in `src/features/settings`). The switch
-opens three steps in the order a book once passed to be printed:
+Settings, Sub Rosa (`SubRosaPanel` in `src/features/settings`), or "Go under
+the rose" in the palette. Either opens one acknowledgement (`SubRosaAsk`,
+mounted once in the shell): what follows is history and curiosity, not taught
+as true and not meant to stand against Scripture or the faith. One button, "I
+understand", and it is on. Coming out is the same switch or "Come out from
+under the rose" in the palette, one click and no message.
 
-1. **Nihil obstat** ("nothing stands in the way", the censor's line): swear
-   to four oaths ("I have consulted my pastor, my mother and at least one
-   Jesuit", "a picture of a demon is not a demon", and so on).
-2. **Imprimatur** ("let it be printed", the bishop's): press and hold a seal
-   for 2.4 s (pointer, Space or Enter) while the cross in it turns over.
-   Letting go early lets it fall back.
-3. **Retro me, Satana** (Mark 8:33 in the Vulgate): type the words, without
-   minding case or punctuation (`saidTheWords`).
-
-Coming out is the same switch, one click, and a toast: "Welcome back. Nobody
-saw anything." The palette has "Come out from under the rose" while it is on;
-going under is done only through the rite.
+> **As built (after S4):** S1 shipped a three-step rite (four joking oaths, a
+> seal pressed and held for 2.4 s, and *Retro me, Satana* typed out) and a
+> toast on the way out. It was fun once and a chore for anyone who switches
+> often, so it became the one acknowledgement above.
 
 ## What it changes
 
@@ -67,7 +63,7 @@ to Sub Rosa while the mode is on.
 
 ## Milestones
 
-- [x] **S1 The switch.** Rite, theme, shelves on and restored, hanging rose,
+- [x] **S1 The switch.** The acknowledgement, theme, shelves on and restored, hanging rose,
   Petrine cross, palette commands.
 - [x] **S2 Dark art.** `scripts/art/curios.mjs` (in `pnpm data:art`) builds
   `public/art/curios/`: plates, heroes and paintings, every file checked on
@@ -218,7 +214,7 @@ is clean and `pnpm test` passes (122 tests). Nothing in Rust changed.
 
 | Part | Files |
 |---|---|
-| The switch, the rite, the theme | `src/features/settings/SubRosaPanel.tsx`, `src/app/subrosa.ts`, `subRosa` in `src/app/theme.ts`, `setSubRosa` and `beforeSubRosa` in `src/store/study.ts` |
+| The switch, the acknowledgement, the theme | `src/features/settings/SubRosaPanel.tsx`, `src/app/subrosa.ts`, `subRosa` in `src/app/theme.ts`, `setSubRosa` and `beforeSubRosa` in `src/store/study.ts` |
 | The art | `scripts/art/curios.mjs` (writes `public/art/curios/`), `ROSE_PLATES`, `ROSE_PAGE_PAINTINGS`, `roseHero` in `src/lib/art.ts`, `useArt` in `src/art/Art.tsx`, credits in [curios-credits.md](curios-credits.md) |
 | The shelf texts | `scripts/data/pseudepigrapha.mjs`, called from `build-bible.mjs`; books in `src/lib/data/books.json`; links in `src/lib/companions.ts` |
 | The library | `scripts/data/library.mjs` (writes `public/data/library*`), `src/lib/library.ts` |

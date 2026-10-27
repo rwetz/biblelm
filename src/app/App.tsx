@@ -46,7 +46,8 @@ import { CabinetView } from "@/features/cabinet/CabinetView";
 import { useNotebooks } from "@/store/notebooks";
 import { loadPaintings, loadRosePaintings, paintingForDay, type Painting } from "@/lib/art";
 import { nextScheme, useScheme } from "@/app/scheme";
-import { useSubRosa, useSubRosaSync } from "@/app/subrosa";
+import { useSubRosa, useSubRosaAsk, useSubRosaSync } from "@/app/subrosa";
+import { SubRosaAsk } from "@/features/settings/SubRosaPanel";
 import { SCHEMES } from "@/app/theme";
 import { useStudy, type Page } from "@/store/study";
 
@@ -288,6 +289,7 @@ export default function App() {
       <Look />
       <Palette open={palette} onOpenChange={setPalette} commands={commands} />
       <Welcome />
+      <SubRosaAsk />
     </div>
   );
 }
@@ -336,6 +338,7 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
   const study = useStudy();
   const [, setScheme] = useScheme();
   const [subRosa, setSubRosa] = useSubRosa();
+  const askSubRosa = useSubRosaAsk((s) => s.ask);
   const [catalog] = useCatalog();
   const { notebooks, setActive } = useNotebooks();
   return useMemo(() => {
@@ -453,8 +456,10 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
     ];
     const labToggle: PaletteCommand = { id: "lab-toggle", label: study.showLab ? "Hide the Lab from the sidebar" : "Show the Lab in the sidebar", group: "Lab", icon: "brain", keywords: ["machine", "gpt", "simpler", "study only"], run: () => study.set({ showLab: !study.showLab }) };
     const welcome: PaletteCommand = { id: "welcome", label: "Show the welcome again", group: "Settings", icon: "info", keywords: ["name", "first start", "intro"], run: () => study.set({ welcomed: false }) };
-    // Going under is done only by the rite in Settings; coming out is one step.
-    const rose: PaletteCommand = { id: "subrosa-off", label: "Come out from under the rose", group: "Appearance", icon: "contrast", keywords: ["sub rosa", "leave", "normal", "light"], run: () => setSubRosa(false) };
+    // Going under asks for the acknowledgement first; coming out is one step.
+    const rose: PaletteCommand = subRosa
+      ? { id: "subrosa-off", label: "Come out from under the rose", group: "Appearance", icon: "contrast", keywords: ["sub rosa", "leave", "normal", "light"], run: () => setSubRosa(false) }
+      : { id: "subrosa-on", label: "Go under the rose", group: "Appearance", icon: "incognito", keywords: ["sub rosa", "curiosities", "cabinet", "dark"], run: () => askSubRosa(true) };
     // Each dossier and symbol, under the rose only.
     const curios: PaletteCommand[] = CURIOS.map((c) => ({
       id: `curio-${c.id}`,
@@ -465,6 +470,6 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
       run: () => study.openCabinet({ text: null, section: 0, shelf: c.kind === "symbol" ? "symbols" : "dossiers", curio: c.id }),
     }));
     void openPalette;
-    return [...nav, ...reading, ...settings, welcome, ...(study.showLab ? lab : []), labToggle, ...layout, ...translations, ...shelves, ...nbs, ...appearance, ...(subRosa ? [rose, ...curios] : [])];
-  }, [study, setScheme, subRosa, setSubRosa, catalog, notebooks, setActive, openPalette, history]);
+    return [...nav, ...reading, ...settings, welcome, ...(study.showLab ? lab : []), labToggle, ...layout, ...translations, ...shelves, ...nbs, ...appearance, rose, ...(subRosa ? curios : [])];
+  }, [study, setScheme, subRosa, setSubRosa, askSubRosa, catalog, notebooks, setActive, openPalette, history]);
 }
