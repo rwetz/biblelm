@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   fmtShortcut,
   Icon,
   MOD_KEY,
+  MOD_PROP,
+  SHIFT_KEY,
   SidebarNav,
   StatusBar,
   StatusItem,
@@ -24,11 +26,14 @@ import { SidebarArt, SidebarOrnament } from "@/art/SidebarArt";
 import { formatRef, SHELVES, type Shelf } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
 import { refreshGpuInfo } from "@/lib/gpu";
+import { listen } from "@/lib/backend";
+import { setSaverMode, watchPower } from "@/lib/power";
 import { HomeView } from "@/features/home/HomeView";
 import { ReadView, chapterStep, toggleVersePanel } from "@/features/read/ReadView";
 import { SearchView } from "@/features/search/SearchView";
 import { TopicsView } from "@/features/topics/TopicsView";
 import { STRUGGLES } from "@/lib/studies";
+import { CURIOS } from "@/lib/dossiers";
 import { AtlasView } from "@/features/atlas/AtlasView";
 import { GalleryView } from "@/features/gallery/GalleryView";
 import { DailyView } from "@/features/daily/DailyView";
@@ -37,9 +42,11 @@ import { ViewBoundary } from "./ViewBoundary";
 import { NotebooksView } from "@/features/notebooks/NotebooksView";
 import { LabView } from "@/features/lab/LabView";
 import { SettingsView } from "@/features/settings/SettingsView";
+import { CabinetView } from "@/features/cabinet/CabinetView";
 import { useNotebooks } from "@/store/notebooks";
-import { loadPaintings, paintingForDay, type Painting } from "@/lib/art";
+import { loadPaintings, loadRosePaintings, paintingForDay, type Painting } from "@/lib/art";
 import { nextScheme, useScheme } from "@/app/scheme";
+import { useSubRosa, useSubRosaSync } from "@/app/subrosa";
 import { SCHEMES } from "@/app/theme";
 import { useStudy, type Page } from "@/store/study";
 
@@ -47,7 +54,7 @@ const SHELF_WORDS: Record<Shelf, string[]> = {
   protestant: ["protestant", "66 books"],
   deuterocanon: ["deuterocanon", "catholic", "tobit", "judith", "wisdom", "sirach", "baruch", "maccabees"],
   apocrypha: ["apocrypha", "esdras", "manasseh", "psalm 151", "1611"],
-  pseudepigrapha: ["pseudepigrapha", "enoch", "watchers", "charles"],
+  pseudepigrapha: ["pseudepigrapha", "enoch", "watchers", "charles", "jubilees", "solomon", "nicodemus", "harrowing", "apocalypse of paul", "james"],
 };
 
 const NAV: SidebarNavSection<Page>[] = [
@@ -62,11 +69,17 @@ const NAV: SidebarNavSection<Page>[] = [
       { id: "gallery", label: "Gallery", icon: "image" },
       { id: "daily", label: "Daily", icon: "calendar" },
       { id: "notebooks", label: "Notebooks", icon: "note" },
+      { id: "cabinet", label: "Sub Rosa", icon: "incognito" },
     ],
   },
   { title: "Machine", items: [{ id: "lab", label: "Lab", icon: "brain" }] },
   { items: [{ id: "settings", label: "Settings", icon: "settings" }] },
 ];
+/** Pages that are there only while a setting is on: the Lab (Settings, Lab in the sidebar) and the cabinet, under the rose. */
+const shown = (page: Page, showLab: boolean, subRosa: boolean) => (page !== "lab" || showLab) && (page !== "cabinet" || subRosa);
+/** The sidebar as set. */
+const navFor = (showLab: boolean, subRosa: boolean) =>
+  NAV.map((s) => ({ ...s, items: s.items.filter((i) => shown(i.id, showLab, subRosa)) })).filter((s) => s.items.length);
 
 // The paintings, for commands that open one (loaded once at start).
 let paintingsCache: Painting[] = [];
@@ -83,14 +96,16 @@ const VIEWS: Record<Page, () => React.ReactNode> = {
   notebooks: () => <NotebooksView />,
   lab: () => <LabView />,
   settings: () => <SettingsView />,
+  cabinet: () => <CabinetView />,
 };
 
 /**
- * Narrower than the desktop window's minimum (900 px), as `pnpm dev` can be:
- * the sidebar folds to its icons and drops its art, so the page keeps room.
+ * Narrower than a small laptop's window (a 1366 or 1280 wide screen with the
+ * verse panel open leaves the text little room beside a full sidebar): the
+ * sidebar folds to its icons and drops its art, so the page keeps room.
  */
 function useNarrow(): boolean {
-  const query = "(max-width: 899px)";
+  const query = "(max-width: 1023px)";
   const [narrow, setNarrow] = useState(() => typeof window !== "undefined" && window.matchMedia?.(query).matches === true);
   useEffect(() => {
     const m = window.matchMedia?.(query);
@@ -103,15 +118,135 @@ function useNarrow(): boolean {
   return narrow;
 }
 
+/**
+ * Back and forward through the pages visited (the menu, the keyboard and a
+ * two-finger swipe), like a browser's, without a router.
+ */
+function usePageHistory(page: Page, go: (p: Page) => void) {
+  const back = useRef<Page[]>([]);
+  const ahead = useRef<Page[]>([]);
+  const last = useRef(page);
+  const stepping = useRef(false);
+  useEffect(() => {
+    if (page === last.current) return;
+    if (!stepping.current) {
+      back.current = [...back.current, last.current].slice(-30);
+      ahead.current = [];
+    }
+    stepping.current = false;
+    last.current = page;
+  }, [page]);
+  return useMemo(() => {
+    const step = (from: { current: Page[] }, to: { current: Page[] }) => {
+      const p = from.current.pop();
+      if (!p) return;
+      to.current.push(last.current);
+      stepping.current = true;
+      go(p);
+    };
+    return { back: () => step(back, ahead), forward: () => step(ahead, back) };
+  }, [go]);
+}
+
+/**
+ * A two-finger swipe across a trackpad turns back or forward, unless the
+ * pointer is over something that scrolls sideways or pans (maps, wide
+ * tables). One turn per swipe: the gesture must pause before the next.
+ */
+function useSwipeHistory(history: { back: () => void; forward: () => void }) {
+  useEffect(() => {
+    let dx = 0;
+    let spent = false;
+    let quiet: ReturnType<typeof setTimeout> | undefined;
+    const sideways = (el: Element | null): boolean => {
+      for (; el && el !== document.body; el = el.parentElement) {
+        if (el instanceof HTMLCanvasElement || el instanceof SVGSVGElement) return true;
+        const ox = getComputedStyle(el).overflowX;
+        if ((ox === "auto" || ox === "scroll") && el.scrollWidth > el.clientWidth) return true;
+      }
+      return false;
+    };
+    const onWheel = (e: WheelEvent) => {
+      clearTimeout(quiet);
+      quiet = setTimeout(() => ((dx = 0), (spent = false)), 220);
+      if (spent || e.ctrlKey || Math.abs(e.deltaX) < 2 * Math.abs(e.deltaY)) return;
+      if (sideways(e.target as Element)) return;
+      dx += e.deltaX;
+      if (Math.abs(dx) < 140) return;
+      spent = true;
+      if (dx < 0) history.back();
+      else history.forward();
+    };
+    window.addEventListener("wheel", onWheel, { passive: true });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [history]);
+}
+
 export default function App() {
   const page = useStudy((s) => s.page);
+  const showLab = useStudy((s) => s.showLab);
+  const compact = useStudy((s) => s.compact);
+  const saver = useStudy((s) => s.saver);
+  const folded = useStudy((s) => s.sidebarFolded);
+  const setStudy = useStudy((s) => s.set);
   const redLetter = useStudy((s) => s.redLetter);
   const go = useStudy((s) => s.go);
+  const subRosa = useStudy((s) => s.subRosa);
   const [palette, setPalette] = useState(false);
   const narrow = useNarrow();
+  const nav = useMemo(() => navFor(showLab, subRosa), [showLab, subRosa]);
+  const history = usePageHistory(page, go);
+  useSwipeHistory(history);
+  const commands = useCommands(() => setPalette(true), history);
+  useSubRosaSync();
+
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-compact", compact);
+  }, [compact]);
+  useEffect(() => {
+    watchPower();
+    setSaverMode(saver);
+  }, [saver]);
+
+  // The shortcuts a Mac app is expected to have (Ctrl elsewhere); also the menu bar's.
+  useEffect(() => {
+    const find = () => {
+      go("search");
+      setTimeout(() => window.dispatchEvent(new CustomEvent("biblelm:focus-search")), 60);
+    };
+    const run: Record<string, () => void> = {
+      settings: () => go("settings"),
+      find,
+      palette: () => setPalette(true),
+      sidebar: () => setStudy({ sidebarFolded: !useStudy.getState().sidebarFolded }),
+      back: history.back,
+      forward: history.forward,
+    };
+    const keys: Record<string, string> = { ",": "settings", f: "find", "\\": "sidebar", "[": "back", "]": "forward" };
+    const onKey = (e: KeyboardEvent) => {
+      if (!e[`${MOD_PROP}Key`] || e.altKey || e.shiftKey) return;
+      const name = keys[e.key.toLowerCase()];
+      if (!name) return;
+      e.preventDefault();
+      run[name]();
+    };
+    window.addEventListener("keydown", onKey);
+    const off = listen<string>("menu", (e) => {
+      if (e.payload.startsWith("go-")) go(e.payload.slice(3) as Page);
+      else run[e.payload]?.();
+    });
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      off.then((f) => f());
+    };
+  }, [go, history, setStudy]);
   useCommandPaletteShortcut(() => setPalette((o) => !o));
-  const commands = useCommands(() => setPalette(true));
   const loadNotes = useNotebooks((s) => s.load);
+
+  // Hiding the Lab, or coming out from under the rose, while on its page leaves for Home rather than a page with no nav item.
+  useEffect(() => {
+    if (!shown(page, showLab, subRosa)) go("home");
+  }, [showLab, subRosa, page, go]);
 
   useEffect(() => {
     loadNotes();
@@ -132,16 +267,16 @@ export default function App() {
           >
             <Icon name="search" size="xs" />
             <span className="flex-1 truncate text-left transition-colors group-hover:text-foreground">Find a page, setting or command</span>
-            <kbd className="hidden font-mono text-[10px] opacity-70 md:inline">{fmtShortcut(MOD_KEY, "Shift", "P")}</kbd>
+            <kbd className="hidden font-mono text-[10px] opacity-70 md:inline">{fmtShortcut(MOD_KEY, SHIFT_KEY, "P")}</kbd>
           </button>
         }
-        actions={<ModeToggle />}
+        actions={subRosa ? undefined : <ModeToggle />}
       />
       <div className="nexis-shell-body flex min-h-0 flex-1">
         <div className="relative flex shrink-0">
-          <SidebarNav sections={NAV} value={page} onChange={go} label="BibleLM" collapsed={narrow} />
-          {!narrow && <SidebarOrnament />}
-          {!narrow && <SidebarArt />}
+          <SidebarNav sections={nav} value={page} onChange={go} label="BibleLM" collapsed={narrow || folded} />
+          {!(narrow || folded) && <SidebarOrnament />}
+          {!(narrow || folded) && <SidebarArt />}
         </div>
         <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <ViewEnter replayKey={page} className="flex min-h-0 flex-1 flex-col">
@@ -197,13 +332,14 @@ function Status() {
   );
 }
 
-function useCommands(openPalette: () => void): PaletteCommand[] {
+function useCommands(openPalette: () => void, history: { back: () => void; forward: () => void }): PaletteCommand[] {
   const study = useStudy();
   const [, setScheme] = useScheme();
+  const [subRosa, setSubRosa] = useSubRosa();
   const [catalog] = useCatalog();
   const { notebooks, setActive } = useNotebooks();
   return useMemo(() => {
-    const nav = NAV.flatMap((s) => s.items).map<PaletteCommand>((i) => ({
+    const nav = NAV.flatMap((s) => s.items).filter((i) => shown(i.id, study.showLab, subRosa)).map<PaletteCommand>((i) => ({
       id: `go-${i.id}`,
       label: `Go to ${i.label}`,
       group: "Navigate",
@@ -217,7 +353,7 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       { id: "prev-ch", label: "Previous chapter", group: "Read", icon: "chevron-left", shortcut: "[", run: () => chapterStep(-1) },
       { id: "verse-panel", label: study.selected ? "Hide the verse panel" : "Show the verse panel", group: "Read", icon: "info", shortcut: "P", keywords: ["notes", "cross references", "sidebar"], run: () => { if (study.page !== "read") study.go("read"); toggleVersePanel(); } },
       { id: "interlinear", label: study.interlinear ? "Read without the Hebrew and Greek" : "Read interlinear (Hebrew and Greek)", group: "Read", icon: "text", keywords: ["greek", "hebrew", "original", "strongs"], run: () => { study.set({ interlinear: !study.interlinear }); if (study.page !== "read") study.go("read"); } },
-      { id: "look-today", label: "Look: today's painting", group: "Art", icon: "image", keywords: ["caravaggio", "rembrandt", "visio divina", "gallery"], run: () => { const p = paintingForDay(paintingsCache); if (p) study.openLook({ kind: "painting", id: p.id }); } },
+      { id: "look-today", label: "Look: today's painting", group: "Art", icon: "image", keywords: ["caravaggio", "rembrandt", "visio divina", "gallery"], run: async () => { const p = paintingForDay(study.subRosa ? [...paintingsCache, ...(await loadRosePaintings())] : paintingsCache); if (p) study.openLook({ kind: "painting", id: p.id }); } },
       { id: "columns", label: study.columns ? "Read in one column" : "Read in two columns", group: "Read", icon: "split-vertical", run: () => study.set({ columns: !study.columns }) },
       { id: "red-letter", label: study.redLetter ? "Words of Christ in black" : "Words of Christ in red", group: "Read", icon: "quote", keywords: ["red letter", "jesus"], run: () => study.set({ redLetter: !study.redLetter }) },
       { id: "bigger", label: "Larger text", group: "Read", icon: "zoom-in", run: () => study.set({ textSize: Math.min(28, study.textSize + 1) }) },
@@ -259,7 +395,7 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
     const appearance: PaletteCommand[] = [
       ...art,
       { id: "dev", label: study.devMode ? "Turn developer mode off" : "Turn developer mode on", group: "Appearance", icon: "code", keywords: ["debug", "art", "hero", "plates"], run: () => { study.set({ devMode: !study.devMode }); if (!study.devMode) study.go("settings"); } },
-      ...SCHEMES.map((sc) => ({ id: `scheme-${sc.id}`, label: `Scheme: ${sc.label}`, group: "Appearance", icon: "contrast" as const, keywords: ["theme", sc.id === "vellum" ? "light mode" : "dark mode", sc.blurb], run: () => setScheme(sc.id) })),
+      ...(subRosa ? [] : SCHEMES).map((sc) => ({ id: `scheme-${sc.id}`, label: `Scheme: ${sc.label}`, group: "Appearance", icon: "contrast" as const, keywords: ["theme", sc.id === "vellum" ? "light mode" : "dark mode", sc.blurb], run: () => setScheme(sc.id) })),
     ];
     const nbs: PaletteCommand[] = [
       { id: "nb-new", label: "New notebook", group: "Notebooks", icon: "add", run: () => { study.go("notebooks"); window.dispatchEvent(new CustomEvent("biblelm:new-notebook")); } },
@@ -284,16 +420,22 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       setting("Illustrations", ["art", "pictures", "engravings", "paintings", "off"]),
       setting("Reading face", ["font", "typeface", "garamond", "fell", "gothic", "blackletter"]),
       setting("Text size", ["font size", "bigger", "smaller", "zoom"]),
+      setting("Interface size", ["zoom", "scale", "bigger", "smaller", "ui size", "large monitor", "4k"]),
       setting("Red letter", ["words of christ", "jesus", "red"]),
       setting("Two columns", ["columns", "layout", "printed bible"]),
       setting("Ornaments", ["decorations", "flair", "dither", "emblems", "turn off"]),
+      setting("Compact spacing", ["density", "small screen", "laptop", "margins", "tight"]),
+      setting("Fold the sidebar to icons", ["collapse", "nav", "room"]),
+      setting("Save battery", ["power", "low power", "laptop", "animation", "blur", "motion"]),
       setting("Your name", ["name", "print", "title page", "profile"]),
       // Each shelf by its own books, so "enoch" finds the Pseudepigrapha alone.
       ...SHELVES.map((s) => setting(s.label, ["canon", "shelf", "books", ...SHELF_WORDS[s.id]])),
       setting("Translations", ["kjv", "web", "asv", "version", "bible"]),
+      setting("Lab in the sidebar", ["machine", "gpt", "train", "hide", "simpler", "study only"]),
       setting("Semantic search", ["meaning", "embedding", "machine"]),
       setting("Jev", ["typesafe", "rerank", "api key", "machine help", "bypass"]),
       setting("Developer mode", ["debug", "hero", "plates", "art", "ornaments sheet"]),
+      setting("Sub Rosa", ["curiosities", "dark", "occult", "angels", "demons", "hell", "goetia", "solomon", "masons", "symbols", "under the rose"]),
       setting("About", ["credits", "licence", "version", "sources"]),
     ];
     const lab: PaletteCommand[] = ([["corpus", "Corpus"], ["train", "Training"], ["generate", "Generate"], ["model", "Model"], ["inside", "Inside the model"], ["lessons", "Lessons"]] as const).map(([t, name]) => ({
@@ -304,8 +446,32 @@ function useCommands(openPalette: () => void): PaletteCommand[] {
       keywords: ["gpt", "model", "machine", "train"],
       run: () => { study.go("lab"); setTimeout(() => window.dispatchEvent(new CustomEvent("biblelm:lab-tab", { detail: t })), 60); },
     }));
+    const layout: PaletteCommand[] = [
+      { id: "back", label: "Back", group: "Navigate", icon: "chevron-left", shortcut: fmtShortcut(MOD_KEY, "["), run: history.back },
+      { id: "forward", label: "Forward", group: "Navigate", icon: "chevron-right", shortcut: fmtShortcut(MOD_KEY, "]"), run: history.forward },
+      { id: "sidebar", label: study.sidebarFolded ? "Unfold the sidebar" : "Fold the sidebar to icons", group: "Appearance", icon: "sidebar-left", shortcut: fmtShortcut(MOD_KEY, "\\"), keywords: ["collapse", "hide", "nav", "room"], run: () => study.set({ sidebarFolded: !study.sidebarFolded }) },
+      { id: "compact", label: study.compact ? "Roomier spacing" : "Compact spacing", group: "Appearance", icon: "zoom-out", keywords: ["density", "small screen", "laptop", "margins", "tight"], run: () => study.set({ compact: !study.compact }) },
+    ];
+    const labToggle: PaletteCommand = { id: "lab-toggle", label: study.showLab ? "Hide the Lab from the sidebar" : "Show the Lab in the sidebar", group: "Lab", icon: "brain", keywords: ["machine", "gpt", "simpler", "study only"], run: () => study.set({ showLab: !study.showLab }) };
     const welcome: PaletteCommand = { id: "welcome", label: "Show the welcome again", group: "Settings", icon: "info", keywords: ["name", "first start", "intro"], run: () => study.set({ welcomed: false }) };
+    const rose: PaletteCommand = subRosa
+      ? { id: "subrosa-off", label: "Come out from under the rose", group: "Appearance", icon: "contrast", keywords: ["sub rosa", "leave", "normal", "light"], run: () => setSubRosa(false) }
+      : { id: "subrosa-on", label: "Go under the rose", group: "Appearance", icon: "incognito", keywords: ["sub rosa", "curiosities", "cabinet", "dark"], run: () => setSubRosa(true) };
+    // Each dossier and symbol, under the rose only.
+    const curios: PaletteCommand[] = CURIOS.map((c) => ({
+      id: `curio-${c.id}`,
+      label: `${c.kind === "symbol" ? "Symbol" : "Dossier"}: ${c.title}`,
+      group: "Sub Rosa",
+      icon: "incognito",
+      keywords: ["sub rosa", c.lede],
+      run: () => study.openCabinet({ text: null, section: 0, shelf: c.kind === "symbol" ? "symbols" : "dossiers", curio: c.id }),
+    }));
+    curios.push({ id: "curio-hell", label: "The map of hell (Botticelli)", group: "Sub Rosa", icon: "incognito", keywords: ["sub rosa", "dante", "inferno", "circles", "atlas"], run: () => study.openAtlas("hell", "") });
+    curios.push({ id: "curio-quiz", label: "Scripture or myth? A quiz", group: "Sub Rosa", icon: "incognito", keywords: ["sub rosa", "quiz", "myths", "apple", "lucifer", "flashcards"], run: () => study.openCabinet({ text: null, section: 0, shelf: "quiz" }) });
+    curios.push({ id: "curio-numbers", label: "Gematria: the number of a name", group: "Sub Rosa", icon: "incognito", keywords: ["sub rosa", "isopsephy", "666", "616", "bible codes", "els"], run: () => study.openCabinet({ text: null, section: 0, shelf: "numbers" }) });
+    curios.push({ id: "curio-lodge", label: "The lodge: degrees, officers and numbers", group: "Sub Rosa", icon: "incognito", keywords: ["sub rosa", "freemasonry", "masons", "scottish rite", "york rite", "33rd degree", "worshipful master", "tracing board"], run: () => study.openCabinet({ text: null, section: 0, shelf: "lodge" }) });
+    curios.push({ id: "curio-bestiary", label: "The bestiary: the Goetia's 72 spirits", group: "Sub Rosa", icon: "incognito", keywords: ["sub rosa", "goetia", "seals", "demons", "testament of solomon"], run: () => study.openCabinet({ text: null, section: 0, shelf: "bestiary" }) });
     void openPalette;
-    return [...nav, ...reading, ...settings, welcome, ...lab, ...translations, ...shelves, ...nbs, ...appearance];
-  }, [study, setScheme, catalog, notebooks, setActive, openPalette]);
+    return [...nav, ...reading, ...settings, welcome, ...(study.showLab ? lab : []), labToggle, ...layout, ...translations, ...shelves, ...nbs, ...appearance, rose, ...(subRosa ? curios : [])];
+  }, [study, setScheme, subRosa, setSubRosa, catalog, notebooks, setActive, openPalette, history]);
 }

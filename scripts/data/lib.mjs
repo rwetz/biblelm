@@ -26,11 +26,59 @@ export async function cached(url, name) {
   if (existsSync(dest)) return readFileSync(dest);
   ensureDir(dirname(dest));
   process.stdout.write(`  fetch ${url}\n`);
-  const res = await fetch(url, { headers: { "User-Agent": "BibleLM data build (+github.com/rwetz/biblelm)" } });
+  let res;
+  // A busy server (429, 503) is waited on, as long as it asks, a few times.
+  for (let tries = 0; ; tries++) {
+    res = await fetch(url, { headers: { "User-Agent": "BibleLM data build (+https://github.com/rwetz/biblelm; rwetz00 at gmail)" } });
+    if (!(res.status === 429 || res.status === 503) || tries === 4) break;
+    const wait = Math.min(60, +(res.headers.get("retry-after") ?? 0) || 5 * 2 ** tries);
+    process.stdout.write(`  busy (${res.status}), waiting ${wait}s\n`);
+    await new Promise((r) => setTimeout(r, wait * 1000));
+  }
   if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
   writeFileSync(dest, buf);
   return buf;
+}
+
+/**
+ * A Wikisource page as rendered (its proofread pages put together), from the
+ * parse API, cached in data-src/wikisource/<name>.html. HTML, read as text.
+ */
+export async function wikisource(page, name) {
+  const dest = join(SRC, "wikisource", `${name}.html`);
+  if (existsSync(dest)) return readFileSync(dest, "utf8");
+  const url = `https://en.wikisource.org/w/api.php?action=parse&format=json&formatversion=2&prop=text&page=${encodeURIComponent(page)}`;
+  const json = JSON.parse((await cached(url, `wikisource/${name}.json`)).toString("utf8"));
+  if (!json.parse?.text) throw new Error(`Wikisource: no page "${page}"`);
+  writeFileSync(dest, json.parse.text);
+  return json.parse.text;
+}
+
+const ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
+
+/**
+ * Rendered HTML to paragraphs of plain text: footnote markers and page
+ * numbers dropped, line breaks inside a paragraph kept as "\n" (verse), and
+ * zero-width page joins removed. Tags are stripped, never interpreted.
+ */
+export function htmlParas(html) {
+  const text = html
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/g, "")
+    .replace(/\s*\n\s*/g, " ")
+    .replace(/<sup\b[^>]*class="reference"[^>]*>[\s\S]*?<\/sup>/g, "")
+    .replace(/<span\b[^>]*class="pagenum[^"]*"[^>]*>(?:[^<]|<(?!\/?span)[^>]*>)*<\/span>/g, "")
+    .replace(/<br\s*\/?>/g, "\n")
+    .replace(/<\/(p|div|h\d|li|tr|dd|dt|center)>|<(p|div|h\d|li|tr|center)\b[^>]*>/g, "\n\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&(#x[0-9a-f]+|#\d+|\w+);/gi, (m, e) =>
+      e[0] === "#" ? String.fromCodePoint(e[1].toLowerCase() === "x" ? parseInt(e.slice(2), 16) : +e.slice(1)) : (ENTITIES[e.toLowerCase()] ?? m),
+    )
+    .replace(/[​­]/g, "");
+  return text
+    .split(/\n[ \t]*\n/)
+    .map((p) => p.split("\n").map((l) => l.replace(/[ \t ]+/g, " ").trim()).filter(Boolean).join("\n"))
+    .filter(Boolean);
 }
 
 export function writeJson(rel, value) {

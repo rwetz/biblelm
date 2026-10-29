@@ -4,9 +4,10 @@
 // field (sdfMark.ts).
 
 import { useRef } from "react";
-import { cn, useReducedMotion, useTheme } from "@nexis/design";
+import { cn, useTheme } from "@nexis/design";
 import { toRgba, useSdfShader } from "./sdfMark";
 import roseLit from "./rose-lit.svg";
+import { useStill } from "@/lib/power";
 
 const FRAGMENT = `#version 300 es
 precision highp float;
@@ -220,7 +221,7 @@ export function LitRose({
   speed?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const dark = useTheme().resolvedMode === "dark";
   const settings = useRef({ lightA, lightB, angle, distance, intensity, reach, core, shadows, body: BODY.light, bevel, speed });
   settings.current = { lightA, lightB, angle, distance, intensity, reach, core, shadows, body: dark ? BODY.dark : BODY.light, bevel, speed };

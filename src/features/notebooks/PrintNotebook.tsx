@@ -6,7 +6,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Engraving, Fleuron, usePaintings, usePlates } from "@/art/Art";
-import { paintingCredit, paintingUrl, paintingsInChapter, platesInChapter } from "@/lib/art";
+import { paintingCredit, paintingUrl, paintingsInChapter, plateCredit, platesInChapter } from "@/lib/art";
 import { bookName, formatRef, parseOsis } from "@/lib/canon";
 import { useTranslation } from "@/lib/hooks";
 import { VerseText } from "@/features/read/ReadView";
@@ -77,7 +77,7 @@ export function PrintNotebook({ nb, keep, subtitle, onDone }: { nb: Notebook; ke
               {pics.map((p) => (
                 <figure key={p.id} className="my-6 text-center">
                   <Engraving plate={p} loading="eager" className="mx-auto max-h-[45vh] w-auto" />
-                  <figcaption className="mt-1 font-garamond text-xs italic">{p.title}, Gustave Doré</figcaption>
+                  <figcaption className="mt-1 font-garamond text-xs italic">{p.title}, {plateCredit(p)}</figcaption>
                 </figure>
               ))}
               <h3 className="mt-6 font-garamond text-lg font-semibold">{spansLabel(spans, label)}</h3>

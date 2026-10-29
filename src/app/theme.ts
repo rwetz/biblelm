@@ -202,3 +202,101 @@ export const SCHEMES: { id: Scheme; label: string; blurb: string }[] = [
   { id: "nocturne", label: "Nocturne", blurb: "Lamp-black and gilt" },
   { id: "tenebrae", label: "Tenebrae", blurb: "Caravaggio's dark and vermilion, for the paintings" },
 ];
+
+// Sub Rosa: the curiosities mode's own theme (src/app/subrosa.ts). Not a
+// scheme you step to: it comes with the mode and goes with it. Cold where
+// the others are warm: a green-black like a smoked glass, ash and bone for
+// the ink, and brimstone (sulphur yellow) as the one accent. Its light
+// variant (ash on bone) exists only because a theme must have one.
+export const SUBROSA_ID = "subrosa";
+
+export const subRosa: Theme = {
+  id: SUBROSA_ID,
+  name: "Sub Rosa",
+  author: "BibleLM",
+  description: "Smoked glass, ash and brimstone, under the rose.",
+  variants: {
+    light: {
+      colors: {
+        background: "#e3e2da",
+        foreground: "#16170f",
+        card: "#ecebe3",
+        cardForeground: "#16170f",
+        popover: "#f1f0e8",
+        popoverForeground: "#16170f",
+        primary: "#1f2018",
+        primaryForeground: "#ecebe3",
+        secondary: "#d4d3c8",
+        secondaryForeground: "#16170f",
+        muted: "#d4d3c8",
+        mutedForeground: "#56574a",
+        accent: "#cbcabd",
+        accentForeground: "#16170f",
+        destructive: "#a3261b",
+        border: "rgba(22,23,15,0.15)",
+        input: "rgba(22,23,15,0.22)",
+        ring: "#7d7414",
+        sidebar: "#d9d8cd",
+        sidebarForeground: "#16170f",
+        sidebarPrimary: "#7d7414",
+        sidebarPrimaryForeground: "#ecebe3",
+        sidebarAccent: "#c8c7b9",
+        sidebarAccentForeground: "#16170f",
+        sidebarBorder: "rgba(22,23,15,0.12)",
+        sidebarRing: "#7d7414",
+        radius: "0.5rem",
+      },
+      terminal: {
+        background: "#e3e2da",
+        foreground: "#16170f",
+        ansi: [
+          "#16170f", "#a3261b", "#4f7a2e", "#7d7414",
+          "#2f5f8a", "#6a3f74", "#2d7470", "#d4d3c8",
+          "#56574a", "#c2452b", "#5f9138", "#9a9019",
+          "#3b72a6", "#83508b", "#358a85", "#ecebe3",
+        ],
+      },
+    },
+    dark: {
+      colors: {
+        background: "#0a0c0a",
+        foreground: "#d8d6c6",
+        card: "#101310",
+        cardForeground: "#d8d6c6",
+        popover: "#141714",
+        popoverForeground: "#d8d6c6",
+        primary: "#d8d6c6",
+        primaryForeground: "#0a0c0a",
+        secondary: "#1a1e1a",
+        secondaryForeground: "#d8d6c6",
+        muted: "#1a1e1a",
+        mutedForeground: "#8e8f7f",
+        accent: "#202520",
+        accentForeground: "#d8d6c6",
+        destructive: "#e5675e",
+        border: "rgba(216,214,198,0.09)",
+        input: "rgba(216,214,198,0.14)",
+        ring: "#cdbf45",
+        sidebar: "#070907",
+        sidebarForeground: "#d8d6c6",
+        sidebarPrimary: "#cdbf45",
+        sidebarPrimaryForeground: "#0a0c0a",
+        sidebarAccent: "#1c201c",
+        sidebarAccentForeground: "#d8d6c6",
+        sidebarBorder: "rgba(216,214,198,0.07)",
+        sidebarRing: "#cdbf45",
+        radius: "0.5rem",
+      },
+      terminal: {
+        background: "#0a0c0a",
+        foreground: "#d8d6c6",
+        ansi: [
+          "#1a1e1a", "#e5675e", "#8fbf6a", "#cdbf45",
+          "#78a8d6", "#b48fbe", "#6fbcb4", "#c8c6b6",
+          "#4f5246", "#f08a80", "#a7d384", "#e2d55e",
+          "#97c0e8", "#cba8d2", "#8fd2ca", "#eeecdc",
+        ],
+      },
+    },
+  },
+};

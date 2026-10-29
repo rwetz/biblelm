@@ -75,7 +75,7 @@ export function SearchView() {
 
   return (
     <PlatePage plate={plate} corner="br" hidePlate={typing}>
-      <div className="relative mx-auto w-full max-w-3xl px-8 pb-24 pt-12">
+      <div className="relative mx-auto w-full max-w-3xl px-(--gutter) pb-24 pt-(--page-top)">
         <h1 className="flex items-center gap-3 font-blackletter text-4xl"><PageMark page="search" />Search the Scriptures</h1>
         <p className="mt-1 text-sm text-muted-foreground">A reference, a word, a question, or what you are looking for in your own words.</p>
         <form

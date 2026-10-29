@@ -71,7 +71,7 @@ function Zipf({ words }: { words: Parameters<typeof zipf>[0] }) {
   );
 }
 
-function Codes({ t }: { t: NonNullable<ReturnType<typeof useTranslation>[0]> }) {
+export function Codes({ t }: { t: NonNullable<ReturnType<typeof useTranslation>[0]> }) {
   const [word, setWord] = useState("GOD");
   const [skip, setSkip] = useState(250);
   const [moby, setMoby] = useState<string | null | undefined>(undefined);

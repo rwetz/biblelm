@@ -7,13 +7,15 @@
 // Sources (all public domain except OpenBible, which is CC-BY: credited in the
 // app's About panel and in public/data/CREDITS.json):
 //   eBible.org verse-per-line files, OpenBible.info cross references + topics,
-//   R. H. Charles's 1 Enoch (1917) from Project Gutenberg, a companion text.
+//   R. H. Charles's 1 Enoch (1917) from Project Gutenberg, a companion text,
+//   and the rest of the Pseudepigrapha shelf (pseudepigrapha.mjs).
 
 import { unzipSync, strFromU8 } from "fflate";
 import { createHash } from "node:crypto";
 import { BOOKS, BY_CODE, BY_OSIS, cached, kb, writeBin, writeJson } from "./lib.mjs";
 import { parseBook } from "./usfm.mjs";
 import { parseCharles } from "./enoch.mjs";
+import { buildPseudepigrapha } from "./pseudepigrapha.mjs";
 
 const BY_USFM = new Map(BOOKS.map((b) => [b.usfm, b]));
 
@@ -108,11 +110,17 @@ async function buildEnoch() {
   const out = [{ osis: "1En", chapters: parseCharles(text) }];
   const verses = out[0].chapters.reduce((n, c) => n + c.v.length, 0);
   if (out[0].chapters.length !== 108 || verses < 1060) throw new Error(`1 Enoch: parsed ${out[0].chapters.length} chapters, ${verses} verses (expected 108 and about 1,063)`);
-  const meta = { id: "enoch", name: "1 Enoch (R. H. Charles)", abbr: "Charles", language: "English", year: "1917", note: "Charles's critical signs are left out; the printed edition has them." };
-  const p = writeJson("bible/enoch.json", { ...meta, books: out });
-  console.log(`  ${"1En".padEnd(4)} ${String(1).padStart(3)} book  ${String(verses).padStart(6)} verses ${kb(p)}`);
-  const hash = createHash("sha256").update(JSON.stringify(out)).digest("hex").slice(0, 16);
-  return { meta: { ...meta, hash, companion: true, books: ["1En"], verses, source: "https://www.gutenberg.org/ebooks/77935", licence: "Public domain" }, data: out };
+  const meta = { id: "enoch", name: "1 Enoch (R. H. Charles)", abbr: "Charles", language: "English", year: "1917", note: "Charles's critical signs are left out; the printed edition has them.", source: "https://www.gutenberg.org/ebooks/77935", licence: "Public domain" };
+  return companion(meta, out);
+}
+
+/** Write a companion text (bible/<id>.json) and its entry for translations.json. */
+function companion({ source, licence, ...meta }, books) {
+  const verses = books.reduce((n, b) => n + b.chapters.reduce((m, c) => m + c.v.length, 0), 0);
+  const p = writeJson(`bible/${meta.id}.json`, { ...meta, books });
+  console.log(`  ${books.map((b) => b.osis).join(", ").padEnd(14)} ${String(verses).padStart(6)} verses ${kb(p)}  ${meta.name}`);
+  const hash = createHash("sha256").update(JSON.stringify(books)).digest("hex").slice(0, 16);
+  return { meta: { ...meta, hash, companion: true, books: books.map((b) => b.osis), verses, source, licence }, data: books };
 }
 
 /** Verse index over the KJV (with Apocrypha): position i <-> "Gen.1.1". Companions come after, so no KJV position moves. */
@@ -194,10 +202,12 @@ async function main() {
   console.log("translations");
   const built = [];
   for (const t of TRANSLATIONS) built.push(await buildTranslation(t));
-  const enoch = await buildEnoch();
-  writeJson("translations.json", [...built, enoch].map((b) => b.meta));
+  // Companions: 1 Enoch, then the rest of the shelf. Each comes after the last in
+  // the verse index, so adding one never moves a verse already indexed.
+  const companions = [await buildEnoch(), ...(await buildPseudepigrapha()).map((c) => companion(c.meta, c.books))];
+  writeJson("translations.json", [...built, ...companions].map((b) => b.meta));
 
-  const refs = buildIndex(built[0].data, enoch.data);
+  const refs = buildIndex(built[0].data, ...companions.map((c) => c.data));
   writeJson("refs.json", refs);
   const idx = new Map(refs.map((r, i) => [r, i]));
   console.log(`  index ${refs.length} verses`);
@@ -210,7 +220,7 @@ async function main() {
   await buildTopics(idx);
 
   writeJson("CREDITS.json", {
-    texts: [...built, enoch].map((b) => ({ name: b.meta.name, source: b.meta.source, licence: "Public domain" })),
+    texts: [...built, ...companions].map((b) => ({ name: b.meta.name, source: b.meta.source, licence: "Public domain" })),
     data: [
       { name: "Cross references", source: "https://www.openbible.info/labs/cross-references/", licence: "CC-BY" },
       { name: "Topical Bible", source: "https://www.openbible.info/topics/", licence: "CC-BY" },

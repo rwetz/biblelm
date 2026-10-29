@@ -6,7 +6,11 @@ import {
   Icon,
   IN_TAURI,
   Input,
+  INTERFACE_SCALES,
+  interfaceScaleLabel,
+  MOD_KEY,
   Panel,
+  parseInterfaceSize,
   Segmented,
   Slider,
   Switch,
@@ -24,6 +28,7 @@ import { DeveloperPanel } from "./DeveloperPanel";
 import { useScheme } from "@/app/scheme";
 import { SCHEMES } from "@/app/theme";
 import { PageMark } from "@/art/SidebarArt";
+import { SubRosaPanel } from "./SubRosaPanel";
 
 export function SettingsView() {
   const study = useStudy();
@@ -59,15 +64,21 @@ export function SettingsView() {
 
   return (
     <PlatePage plate={plate} corner="tr">
-      <div className="relative mx-auto w-full max-w-3xl space-y-6 px-8 pb-24 pt-10">
+      <div className="relative mx-auto w-full max-w-3xl space-y-6 px-(--gutter) pb-24 pt-(--page-top)">
         <h1 className="flex items-center gap-3 font-blackletter text-4xl"><PageMark page="settings" />Settings</h1>
 
         <Panel title="Appearance">
           <div className="space-y-5">
-            <Field label="Scheme" hint={SCHEMES.find((x) => x.id === scheme)?.blurb} inline>
-              <Segmented label="Scheme" size="sm" value={scheme} onChange={setScheme} segments={SCHEMES.map((x) => ({ id: x.id, label: x.label }))} />
-            </Field>
-            {scheme !== "tenebrae" && (
+            {study.subRosa ? (
+              <Field label="Scheme" hint="Sub Rosa keeps its own colours until you come out from under the rose." inline>
+                <span className="text-xs text-muted-foreground">Sub Rosa</span>
+              </Field>
+            ) : (
+              <Field label="Scheme" hint={SCHEMES.find((x) => x.id === scheme)?.blurb} inline>
+                <Segmented label="Scheme" size="sm" value={scheme} onChange={setScheme} segments={SCHEMES.map((x) => ({ id: x.id, label: x.label }))} />
+              </Field>
+            )}
+            {!study.subRosa && scheme !== "tenebrae" && (
               <Field label="Follow the system's light and dark" inline>
                 <Switch checked={theme.mode === "system"} onCheckedChange={(on) => theme.setMode(on ? "system" : theme.resolvedMode)} />
               </Field>
@@ -101,6 +112,15 @@ export function SettingsView() {
             <Field label={`Text size · ${study.textSize}px`} inline>
               <Slider className="w-56" min={14} max={28} step={1} value={[study.textSize]} onValueChange={([v]) => study.set({ textSize: v })} />
             </Field>
+            <Field label="Interface size" hint={`Menus, panels and pages together. Auto follows the window's width (now ${interfaceScaleLabel(theme.interfaceScale)}); ${MOD_KEY}+= and ${MOD_KEY}+- step it, ${MOD_KEY}+0 returns to Auto.`} inline>
+              <Segmented
+                label="Interface size"
+                size="sm"
+                value={String(theme.interfaceSize)}
+                onChange={(v) => theme.setInterfaceSize(parseInterfaceSize(v))}
+                segments={[{ id: "auto", label: "Auto" }, ...INTERFACE_SCALES.map((s) => ({ id: String(s), label: interfaceScaleLabel(s) }))]}
+              />
+            </Field>
             <Field label="Red letter" hint="The words of Christ in red, in the KJV and WEB." inline>
               <Switch checked={study.redLetter} onCheckedChange={(redLetter) => study.set({ redLetter })} />
             </Field>
@@ -109,6 +129,25 @@ export function SettingsView() {
             </Field>
             <Field label="Ornaments" hint="The small dithered devices: headpieces, the evangelists' emblems, the mark beside each page in the sidebar." inline>
               <Switch checked={study.ornaments} onCheckedChange={(ornaments) => study.set({ ornaments })} />
+            </Field>
+            <Field label="Compact spacing" hint="Tighter margins and lines, for a small screen." inline>
+              <Switch checked={study.compact} onCheckedChange={(compact) => study.set({ compact })} />
+            </Field>
+            <Field label="Fold the sidebar to icons" hint="It folds by itself on a narrow window." inline>
+              <Switch checked={study.sidebarFolded} onCheckedChange={(sidebarFolded) => study.set({ sidebarFolded })} />
+            </Field>
+            <Field label="Save battery" hint="The pictures hold still and glass loses its blur. Auto does this on battery power." inline>
+              <Segmented
+                label="Save battery"
+                size="sm"
+                value={study.saver}
+                onChange={(saver) => study.set({ saver })}
+                segments={[
+                  { id: "auto", label: "Auto" },
+                  { id: "on", label: "Always" },
+                  { id: "off", label: "Never" },
+                ]}
+              />
             </Field>
             <Field label="Your name" hint="Printed on the title page of a notebook. Stays on this computer." inline>
               <Input value={study.name} onChange={(e) => study.set({ name: e.target.value })} placeholder="Optional" className="h-8 w-56" />
@@ -164,6 +203,9 @@ export function SettingsView() {
 
         <Panel title="Machine help" meta="small models only, always citing real verses">
           <div className="space-y-5">
+            <Field label="Lab in the sidebar" hint="Where you train and look inside a small model of your own. Off keeps the sidebar to study." inline>
+              <Switch checked={study.showLab} onCheckedChange={(showLab) => study.set({ showLab })} />
+            </Field>
             <Field label="Semantic search" hint="A small embedding model (bge-small, MIT) that runs on this computer. Finds verses by meaning." inline>
               <span className="text-xs text-success">On, offline</span>
             </Field>
@@ -188,6 +230,8 @@ export function SettingsView() {
           </div>
         </Panel>
 
+        <SubRosaPanel />
+
         <DeveloperPanel />
 
         <Panel title="About">
@@ -203,6 +247,13 @@ export function SettingsView() {
               <li>Illustrations: Gustave Doré, La Grande Bible de Tours (1866), public domain, via Wikimedia Commons.</li>
               <li>Woodcuts and engravings: Albrecht Dürer (the Met, CC0), Julius Schnorr von Carolsfeld, William Blake (Yale Center for British Art, CC0), the Nuremberg Chronicle, the 1534 Luther Bible, Matthäus Merian's Vision of Ezekiel (1630) and the four evangelists (Rijksmuseum, CC0); public domain, via Wikimedia Commons.</li>
               <li>Paintings: Caravaggio, Rembrandt, Honthorst and Georges de La Tour, public domain (Wikimedia Commons; the Met and the Rijksmuseum, CC0).</li>
+              {study.subRosa && (
+                <li>
+                  Under the rose: Doré's Inferno, Louis Le Breton's demons for the Dictionnaire infernal (1863), Dürer, Schongauer, Bruegel, Callot, Goya, Blake
+                  and Éliphas Lévi in engraving; Bosch, Bruegel, Memling, Michelangelo, Signorelli, Giotto, Fra Angelico, Lochner, van Eyck, Botticelli, Raphael,
+                  Blake and John Martin in paint. Public domain, via Wikimedia Commons (the Met and the National Gallery of Art, CC0).
+                </li>
+              )}
               <li>Places: OpenBible.info Bible Geocoding Data, CC BY 4.0. Coastlines and rivers: Natural Earth, public domain.</li>
               <li>People and the Hebrew and Greek interlinear: STEPBible (Tyndale House), TIPNR, TAHOT and TAGNT, CC BY 4.0.</li>
               <li>Daily Office: the Book of Common Prayer (1979), public domain; JSON by Reuben Lillie, MIT.</li>

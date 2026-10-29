@@ -40,6 +40,9 @@ class Source:
     license: str
     verified: bool = False
     note: str = ""
+    # A named cut applied after cleaning (see EXTRACTS), for a book of which
+    # only part is to be trained on.
+    extract: str | None = None
 
 
 # Built-in, verified public-domain sources. Add more by dropping entries here or
@@ -52,6 +55,18 @@ PRESETS: dict[str, Source] = {
         url="https://www.gutenberg.org/cache/epub/10/pg10.txt",
         license="Public domain · Project Gutenberg #10",
         verified=True,
+    ),
+    # Sub Rosa (docs/SUBROSA.md): the Goetia's catalogue of the 72 spirits, for
+    # a small model that invents spirits which never were. The app shows it
+    # only under the rose and labels everything it writes as invented.
+    "goetia": Source(
+        id="goetia",
+        name="The Goetia: the 72 spirits",
+        language="English",
+        url="https://www.gutenberg.org/cache/epub/72679/pg72679.txt",
+        license="Public domain · Project Gutenberg #72679",
+        verified=True,
+        extract="goetia_spirits",
     ),
 }
 
@@ -129,6 +144,35 @@ def clean(raw: bytes, declared: str | None = None) -> str:
             "'Plain Text UTF-8' file - it ends in .txt"
         )
     return normalize_newlines(strip_gutenberg(text))
+
+
+_SPIRIT_HEAD = re.compile(r"^\((\d+)\.?\) [^—\n]+?\.?—", re.MULTILINE)
+
+
+def goetia_spirits(text: str) -> str:
+    """The 72 spirits of the Goetia (Mathers, 1904), one paragraph each, from
+    "(1.) BAEL.—" to the paragraph after the 72nd ("THESE be the 72 ...").
+    The heading before each dash goes, so a paragraph opens "The First
+    Principal Spirit is ..."; footnote marks and transcriber's notes go too.
+    Parsed as text; the book's rite, which follows, is not included."""
+    first = _SPIRIT_HEAD.search(text)
+    end = text.find("THESE be the 72")
+    if not first or end < 0:
+        raise ValueError("the Goetia's catalogue of spirits was not found in this text")
+    paras = []
+    for p in re.split(r"\n\s*\n", text[first.start() : end]):
+        p = " ".join(p.split())
+        if not p or p.startswith("["):
+            continue
+        p = re.sub(r"\[\d+\]", "", _SPIRIT_HEAD.sub("", p)).replace("_", "")
+        paras.append(p)
+    heads = len(_SPIRIT_HEAD.findall(text[first.start() : end]))
+    if heads != 72:
+        raise ValueError(f"expected 72 spirits in the Goetia, found {heads}")
+    return "\n\n".join(paras) + "\n"
+
+
+EXTRACTS = {"goetia_spirits": goetia_spirits}
 
 
 def stats(text: str) -> dict[str, int]:
@@ -302,6 +346,8 @@ def download(version: str, data_dir: Path, chunk_size: int = 1 << 16) -> Path:
 
     protocol.status("clean", "Cleaning text", version=version)
     text = clean(bytes(raw), declared)
+    if src.extract:
+        text = EXTRACTS[src.extract](text)
     if len(text) < 1024:
         raise ValueError(
             f"{src.name} downloaded only {len(text)} characters of text — that "

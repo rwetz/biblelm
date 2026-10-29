@@ -34,6 +34,8 @@ export interface Plate {
   book?: string;
   /** Where the app uses a woodcut (woodcuts.mjs). */
   role?: string;
+  /** Sub Rosa's (scripts/art/curios.mjs): shown only under the rose. */
+  rose?: boolean;
 }
 
 export interface Hero {
@@ -51,19 +53,26 @@ export interface Hero {
   /** The Lab's literary plates: the poem it illustrates and where its weight sits. */
   work?: string;
   focusY?: number;
+  /** Folder under public/art: "heroes" when unset. */
+  dir?: string;
+  /** Who made it, when not Doré (Sub Rosa's). */
+  artist?: string;
+  rose?: boolean;
 }
 
 const BASE = `${import.meta.env.BASE_URL}art`;
 export const plateUrl = (img: PlateImage) => `${BASE}/${img.dir ?? "dore"}/${img.file}`;
+/** Who a hero is after, for its caption. */
+export const heroArtist = (h: Hero) => h.artist ?? "Gustave Doré";
 /** Who made a plate, for its caption. */
 export const plateCredit = (p: Plate) => (p.artist ? `${p.artist}, ${p.year}` : "Gustave Doré, 1866");
 const json = <T,>(url: string): Promise<T[]> =>
   fetch(url)
     .then((r) => (r.ok ? (r.json() as Promise<T[]>) : []))
     .catch(() => []);
-export const heroUrl = (h: Hero) => `${BASE}/heroes/${h.tone ?? h.file}`;
+export const heroUrl = (h: Hero) => `${BASE}/${h.dir ?? "heroes"}/${h.tone ?? h.file}`;
 /** The untouched engraving behind a hero, falling back to the levelled tone. */
-export const heroSrcUrl = (h: Hero) => `${BASE}/heroes/${h.src ?? h.tone ?? h.file}`;
+export const heroSrcUrl = (h: Hero) => `${BASE}/${h.dir ?? "heroes"}/${h.src ?? h.tone ?? h.file}`;
 
 let plates: Promise<Plate[]> | null = null;
 let heroes: Promise<Hero[]> | null = null;
@@ -88,6 +97,57 @@ export function loadLiterary(): Promise<Hero[]> {
     .then((r) => (r.ok ? (r.json() as Promise<Hero[]>) : []))
     .catch(() => []);
   return literary;
+}
+
+// ── Sub Rosa (scripts/art/curios.mjs, docs/SUBROSA.md) ──────────────────
+// Its own plates, heroes and paintings, fetched only once the mode is on and
+// then mixed in with the rest (usePlates, useHeroes, usePaintings in Art.tsx).
+
+let rosePlates: Promise<Plate[]> | null = null;
+let roseHeroes: Promise<Hero[]> | null = null;
+let rosePaintings: Promise<Painting[]> | null = null;
+export const loadRosePlates = () => (rosePlates ??= json<Plate>(`${BASE}/curios/plates.json`));
+export const loadRoseHeroes = () => (roseHeroes ??= json<Hero>(`${BASE}/curios/heroes.json`));
+export const loadRosePaintings = () => (rosePaintings ??= json<Painting>(`${BASE}/curios/paintings.json`));
+
+/** Under the rose, each page's plate (PAGE_PLATES, SIDEBAR_PLATES) gives way to one of these. */
+export const ROSE_PLATES: Record<number, number> = {
+  1001: 2010, // search: Dante lost in the dark wood
+  1006: 2040, // topics: Schongauer's Anthony tormented by demons
+  1004: 2045, // notebooks: Goya, the sleep of reason at a desk
+  140: 2020, // the apocrypha: Asmodeus, Tobit's demon
+  10: 2005, // translations: the Titans, Nimrod's tongue confounded
+  128: 2002, // training: Charon herds the sinners
+  1003: 2051, // the model: Lévi's Baphomet
+  1009: 2001, // settings: abandon all hope
+  93: 2007, // empty: the wood of the suicides
+  1002: 2003, // no results: Minos
+  1005: 2028, // empty notebook: Cerberus
+  1007: 2006, // error: Lucifer
+  205: 2009, // search sidebar: Calcabrina and Alichino
+  225: 2046, // topics sidebar: Bruegel's Last Judgment
+  157: 2021, // notebooks sidebar: Azazel
+  1015: 2043, // lab sidebar: the beast with two horns like a lamb
+  1010: 2050, // settings sidebar: Knight, Death and the Devil
+};
+
+/** A page's plate number, swapped for Sub Rosa's under the rose. */
+export const pagePlate = (n: number, rose: boolean) => (rose ? (ROSE_PLATES[n] ?? n) : n);
+
+/** Under the rose, the paintings that set a page's mood. */
+export const ROSE_PAGE_PAINTINGS: Record<string, string> = {
+  notebooks: "botticelli-map-of-hell", // the scholar's map of the whole of it
+  topics: "garden-of-earthly-delights",
+  gallery: "fall-of-the-rebel-angels",
+  dark: "mouth-of-hell",
+};
+
+export const pagePainting = (key: keyof typeof PAGE_PAINTINGS, rose: boolean) => (rose ? ROSE_PAGE_PAINTINGS[key] : PAGE_PAINTINGS[key]);
+
+/** Under the rose, Home's hero turns daily through Sub Rosa's own. */
+export function roseHero(heroesList: Hero[], date = new Date()): Hero | undefined {
+  const own = heroesList.filter((h) => h.rose);
+  return own.length ? own[((localDay(date) % own.length) + own.length) % own.length] : undefined;
 }
 
 /** Which of a rotating set shows now: the same for every view, turning every `ms`. */
@@ -125,6 +185,7 @@ export const PAGE_PLATES: Record<string, number> = {
   noResults: 1002, // Schnorr, Abraham told to count the stars
   notebookEmpty: 1005, // Dürer, Jerome's lion asleep
   error: 1007, // Dürer, St Michael fighting the dragon
+  cabinet: 2032, // Sub Rosa only: Le Breton's Byleth, the king who rides a pale horse to trumpets
 };
 
 /** The sidebar vignette on pages that already carry a corner plate, so the two never repeat. */
@@ -134,6 +195,7 @@ export const SIDEBAR_PLATES: Record<string, number> = {
   notebooks: 157, // Baruch
   lab: 1015, // Merian, Ezekiel's vision: the wheels full of eyes, the living creatures
   settings: 1010, // The 1534 Luther Bible's title page, Cranach's workshop
+  cabinet: 2051, // Sub Rosa only: Lévi's Baphomet, the cabinet's best-known stranger
 };
 
 export const plateNumber =(all: Plate[], n: number) => all.find((p) => p.n === n);
@@ -203,9 +265,10 @@ export interface Painting {
   licence: string;
   full: PlateImage;
   thumb: PlateImage;
+  rose?: boolean;
 }
 
-export const paintingUrl = (img: PlateImage) => `${BASE}/paintings/${img.file}`;
+export const paintingUrl = (img: PlateImage) => `${BASE}/${img.dir ?? "paintings"}/${img.file}`;
 
 let paintings: Promise<Painting[]> | null = null;
 
@@ -247,6 +310,9 @@ export function paintingForDay(all: Painting[], date = new Date()): Painting | u
   const y = date.getFullYear();
   const day = localDay;
   const t = day(date);
+  // Under the rose (its paintings are loaded): no church year, one of its own each day.
+  const rose = all.filter((p) => p.rose);
+  if (rose.length) return rose[((t % rose.length) + rose.length) % rose.length];
   const easter = day(easterSunday(y));
   const christmas = day(new Date(y, 11, 25));
   const xmasDow = new Date(y, 11, 25).getDay();

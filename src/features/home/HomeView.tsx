@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Button, Icon } from "@nexis/design";
 import { TrinityMark } from "@/art/TrinityMark";
 import { DitherHero, Engraving, Fleuron, useHeroes, usePaintings, usePlates } from "@/art/Art";
-import { paintingCredit, paintingForDay, paintingUrl, seasonalHero } from "@/lib/art";
+import { paintingCredit, paintingForDay, paintingUrl, roseHero, seasonalHero } from "@/lib/art";
 import { wholeSentence } from "@/lib/bible";
 import { formatRef, parseOsis, type Ref } from "@/lib/canon";
 import { useCatalog, useTranslation } from "@/lib/hooks";
@@ -11,6 +11,7 @@ import { useStudy } from "@/store/study";
 import { VerseText } from "@/features/read/ReadView";
 import { QueryReading } from "@/features/search/JevReading";
 import { SearchField } from "@/app/controls";
+import { Omen } from "./Omen";
 
 // A year of well-loved verses, one a day (the list is references only; the
 // words come from whichever translation you read).
@@ -35,8 +36,10 @@ export function HomeView() {
   const paintings = usePaintings();
   const today = useMemo(() => paintingForDay(paintings), [paintings]);
   // The hero follows the church year in every scheme (one of the dithered
-  // Doré heroes); the day's painting has its own place below, in Look at today.
-  const hero = useMemo(() => heroes.find((h) => h.id === devHero) ?? seasonalHero(heroes), [heroes, devHero]);
+  // Doré heroes), or under the rose turns daily through its own; the day's
+  // painting has its own place below, in Look at today.
+  const rose = useStudy((s) => s.subRosa);
+  const hero = useMemo(() => heroes.find((h) => h.id === devHero) ?? (rose ? roseHero(heroes) : undefined) ?? seasonalHero(heroes), [heroes, devHero, rose]);
   const openLook = useStudy((s) => s.openLook);
   const { translation, history, read, searchFor, go } = useStudy();
   const [t] = useTranslation(translation);
@@ -52,7 +55,7 @@ export function HomeView() {
       {/* The first screen is the picture, the search box and the verse of the
           day, filling the window exactly; your reading and notebooks wait below. */}
       <div className="flex min-h-full shrink-0 flex-col">
-      <DitherHero hero={hero} height="auto" width="84rem" fadeFrom={64} focusY={30} className="min-h-[22rem] flex-1">
+      <DitherHero hero={hero} height="auto" width="84rem" fadeFrom={64} focusY={30} className="min-h-[clamp(13rem,39vh,22rem)] flex-1">
         <div className="mt-auto flex flex-col items-center px-6 pb-10">
           <form
             className="w-full max-w-2xl"
@@ -83,33 +86,39 @@ export function HomeView() {
         </div>
       </DitherHero>
 
-        <section className="mx-auto w-full max-w-3xl shrink-0 px-8 pb-8 text-center">
-          <TrinityMark className="mx-auto mb-3 mt-6 size-14" />
-          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
-          {passage?.verses.length ? (
-            <blockquote className="mt-4">
-              <p className="font-garamond text-[2rem] leading-snug text-foreground md:text-[clamp(2rem,3.6vh,2.4rem)]">
-                {passage.verses.map((v, i) => (
-                  <span key={v.n}>
-                    {i > 0 && <sup className="mr-1 font-sans text-[0.4em] font-semibold text-brand">{v.n}</sup>}
-                    <VerseText raw={v.raw} />{" "}
-                  </span>
-                ))}
-              </p>
-              <footer className="mt-4">
-                <button type="button" onClick={() => read(passage.ref, { select: true })} className="font-garamond text-lg text-brand hover:underline">
-                  {formatRef(passage.ref)}
-                </button>
-              </footer>
-            </blockquote>
+        <section className="mx-auto w-full max-w-3xl shrink-0 px-(--gutter) pb-8 text-center">
+          <TrinityMark className="mx-auto mb-3 mt-6 size-14 [@media(max-height:760px)]:mt-3 [@media(max-height:760px)]:size-10" />
+          {rose ? (
+            <Omen t={t} />
           ) : (
-            <p className="mt-4 text-sm text-muted-foreground">Loading…</p>
+            <>
+              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
+              {passage?.verses.length ? (
+                <blockquote className="mt-4">
+                  <p className="font-garamond text-[2rem] leading-snug text-foreground md:text-[clamp(2rem,3.6vh,2.4rem)]">
+                    {passage.verses.map((v, i) => (
+                      <span key={v.n}>
+                        {i > 0 && <sup className="mr-1 font-sans text-[0.4em] font-semibold text-brand">{v.n}</sup>}
+                        <VerseText raw={v.raw} />{" "}
+                      </span>
+                    ))}
+                  </p>
+                  <footer className="mt-4">
+                    <button type="button" onClick={() => read(passage.ref, { select: true })} className="font-garamond text-lg text-brand hover:underline">
+                      {formatRef(passage.ref)}
+                    </button>
+                  </footer>
+                </blockquote>
+              ) : (
+                <p className="mt-4 text-sm text-muted-foreground">Loading…</p>
+              )}
+            </>
           )}
           <Fleuron />
         </section>
       </div>
 
-      <div className="mx-auto w-full max-w-3xl px-8 pb-20 pt-10">
+      <div className="mx-auto w-full max-w-3xl px-(--gutter) pb-20 pt-(--page-top)">
         <div className="grid gap-6 md:grid-cols-2">
           <section>
             <h2 className="font-garamond text-2xl">Continue reading</h2>
@@ -158,7 +167,7 @@ export function HomeView() {
         {today && (
           <section className="mt-10 flex items-center gap-5 rounded-xl p-2">
             <button type="button" onClick={() => openLook({ kind: "painting", id: today.id })} className="shrink-0">
-              <img src={paintingUrl(today.thumb)} alt={`${today.title}, ${paintingCredit(today)}`} className="h-28 w-24 rounded-sm object-cover" style={{ objectPosition: `${today.focusX}% ${today.focusY}%` }} />
+              <img src={paintingUrl(today.thumb)} loading="lazy" decoding="async" alt={`${today.title}, ${paintingCredit(today)}`} className="h-28 w-24 rounded-sm object-cover" style={{ objectPosition: `${today.focusX}% ${today.focusY}%` }} />
             </button>
             <div className="min-w-0">
               <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">To look at today</p>

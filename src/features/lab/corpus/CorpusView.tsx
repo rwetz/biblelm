@@ -1,4 +1,4 @@
-import { invoke, listen } from "@/lib/backend";
+import { GOETIA_CORPUS, invoke, listen } from "@/lib/backend";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { InfoTip } from "@/features/lab/InfoTip";
@@ -6,6 +6,7 @@ import { useAppStore, type CorpusInfo } from "@/store/appStore";
 import { cn } from "@/lib/utils";
 import { Button, Icon, IN_TAURI, Input, Panel, Progress } from "@nexis/design";
 import { LabSection } from "@/features/lab/LabSection";
+import { useStudy } from "@/store/study";
 import { Reading, ScaleField, TypeCase } from "./Figures";
 
 interface Translation {
@@ -39,16 +40,18 @@ export function CorpusView({ front = false }: { front?: boolean } = {}) {
   const [showAdd, setShowAdd] = useState(false);
   const [sample, setSample] = useState<string | null>(null);
 
+  // The Goetia's spirits (Sub Rosa) are a corpus only under the rose.
+  const rose = useStudy((s) => s.subRosa);
   const refresh = useCallback(async () => {
     try {
-      setTranslations(await invoke<Translation[]>("corpus_list"));
+      setTranslations((await invoke<Translation[]>("corpus_list")).filter((t) => rose || t.id !== GOETIA_CORPUS));
       setListError(false);
     } catch (err) {
       // In the browser there is no Lab backend: say so instead of loading forever.
       if (IN_TAURI) console.error("corpus_list failed:", err);
       setListError(true);
     }
-  }, []);
+  }, [rose]);
 
   useEffect(() => {
     refresh();

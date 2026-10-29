@@ -15,8 +15,25 @@ let worker: Worker | null = null;
 let seq = 0;
 const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
 let initP: Promise<number> | null = null;
+let idle: ReturnType<typeof setTimeout> | undefined;
+
+/** The index and model hold tens of MB; give them back after a few quiet minutes. */
+const IDLE_MS = 4 * 60_000;
+function stopWhenIdle() {
+  clearTimeout(idle);
+  idle = setTimeout(() => {
+    if (pending.size > 0) return stopWhenIdle();
+    worker?.terminate();
+    worker = null;
+    initP = null;
+  }, IDLE_MS);
+}
+
+/** The chiasm finder compares every pair: past a few hundred verses that is slow and large. */
+export const MAX_SIMILARITY_VERSES = 400;
 
 function call<T>(msg: Record<string, unknown>, transfer: Transferable[] = []): Promise<T> {
+  stopWhenIdle();
   if (!worker) {
     worker = new Worker(new URL("./semantic.worker.ts", import.meta.url), { type: "module" });
     worker.onmessage = (e: MessageEvent<{ id: number; ok: boolean; error?: string }>) => {
@@ -69,6 +86,7 @@ export async function between(a: number, b: number, shelves: ReadonlySet<Shelf>,
 
 /** Cosine similarity of every pair of verses in a passage (the chiasm finder). */
 export async function similarityMatrix(verses: number[]): Promise<Float32Array> {
+  if (verses.length > MAX_SIMILARITY_VERSES) throw new Error(`Choose a passage of ${MAX_SIMILARITY_VERSES} verses or fewer.`);
   await initSemantic();
   return (await call<{ matrix: Float32Array }>({ kind: "similarity", verses })).matrix;
 }

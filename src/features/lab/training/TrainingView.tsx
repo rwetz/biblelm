@@ -160,7 +160,7 @@ export function TrainingView() {
         {/* Config panel */}
         <div className="flex flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/6 dark:ring-foreground/10">
           <div className="flex h-10 items-center justify-between border-b border-border/60 px-4">
-            <p className="font-heading text-[13px] font-medium">Settings</p>
+            <p className="text-body font-semibold">Settings</p>
             <Button
               size="sm"
               variant="ghost"
@@ -551,7 +551,7 @@ function VramMeter({
     )}>
       <div className="flex items-center justify-between mb-1.5">
         <div className="flex items-center gap-1">
-          <p className="text-xs text-muted-foreground">Est. VRAM</p>
+          <p className="text-xs text-muted-foreground">{gpuInfo.unified ? "Est. memory" : "Est. VRAM"}</p>
           <InfoTip side="right">
             Conservative estimate of GPU memory needed for training at this
             config. Includes model weights, gradients, Adam optimizer states,
@@ -578,6 +578,9 @@ function VramMeter({
       </div>
 
       <p className="mt-1 text-xs text-muted-foreground/50">{gpuInfo.name}</p>
+      {gpuInfo.unified && (
+        <p className="mt-0.5 text-xs text-muted-foreground/50">Shared with the rest of the computer: close other apps before a large run.</p>
+      )}
 
       {isOOM && (
         <p className="mt-1.5 text-xs font-medium text-destructive">

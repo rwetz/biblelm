@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Alert, AlertDescription, AlertTitle, cn, Icon, IN_TAURI } from "@nexis/design";
 import { Dither, DitherHero, useRotatingHero } from "@/art/Art";
 import { RoseMark } from "@/art/RoseMark";
-import { heroUrl, type Hero } from "@/lib/art";
+import { heroArtist, heroUrl, type Hero } from "@/lib/art";
 import { useStudy } from "@/store/study";
 import { LAB_NEEDS_DESKTOP } from "@/lib/backend";
 import { LAB_COLUMN } from "./LabSection";
@@ -38,7 +38,7 @@ function Frontispiece({ hero }: { hero?: Hero }) {
   const mode = useStudy((s) => s.illustrations);
   const show = hero && mode === "full";
   return (
-    <div className="mx-auto grid w-full max-w-[100rem] shrink-0 gap-x-14 gap-y-8 px-8 pb-10 pt-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+    <div className="mx-auto grid w-full max-w-[100rem] shrink-0 gap-x-14 gap-y-8 px-(--gutter) pb-10 pt-(--page-top) lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
       {/* The title has a row of its own, over both columns, so the picture never runs under it. */}
       <div className="col-span-full flex min-w-0 items-center gap-6 pt-2">
         <RoseMark label="BibleLM" dot={2} className="size-28 shrink-0 md:size-36" />
@@ -51,7 +51,7 @@ function Frontispiece({ hero }: { hero?: Hero }) {
         {show && (
           <p className="font-garamond text-sm italic text-muted-foreground/80">
             {hero.title}
-            {hero.work ? `, from ${hero.work}` : ""}, after Gustave Doré
+            {hero.work ? `, from ${hero.work}` : ""}, after {heroArtist(hero)}
           </p>
         )}
       </div>
@@ -62,7 +62,7 @@ function Frontispiece({ hero }: { hero?: Hero }) {
             key={hero.id}
             src={heroUrl(hero)}
             algo={hero.algo === "bayer" ? "bayer" : hero.algo === "blue" ? "blue" : "atkinson"}
-            label={`${hero.title}, after Gustave Doré`}
+            label={`${hero.title}, after ${heroArtist(hero)}`}
             edges={{ top: 0.04, right: 0.04, bottom: 0.12, left: 0.08 }}
             className="absolute inset-0 text-foreground opacity-90 dark:opacity-85"
           />
@@ -92,7 +92,7 @@ export function LabView() {
       {home ? (
         <Frontispiece hero={hero} />
       ) : (
-        <DitherHero hero={hero} height="10.5rem" focusY={hero?.focusY ?? 40} clearLeft fadeFrom={50}>
+        <DitherHero hero={hero} height="clamp(7.5rem, 19vh, 10.5rem)" focusY={hero?.focusY ?? 40} clearLeft fadeFrom={50}>
           <div className={cn(LAB_COLUMN, "mt-auto pb-5")}>
             <h1 className="flex items-center gap-3 font-blackletter text-6xl leading-none"><RoseMark dot={2} className="size-14" />The Lab</h1>
             <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">{LEDE}</p>

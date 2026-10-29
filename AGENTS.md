@@ -14,6 +14,7 @@ touching:
 | Nexis design, themes, typography | [docs/DESIGN.md](docs/DESIGN.md) |
 | Illustrations | [docs/ART.md](docs/ART.md), [docs/art-credits.md](docs/art-credits.md), [docs/painting-credits.md](docs/painting-credits.md) |
 | Algorithm ideas | [docs/IDEAS.md](docs/IDEAS.md) |
+| Sub Rosa, the curiosities mode | [docs/SUBROSA.md](docs/SUBROSA.md) |
 
 ## Principles
 
@@ -39,11 +40,12 @@ src/
   art/Art.tsx       Engraving, PlateFigure, CornerPlate, DitherHero, ornaments
   features/         home, read (+VersePanel), search, topics (+map, structure,
                     words, links, echoes), atlas, gallery, look, daily, notebooks,
-                    lab (corpus, training, inference, model, inside, lessons), settings
+                    lab (corpus, training, inference, model, inside, lessons), settings,
+                    cabinet (Sub Rosa's page and library reader)
   lib/              canon (shelves), bible (verse store, companion texts), search,
                     xrefs (graph), topics, studies, semantic (+ worker), suffix
                     (+ worker), words, els, atlas, interlinear, lectionary,
-                    plans, fsrs, jev, art, backend
+                    plans, fsrs, jev, art, library, companions, backend
   store/            study (prefs + place), notebooks (your notes)
 src-tauri/src/      lib.rs (Lab workers, paths), study.rs (notes, export, Jev)
 python/biblelm/     the Lab: GPT, training, generation, ONNX, inspect_model
@@ -73,7 +75,7 @@ scripts/data|art/   offline builders (pnpm data); outputs are git-ignored
   `src/lib/art.ts`). Blackletter is for big titles, book names and drop caps
   only; anything smaller or longer is Garamond.
 - Never commit `data/`, `runs/`, `data-src/`, `art-src/`, `public/data`,
-  `public/art/dore|heroes|paintings`, `public/models`, weights or keys.
+  `public/art/dore|heroes|paintings|woodcuts|curios`, `public/models`, weights or keys.
   `TYPESAFE_API_KEY` stays in the user's environment and never reaches the
   webview. No hosted large model (Opus 5.5 or larger) is used: ask first.
 - Importers parse downloads as text; never execute downloaded content.

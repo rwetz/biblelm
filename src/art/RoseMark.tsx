@@ -5,9 +5,10 @@
 // stops drawing off screen.
 
 import { useEffect, useRef } from "react";
-import { cn, useReducedMotion, useTheme } from "@nexis/design";
+import { cn, useTheme } from "@nexis/design";
 import { BAYER8 } from "./dither";
 import rose from "./rose.svg";
+import { useStill } from "@/lib/power";
 
 /** A CSS colour (any syntax the browser knows) as RGB bytes. */
 function rgbOf(color: string): [number, number, number] {
@@ -42,7 +43,7 @@ export function RoseMark({
   dot?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const { paletteEpoch, resolvedMode } = useTheme();
 
   useEffect(() => {
@@ -127,6 +128,7 @@ export function RoseMark({
   return (
     <canvas
       ref={canvasRef}
+      data-rose=""
       role={label ? "img" : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}

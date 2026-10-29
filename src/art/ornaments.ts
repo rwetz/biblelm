@@ -3,6 +3,9 @@
 // the plates. Each ornament is drawn in ink densities (0 paper, 1 solid ink);
 // `ornamentSrc` turns those into grays for the scheme: dark ink on white by
 // day, light on black by night, where Dither draws the lit dots instead.
+// The cabinet's symbols are drawn in sigils.ts and merged in here.
+
+import { SIGILS, type SigilName } from "./sigils";
 
 export type OrnamentName =
   | "fleuron"
@@ -23,7 +26,16 @@ export type OrnamentName =
   | "eagle"
   | "seraph"
   | "winged-eye"
-  | "ophan";
+  | "ophan"
+  | "crucifix"
+  | "petrine"
+  | "ichthys"
+  | "pentagram"
+  | "pentagram-inverted"
+  | "hexagram"
+  | "eye"
+  | "square-compasses"
+  | SigilName;
 
 /** Ink density 0..1 as a gray for this scheme. */
 type Ink = (density: number) => string;
@@ -86,7 +98,22 @@ const eye = (k: Ink, x: number, y: number, w: number, id: string) =>
   `<path d="M${x - w / 2} ${y} C${x - w / 4} ${y - w * 0.36} ${x + w / 4} ${y - w * 0.36} ${x + w / 2} ${y} C${x + w / 4} ${y + w * 0.36} ${x - w / 4} ${y + w * 0.36} ${x - w / 2} ${y}Z" fill="${k(0.05)}" stroke="${k(1)}" stroke-width="${Math.max(0.6, w * 0.05)}"/>` +
   `<circle cx="${x}" cy="${y}" r="${w * 0.2}" fill="url(#${id})"/><circle cx="${x}" cy="${y}" r="${w * 0.09}" fill="${k(1)}"/><circle cx="${x - w * 0.06}" cy="${y - w * 0.07}" r="${w * 0.035}" fill="${k(0)}"/>`;
 
+/** A plain Latin cross in an 80 by 100 frame, shaded as if cut from wood; turned over for St Peter's. */
+const latinCross = (k: Ink, turned = false) =>
+  `<defs>${lin("beam", k, [0.95, 0.5, 0.85], "x")}${lin("beamh", k, [0.95, 0.5, 0.85], "y")}</defs>` +
+  `<g${turned ? ` transform="rotate(180 40 50)"` : ""}><rect x="34" y="6" width="12" height="88" fill="url(#beam)"/><rect x="12" y="24" width="56" height="11" fill="url(#beamh)"/></g>`;
+
+/** A five-pointed star drawn in one line, every second point joined, point up unless `down`. */
+const star = (k: Ink, down = false) => {
+  const pts = Array.from({ length: 5 }, (_, i) => {
+    const a = ((down ? 90 : -90) + i * 144) * (Math.PI / 180);
+    return `${(50 + 42 * Math.cos(a)).toFixed(2)} ${(53 + 42 * Math.sin(a)).toFixed(2)}`;
+  });
+  return `<path d="M${pts.join(" L")} Z" fill="none" stroke="${k(0.95)}" stroke-width="4" stroke-linejoin="miter"/>` + `<path d="M${pts.join(" L")} Z" fill="none" stroke="${k(0.35)}" stroke-width="1" stroke-linejoin="miter"/>`;
+};
+
 const DRAWINGS: Record<OrnamentName, Drawing> = {
+  ...SIGILS,
   // A printer's flower: a bud between two curling leaves, between rules of dots.
   fleuron: {
     w: 120,
@@ -486,6 +513,96 @@ const DRAWINGS: Record<OrnamentName, Drawing> = {
       );
     },
   },
+
+  // A crucifix: the Latin cross with the body and the title over the head.
+  crucifix: {
+    w: 80,
+    h: 100,
+    title: "Crucifix",
+    draw: (k) =>
+      latinCross(k) +
+      `<rect x="31" y="9" width="18" height="7" fill="${k(0.15)}" stroke="${k(0.9)}" stroke-width="0.8"/>` +
+      `<text x="40" y="14.6" text-anchor="middle" font-family="${SERIF}" font-size="5" fill="${k(0.95)}">INRI</text>` +
+      `<circle cx="40" cy="24" r="4.4" fill="${k(0.2)}" stroke="${k(0.95)}" stroke-width="1"/>` +
+      `<path d="M15 30 C24 32 32 31 36 33 L44 33 C48 31 56 32 65 30 L65 33 C56 35 48 35 45 37 L44 56 L36 56 L35 37 C32 35 24 35 15 33 Z" fill="${k(0.15)}" stroke="${k(0.95)}" stroke-width="0.9"/>` +
+      `<path d="M35 54 L45 54 L44 62 L36 62 Z" fill="${k(0.4)}" stroke="${k(0.95)}" stroke-width="0.8"/>` +
+      `<path d="M37 62 L39 84 L41 84 L43 62" fill="${k(0.15)}" stroke="${k(0.95)}" stroke-width="0.9"/>`,
+  },
+
+  // St Peter's cross: the Latin cross turned over, as he asked to be crucified.
+  petrine: {
+    w: 80,
+    h: 100,
+    title: "St Peter's cross",
+    draw: (k) => latinCross(k, true),
+  },
+
+  // Ichthys: two arcs crossing at the tail.
+  ichthys: {
+    w: 100,
+    h: 60,
+    title: "Ichthys",
+    draw: (k) =>
+      `<path d="M6 30 C28 4 64 4 94 46 M6 30 C28 56 64 56 94 14" fill="none" stroke="${k(0.95)}" stroke-width="5" stroke-linecap="round"/>` +
+      `<circle cx="24" cy="26" r="2.4" fill="${k(0.95)}"/>`,
+  },
+
+  // The pentagram, point up: health to the Pythagoreans, the pentalpha on Solomon's ring.
+  pentagram: {
+    w: 100,
+    h: 100,
+    title: "Pentagram",
+    draw: (k) => star(k),
+  },
+
+  // The pentagram point down, as Lévi read it in the 1850s.
+  "pentagram-inverted": {
+    w: 100,
+    h: 100,
+    title: "Inverted pentagram",
+    draw: (k) => star(k, true),
+  },
+
+  // Two triangles interlaced: the seal of Solomon, the Star of David.
+  hexagram: {
+    w: 100,
+    h: 100,
+    title: "Hexagram",
+    draw: (k) =>
+      `<path d="M50 8 L88 74 L12 74 Z" fill="none" stroke="${k(0.95)}" stroke-width="4.5" stroke-linejoin="miter"/>` +
+      `<path d="M50 92 L12 26 L88 26 Z" fill="none" stroke="${k(0.95)}" stroke-width="4.5" stroke-linejoin="miter"/>` +
+      `<path d="M50 8 L88 74 L12 74 Z M50 92 L12 26 L88 26 Z" fill="none" stroke="${k(0.3)}" stroke-width="1"/>`,
+  },
+
+  // The eye of Providence: an eye in a triangle, in rays.
+  eye: {
+    w: 100,
+    h: 100,
+    title: "Eye of Providence",
+    draw: (k) => {
+      let rays = "";
+      for (let i = 0; i < 28; i++) rays += `<path d="M50 60 L48.9 6 L51.1 6 Z" transform="rotate(${(i / 28) * 360} 50 60)" fill="${k(i % 2 ? 0.4 : 0.75)}"/>`;
+      return (
+        `<defs>${rad("glow", k, 0, 0.15, 0.5, 0.6)}${rad("iris", k, 0.4, 0.95, 0.4, 0.4)}</defs>` +
+        rays +
+        `<path d="M50 22 L86 84 L14 84 Z" fill="url(#glow)" stroke="${k(1)}" stroke-width="3" stroke-linejoin="round"/>` +
+        eye(k, 50, 64, 28, "iris")
+      );
+    },
+  },
+
+  // The square and compasses: the builder's tools, the compasses' points over the square.
+  "square-compasses": {
+    w: 100,
+    h: 100,
+    title: "Square and compasses",
+    draw: (k) =>
+      `<defs>${lin("steel", k, [0.95, 0.55, 0.9], "x")}</defs>` +
+      `<path d="M47 14 L18 86 L24 88 L50 24 L76 88 L82 86 L53 14 Z" fill="url(#steel)" stroke="${k(0.95)}" stroke-width="0.8"/>` +
+      `<circle cx="50" cy="15" r="5" fill="${k(0.2)}" stroke="${k(0.95)}" stroke-width="2"/>` +
+      `<path d="M12 52 L50 88 L88 52 L82 47 L50 77 L18 47 Z" fill="${k(0.9)}" stroke="${k(0.95)}" stroke-width="0.8"/>` +
+      `<path d="M18 50 L50 80 L82 50" fill="none" stroke="${k(0.35)}" stroke-width="0.8"/>`,
+  },
 };
 
 export const ORNAMENTS: Readonly<Record<OrnamentName, Pick<Drawing, "w" | "h" | "title">>> = DRAWINGS;
@@ -493,11 +610,17 @@ export const ORNAMENTS: Readonly<Record<OrnamentName, Pick<Drawing, "w" | "h" | 
 /** The emblem of each Gospel. */
 export const EVANGELIST: Record<string, OrnamentName> = { Matt: "angel", Mark: "lion", Luke: "ox", John: "eagle" };
 
+/** A glow of ink behind a symbol, densest at its heart, so the dither shows as a field of dots around it. */
+const halo = (k: Ink, w: number, h: number) =>
+  `<defs><radialGradient id="halo" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="${k(0.42)}"/><stop offset="0.6" stop-color="${k(0.16)}"/><stop offset="1" stop-color="${k(0)}"/></radialGradient></defs>` +
+  `<ellipse cx="${w / 2}" cy="${h / 2}" rx="${w * 0.6}" ry="${h * 0.6}" fill="url(#halo)"/>`;
+
 /**
  * The ornament as an SVG data URL in grays for the scheme. Rasterised large
  * (four times its drawing units) so Dither samples it smoothly at any size.
+ * With `glow` it stands in a halo of ink (the cabinet's symbols and seals).
  */
-export function ornamentSrc(name: OrnamentName, dark: boolean): string {
+export function ornamentSrc(name: OrnamentName, dark: boolean, glow = false): string {
   const d = DRAWINGS[name];
   const k: Ink = (density) => {
     const x = Math.max(0, Math.min(1, density));
@@ -506,6 +629,6 @@ export function ornamentSrc(name: OrnamentName, dark: boolean): string {
   };
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${d.w} ${d.h}" width="${d.w * 4}" height="${d.h * 4}">` +
-    `<rect width="${d.w}" height="${d.h}" fill="${k(0)}"/>${d.draw(k)}</svg>`;
+    `<rect width="${d.w}" height="${d.h}" fill="${k(0)}"/>${glow ? halo(k, d.w, d.h) : ""}${d.draw(k)}</svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }

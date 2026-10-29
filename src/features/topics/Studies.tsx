@@ -34,7 +34,7 @@ export function Studies({ t, index }: { t: Translation; index: VerseIndex }) {
   const s = STRUGGLES.find((x) => x.id === id) ?? STRUGGLES[0];
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-8 py-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-(--gutter) py-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
           <div>
             <SectionLabel>Studies for young men</SectionLabel>

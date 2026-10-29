@@ -19,6 +19,14 @@ import { PlacesAndPeople } from "@/features/atlas/VerseAtlas";
 import { NoteBody } from "@/features/notebooks/NoteBody";
 import { companionLinks } from "@/lib/companions";
 
+// Beside the text while the reader is wide enough to hold both; on a narrower
+// one (a small laptop, a half-screen window) it floats over the text instead
+// of squeezing it to a ribbon (the reader is the `reader` container).
+const PANEL = cn(
+  "flex w-[clamp(18rem,34vw,25rem)] shrink-0 flex-col border-l border-border/60 bg-card/60",
+  "@max-[60rem]/reader:absolute @max-[60rem]/reader:inset-y-0 @max-[60rem]/reader:right-0 @max-[60rem]/reader:z-30 @max-[60rem]/reader:bg-card @max-[60rem]/reader:shadow-xl",
+);
+
 const label = (osis: string) => {
   const r = parseOsis(osis);
   return r ? formatRef(r) : osis;
@@ -60,7 +68,7 @@ function PassagePanel({ book, chapter, verses, translations, onClose }: { book: 
   };
 
   return (
-    <aside className="flex w-[clamp(18rem,34vw,25rem)] shrink-0 flex-col border-l border-border/60 bg-card/60">
+    <aside className={PANEL}>
       <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border/60 px-4">
         <h2 className="min-w-0 truncate font-garamond text-xl" title={title}>{title}</h2>
         <span className="flex-1" />
@@ -135,7 +143,7 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
   useEffect(() => setStudy(null), [osis]);
 
   return (
-    <aside className="flex w-[clamp(18rem,34vw,25rem)] shrink-0 flex-col border-l border-border/60 bg-card/60">
+    <aside className={PANEL}>
       <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border/60 px-4">
         <h2 className="font-garamond text-xl">{formatRef(refSel)}</h2>
         <span className="flex-1" />
@@ -217,7 +225,7 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
 const KIND = { quoted: ["Quotes", "Quoted in"], echoed: ["Echoes", "Echoed in"], retold: ["Retold in", "Retells"] } as const;
 
 /**
- * Where this verse touches 1 Enoch (src/lib/companions.ts): the passage on the
+ * Where this verse touches the Pseudepigrapha shelf (src/lib/companions.ts): the passage on the
  * other side, as printed, and a labelled study note on how they are related.
  * Shown whether or not the Pseudepigrapha shelf is on; its badge says which
  * side is off the canon.
@@ -229,14 +237,14 @@ function BeyondCanon({ refSel, main, onNavigate }: { refSel: Ref; main: Translat
     <section className="space-y-3">
       <SectionLabel>Beyond the canon</SectionLabel>
       {links.map(({ link, other }) => {
-        const toEnoch = other.book === "1En";
+        const beyond = bookOf(other.book)?.shelf === "pseudepigrapha";
         const text = main.range(other).map((v) => v.text).join(" ");
         return (
           <div key={formatRef(other)}>
             <p className="flex items-center gap-2 text-xs text-muted-foreground">
-              {KIND[link.kind][toEnoch ? 0 : 1]}
+              {KIND[link.kind][beyond ? 0 : 1]}
               <button type="button" className="font-semibold text-brand hover:underline" onClick={() => onNavigate(other)}>{formatRef(other)}</button>
-              {toEnoch && <Badge variant="outline">Pseudepigrapha</Badge>}
+              {beyond && <Badge variant="outline">Pseudepigrapha</Badge>}
             </p>
             {text && <p className="mt-1 font-garamond text-[15px] leading-relaxed">{text}</p>}
             <p className="mt-1 text-xs italic text-muted-foreground">Study note: {link.note}</p>
@@ -263,7 +271,7 @@ function SeenInArt({ refSel }: { refSel: Ref }) {
       <div className="mt-2 grid grid-cols-2 gap-3">
         {shown.map((a) => (
           <button key={a.id} type="button" className="group text-left" onClick={() => openLook({ kind: a.kind, id: a.id })}>
-            <img src={a.src} alt="" loading="lazy" className={cn("aspect-[4/3] w-full rounded-sm object-cover", !a.colour && "engraving")} />
+            <img src={a.src} alt="" loading="lazy" decoding="async" className={cn("aspect-[4/3] w-full rounded-sm object-cover", !a.colour && "engraving")} />
             <span className="mt-1 block font-garamond text-sm leading-tight group-hover:underline">{a.title}</span>
             <span className="text-[11px] text-muted-foreground">{a.by}</span>
           </button>

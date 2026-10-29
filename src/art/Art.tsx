@@ -4,61 +4,45 @@
 // is dithered live in the theme's ink, so it never brings its own paper.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { cn, useReducedMotion, useTheme } from "@nexis/design";
+import { cn, useTheme } from "@nexis/design";
 import { formatRef } from "@/lib/canon";
-import { heroSrcUrl, heroUrl, loadHeroes, loadLiterary, loadPaintings, loadPlates, paintingCredit, paintingUrl, plateCredit, plateUrl, rotation, type Hero, type Painting as PaintingData, type Plate } from "@/lib/art";
+import { heroArtist, heroSrcUrl, heroUrl, loadHeroes, loadLiterary, loadPaintings, loadPlates, loadRoseHeroes, loadRosePaintings, loadRosePlates, pagePlate, paintingCredit, paintingUrl, plateCredit, plateUrl, rotation, type Hero, type Painting as PaintingData, type Plate } from "@/lib/art";
 import { useStudy } from "@/store/study";
 import { compose, cssColor, revealCells, type Composed, type PaintingLook } from "./painting";
 import { BAYER8, paintScattered, scatterSeeds, dither, fadeEdges, inkColor, loadImage, paint, toneGrid, type DitherAlgo, type Edges } from "./dither";
 import { ORNAMENTS, ornamentSrc, type OrnamentName } from "./ornaments";
+import { useStill } from "@/lib/power";
 
-export function usePlates(): Plate[] {
-  const [plates, setPlates] = useState<Plate[]>([]);
+/** A list of art, with Sub Rosa's own (fetched only then) after it while the mode is on. */
+function useArt<T>(load: () => Promise<T[]>, loadRose: () => Promise<T[]>): T[] {
+  const rose = useStudy((s) => s.subRosa);
+  const [list, setList] = useState<T[]>([]);
   useEffect(() => {
     let live = true;
-    loadPlates().then((p) => live && setPlates(p));
+    Promise.all([load(), rose ? loadRose() : []]).then(([a, b]) => live && setList(b.length ? [...a, ...b] : a));
     return () => {
       live = false;
     };
-  }, []);
-  return plates;
+  }, [load, loadRose, rose]);
+  return list;
 }
 
-export function usePaintings(): PaintingData[] {
-  const [p, setP] = useState<PaintingData[]>([]);
-  useEffect(() => {
-    let live = true;
-    loadPaintings().then((x) => live && setP(x));
-    return () => {
-      live = false;
-    };
-  }, []);
-  return p;
-}
+export const usePlates = (): Plate[] => useArt(loadPlates, loadRosePlates);
+export const usePaintings = (): PaintingData[] => useArt(loadPaintings, loadRosePaintings);
+export const useHeroes = (): Hero[] => useArt(loadHeroes, loadRoseHeroes);
 
-export function useHeroes(): Hero[] {
-  const [h, setH] = useState<Hero[]>([]);
-  useEffect(() => {
-    let live = true;
-    loadHeroes().then((x) => live && setH(x));
-    return () => {
-      live = false;
-    };
-  }, []);
-  return h;
-}
-
-/** The Lab's literary heroes, one at a time, turning every `ms` (the same one in every view). */
+/** The Lab's literary heroes (Sub Rosa's under the rose), one at a time, turning every `ms` (the same one in every view). */
 export function useRotatingHero(ms = 30_000): Hero | undefined {
+  const rose = useStudy((s) => s.subRosa);
   const [list, setList] = useState<Hero[]>([]);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     let live = true;
-    loadLiterary().then((x) => live && setList(x));
+    (rose ? loadRoseHeroes() : loadLiterary()).then((x) => live && setList(x));
     return () => {
       live = false;
     };
-  }, []);
+  }, [rose]);
   useEffect(() => {
     if (!list.length) return;
     // Wake at the next turn, not on a fixed interval, so every view agrees.
@@ -175,7 +159,7 @@ export function Dither({
 }) {
   const box = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const { paletteEpoch, resolvedMode } = useTheme();
   // Light: draw the ink dots. Dark: draw the lit dots instead, so light stays
   // light and a night scene is not a negative.
@@ -439,7 +423,7 @@ export function Painting({
 }) {
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const { paletteEpoch, resolvedMode } = useTheme();
   const dark = resolvedMode === "dark";
   const [size, setSize] = useState<[number, number] | null>(null);
@@ -550,8 +534,8 @@ export function heroArt(a: HeroArt) {
     focusX: 50,
     focusY: a.focusY ?? 40,
     shadow: 0,
-    label: `${a.title}, after Gustave Doré`,
-    credit: `${a.title}, ${a.work ? `from ${a.work}, ` : ""}after Gustave Doré`,
+    label: `${a.title}, after ${heroArtist(a)}`,
+    credit: `${a.title}, ${a.work ? `from ${a.work}, ` : ""}after ${heroArtist(a)}`,
   };
 }
 
@@ -635,11 +619,13 @@ export function DitherHero({
 
 /**
  * A loader for long work: a cross gathering out of dots and dissolving again,
- * light running down it. Reduced motion shows the cross at rest.
+ * light running down it. Reduced motion shows the cross at rest. Under the
+ * rose it is St Peter's cross: inverted, as he asked to be crucified.
  */
 export function CrossLoader({ size = 48, className, label = "Working" }: { size?: number; className?: string; label?: string }) {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const reduced = useReducedMotion();
+  const reduced = useStill();
+  const petrine = useStudy((s) => s.subRosa);
   const { paletteEpoch } = useTheme();
   useEffect(() => {
     const cv = canvas.current;
@@ -652,7 +638,7 @@ export function CrossLoader({ size = 48, className, label = "Working" }: { size?
     const rgb = inkColor(cv);
     // Brightness: a Latin cross (the beam a third of the way down) in a soft glow.
     const glow = new Float32Array(n * n);
-    const arm = n * 0.08, cx = (n - 1) / 2, beam = n * 0.32;
+    const arm = n * 0.08, cx = (n - 1) / 2, beam = n * (petrine ? 0.68 : 0.32);
     for (let y = 0; y < n; y++)
       for (let x = 0; x < n; x++) {
         const dv = Math.max(Math.abs(x - cx) - arm, n * 0.06 - y, y - n * 0.94, 0);
@@ -682,7 +668,7 @@ export function CrossLoader({ size = 48, className, label = "Working" }: { size?
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [size, reduced, paletteEpoch]);
+  }, [size, reduced, paletteEpoch, petrine]);
   return (
     <canvas
       ref={canvas}
@@ -722,6 +708,7 @@ export function Ornament({
   label,
   level,
   reveal,
+  glow = false,
   className,
 }: {
   name: OrnamentName;
@@ -731,11 +718,13 @@ export function Ornament({
   /** How much of it is resolved, 0 to 1 (see Dither). */
   level?: number;
   reveal?: boolean;
+  /** Stand it in a halo of dots: the cabinet's symbols. */
+  glow?: boolean;
   className?: string;
 }) {
   const dark = useTheme().resolvedMode === "dark";
   const off = useStudy((s) => s.illustrations === "off" || !s.ornaments);
-  const src = useMemo(() => ornamentSrc(name, dark), [name, dark]);
+  const src = useMemo(() => ornamentSrc(name, dark, glow), [name, dark, glow]);
   if (off) return null;
   const o = ORNAMENTS[name];
   return <Dither src={src} algo={algo} dot={dot} focusY={50} label={label} level={level} reveal={reveal} className={cn("shrink-0 text-foreground", className)} style={{ aspectRatio: `${o.w} / ${o.h}` }} />;
@@ -752,8 +741,13 @@ export function Fleuron({ className }: { className?: string }) {
   );
 }
 
-/** Pick the plate for a page's corner from PAGE_PLATES. */
+/** Pick the plate for a page's corner from PAGE_PLATES (Sub Rosa's in its place under the rose). */
 export function usePagePlate(n: number | undefined): Plate | undefined {
   const plates = usePlates();
-  return useMemo(() => (n ? plates.find((p) => p.n === n) : undefined), [plates, n]);
+  const rose = useStudy((s) => s.subRosa);
+  return useMemo(() => {
+    if (!n) return undefined;
+    const want = pagePlate(n, rose);
+    return plates.find((p) => p.n === want) ?? plates.find((p) => p.n === n);
+  }, [plates, n, rose]);
 }

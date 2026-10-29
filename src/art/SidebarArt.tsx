@@ -6,7 +6,7 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BOOKS } from "@/lib/canon";
-import { PAGE_PLATES, plateUrl, SIDEBAR_PLATES, type Plate } from "@/lib/art";
+import { PAGE_PLATES, pagePlate, plateUrl, SIDEBAR_PLATES, type Plate } from "@/lib/art";
 import { useNotebooks } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
 import { verseOfTheDay } from "@/features/home/HomeView";
@@ -37,9 +37,10 @@ function useSidebarPlate(): Plate | undefined {
   const devPlate = useStudy((s) => (s.devMode ? s.devPlate : null));
   const plates = usePlates();
   const inText = useStudy((s) => s.illustrations === "full");
+  const rose = useStudy((s) => s.subRosa);
   return useMemo(() => {
     if (!plates.length) return undefined;
-    const n = (k: number) => plates.find((p) => p.n === k);
+    const n = (k: number) => plates.find((p) => p.n === pagePlate(k, rose)) ?? plates.find((p) => p.n === k);
     if (devPlate) return n(devPlate);
     const daily = verseOfTheDay();
     switch (page) {
@@ -52,7 +53,7 @@ function useSidebarPlate(): Plate | undefined {
       default:
         return n(SIDEBAR_PLATES[page] ?? PAGE_PLATES.empty);
     }
-  }, [plates, page, location.book, location.chapter, cover, devPlate, inText]);
+  }, [plates, page, location.book, location.chapter, cover, devPlate, inText, rose]);
 }
 
 export function SidebarArt() {
@@ -98,6 +99,7 @@ export const PAGE_ORNAMENT: Record<string, OrnamentName> = {
   notebooks: "quill",
   lab: "ophan",
   settings: "urn",
+  cabinet: "winged-eye",
 };
 
 /** Daily is the sun by day and the lamp after five. */

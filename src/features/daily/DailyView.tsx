@@ -34,8 +34,8 @@ export function DailyView() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <DitherHero hero={band} height="17rem" clearLeft fadeFrom={42} caption={false}>
-        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-end px-8 pb-5">
+      <DitherHero hero={band} height="clamp(11rem, 30vh, 17rem)" clearLeft fadeFrom={42} caption={false}>
+        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-end px-(--gutter) pb-5">
           <h1 className="flex items-center gap-3 font-blackletter text-5xl"><PageMark page="daily" />Daily</h1>
           <p className="mt-1 font-garamond text-lg italic text-muted-foreground">
             {date}
@@ -43,7 +43,7 @@ export function DailyView() {
           </p>
         </div>
       </DitherHero>
-      <div className="mx-auto grid w-full max-w-5xl gap-10 px-8 pb-20 pt-6 md:grid-cols-[1fr_18rem]">
+      <div className="mx-auto grid w-full max-w-5xl gap-10 px-(--gutter) pb-20 pt-6 md:grid-cols-[1fr_18rem]">
         <div className="space-y-10">
           <Office lect={lect} />
           <Plans t={t} />
@@ -119,7 +119,7 @@ function TodaysPainting({ id }: { id: string }) {
     <section>
       <SectionLabel>To look at today</SectionLabel>
       <button type="button" onClick={() => openLook({ kind: "painting", id })} className="group mt-2 block text-left">
-        <img src={paintingUrl(p.thumb)} alt={`${p.title}, ${paintingCredit(p)}`} className={cn("w-full rounded-sm", !p.colour && "engraving")} />
+        <img src={paintingUrl(p.thumb)} loading="lazy" decoding="async" alt={`${p.title}, ${paintingCredit(p)}`} className={cn("w-full rounded-sm", !p.colour && "engraving")} />
         <p className="mt-2 font-garamond text-lg leading-snug group-hover:underline">{p.title}</p>
         <p className="text-xs text-muted-foreground">
           {paintingCredit(p)}

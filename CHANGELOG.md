@@ -6,6 +6,135 @@ All notable changes to BibleLM. Format based on
 
 ## Unreleased
 
+### Added
+
+- **Sub Rosa's symbols are a database** (`src/lib/symbols.ts`): 74 signs in
+  six families (planets and metals, alchemy, magic and the occult, Masonic,
+  Christian, ancient), each drawn (`src/art/sigils.ts`) and dithered in a halo
+  of dots, filtered by family or by a word, opening on a sheet of facts, any
+  tagged claims, its pictures and its neighbours. New: the seven planets and
+  their metals, the zodiac, the four elements, sulfur, salt, antimony, the
+  squared circle, the ouroboros, Dee's monad, the unicursal hexagram, the
+  caduceus and the rod of Asclepius, the Rose Cross, the Leviathan cross, the
+  Sigillum Dei, the square of Saturn, the tree of life, the Sator square,
+  Abracadabra, the triquetra, the vesica piscis, the seed of life, the ankh,
+  the eye of Horus, the tau, Alpha and Omega, the shield of the Trinity, the
+  cross pattée, and 26 Masonic emblems.
+- **The lodge**, a cabinet shelf on Freemasonry (`src/lib/lodge.ts`): the
+  Craft, York Rite and Scottish Rite degrees by body (4 to 33 named), the
+  officers with their stations and jewels, the numbers (3, 5, 7, 15, 24, 33,
+  47, Anno Lucis), the emblems, the tracing boards and charts, and the dates.
+- **More public-domain art** for both: Bowring's tracing boards (1819) and a
+  set of 1832, the Library of Congress's Masonic charts (1846 to 1877),
+  Splendor Solis's seven planetary flasks, Maier's squared circle, Khunrath's
+  laboratory and cosmic rose, the Emerald Tablet, Dee's Monas, Fludd and the
+  Mutus Liber. Khunrath's laboratory heads the symbols, the 1846 chart the lodge.
+
+### Changed
+
+- **@nexis/design follows the family rules** (`cfb2b06`): the chrome is set
+  in Inter (Geist and Space Grotesk are gone, so `font-heading` is too), and
+  the whole interface scales with the window. Settings has an Interface size
+  (Auto, 100% to 150%; Ctrl+= / Ctrl+- / Ctrl+0), and the reading text size is
+  in rem so Scripture scales with it. Selects open below, overlays no longer
+  pop a tooltip as they open. BibleLM's rubric selection tints stay.
+- **Sub Rosa says less.** The acknowledgement before going under is gone; so
+  are the "Not Scripture" kickers over the library, the bestiary and the omen,
+  the cabinet's subtitle and the footers that repeated what the tags show.
+  Generated text from the Lab is still labelled.
+- **The Goetia's seals are dithered** like the rest of the art, ink in a halo
+  of dots, instead of drawn flat through a mask.
+
+- **Sub Rosa**, the curiosities mode (docs/SUBROSA.md), off by default.
+  Settings, Sub Rosa (or "Go under the rose" in the palette) turns it on at
+  once. Under the rose the app wears its own theme
+  (smoked glass, ash and brimstone), every shelf comes on without a word, the
+  rose mark hangs head down and the loader's cross is St Peter's. Coming out
+  is one click and puts the scheme and shelves back.
+- **Sub Rosa's art** (`scripts/art/curios.mjs`, credits in
+  docs/curios-credits.md): under the rose every page's corner and sidebar
+  plate gives way to Doré's Inferno, Dürer's Apocalypse, Schongauer, Callot,
+  Goya, Blake or Lévi's Baphomet; Home and the Lab turn through dithered hell
+  scenes; the day's painting comes from Bosch, Bruegel, Michelangelo,
+  Memling, Signorelli, Botticelli's map of hell, Blake's dragon and beast and
+  Martin's Pandemonium; and the demons of the Dictionnaire infernal that
+  Scripture names stand beside their verses (Asmodeus at Tobit 3:8, Azazel
+  at Leviticus 16:8, Beelzebub at 2 Kings 1:2).
+- **Sub Rosa's texts**: four books join 1 Enoch on the Pseudepigrapha shelf,
+  read in the Bible like it: Jubilees (Charles), the Testament of Solomon
+  (Conybeare), and the Gospel of Nicodemus, with the Harrowing of Hell, and
+  the Apocalypse of Paul (M. R. James). The verse panel's "Beyond the canon"
+  links them to the passages they retell or echo. Under the rose a new page,
+  **Sub Rosa**, holds a library read beside the Bible and never as it: the
+  Goetia's seventy-two spirits, Dionysius's nine choirs of angels, James's
+  Apocalypse of Peter, Dante's *Inferno*, *Paradise Lost*, Mackey's
+  *Symbolism of Freemasonry* and five degrees of Pike's *Morals and Dogma*.
+- **Sub Rosa's dossiers and symbols**: two more shelves in the cabinet. Twelve
+  dossiers (biblically accurate angels, the words for hell, Lucifer, 666 or
+  616, Boaz and Jachin, why the Masons build Solomon's Temple, Azazel,
+  Lilith, Legion, the witch of Endor, the Nephilim, Solomon and the demons)
+  and eleven symbols, from the crucifix and the fish to the inverted
+  pentagram, the eye of Providence and Baphomet. Every claim is tagged
+  Scripture, tradition, folklore or modern invention, with its verses quoted,
+  the pictures that show it, and where to read on.
+- **Hide the Lab**: Settings, Lab in the sidebar (or the palette) takes the
+  Lab out of the sidebar and the palette, for a study-only app and a shorter
+  nav. Hiding it while on it goes Home.
+- **A macOS build**: `tauri.macos.conf.json` bundles an `.app` and a `.dmg`;
+  Windows still builds its NSIS installer.
+- **A Go menu on macOS** (Back, Forward, each page, Find, the palette, the
+  sidebar, Settings), and the shortcuts a Mac app is expected to have
+  everywhere: Cmd+, Settings, Cmd+F Find, Cmd+\ folds the sidebar, Cmd+[ and
+  Cmd+] go back and forward through the pages visited (Ctrl elsewhere). A
+  two-finger sideways swipe does the same, except over a map or anything that
+  scrolls sideways.
+- **The window comes back where it was** (app data, `window.json`), unless
+  that place is no longer on a screen.
+- **Compact spacing**, **Fold the sidebar to icons** and **Save battery**
+  (Auto, Always, Never) in Settings. Saving the battery holds the art still,
+  as reduced motion does, and drops the blur behind glass; Auto does it on
+  battery power or in Low Power Mode (`power_state`: pmset on macOS, /sys on
+  Linux, the Battery Status API on Windows). The blur also goes when the
+  system asks for reduced transparency.
+
+- **Sub Rosa's extras** (docs/SUBROSA.md, S5). The cabinet gains three
+  shelves: a **Bestiary** of the Goetia's 72 spirits, each with its seal,
+  rank and legions as the book gives them, and the Testament of Solomon's
+  demons before them; **Numbers**, gematria and isopsephy worked by rule
+  (Nero Caesar 666 and 616, Iesous 888) beside the Bible codes run against
+  Moby-Dick; and **Scripture or myth?**, 22 things people think the Bible
+  says, answered with the verses and brought back on the memory scheduler.
+  Home's verse of the day becomes the day's omen, a verse of signs or a
+  spirit of the day. The Atlas has Botticelli's map of hell, marked from the
+  gate to Lucifer, each mark opening its canto. The Lab can train on the
+  Goetia's catalogue and invent spirits, every one labelled as invented.
+
+### Changed (memory and layout)
+
+- The semantic and phrase-search workers stop after four quiet minutes and
+  give back their index, model and suffix arrays; the next search starts them
+  again.
+- Decoded pictures for dithering are kept for the last 12 only, not every
+  picture ever drawn (a hero is tens of MB decoded).
+- The chiasm finder takes passages of up to 400 verses (a whole book was
+  millions of pairs).
+- The Lab's memory meter knows Apple silicon: it reads Metal's recommended
+  working set as the ceiling and says the memory is shared, where it used to
+  say no GPU and training on CPU (training already used MPS).
+- The verse panel floats over the text when the reader is under 60rem wide,
+  instead of squeezing it.
+- Thumbnails load lazily and decode off the main thread.
+
+### Changed
+
+- **Laptop spacing**: the window opens at 90% of the screen's work area (in
+  logical pixels, so a 1080p panel at 150% counts as 1280 by 720), capped at
+  1440 by 960, instead of a fixed 1280 by 840. Page margins and the space above
+  each page follow the window (`--gutter`, `--page-top`), and the hero bands on
+  Home, Read, Gallery, Daily and the Lab shrink on short windows to their old
+  size at about 900 pixels tall. The sidebar folds to icons below 1024 pixels
+  wide (was 900), so the verse panel leaves the text room on small laptops.
+
 ### Fixed
 
 - **Small screens**: the window opens inside the screen's work area, centred,

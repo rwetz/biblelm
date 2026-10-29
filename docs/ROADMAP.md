@@ -174,6 +174,16 @@ Released as v2.1.0 (tagged 2026-10-23, published 2026-10-25): M14 to M20, and
 the fixes from the end-to-end review (docs/evals/e2e-2026-10-23.md). With it
 the roadmap is complete; nothing planned here is left to build.
 
+### After 2.1: Sub Rosa
+
+The curiosities mode, off by default (docs/SUBROSA.md).
+
+- [x] S1 The switch: one acknowledgement in Settings or the palette, the Sub Rosa theme, every shelf on and restored
+- [x] S2 Dark art (Doré's Inferno and Paradise Lost, Bosch, Bruegel, Blake, the Dictionnaire infernal)
+- [x] S3 Texts (Testament of Solomon, the Goetia, the apocalypses of Peter and Paul, Dante, Milton, Mackey, Pike)
+- [x] S4 Dossiers and symbols
+- [x] S5 Extras (bestiary, daily omen, gematria, the quiz, the map of hell, the Lab's spirits)
+
 Still open outside this repo: Axon 0.10 and 0.11 wait on
 [rwetz/axon#1](https://github.com/rwetz/axon/pull/1) (`text-gpt` into `main`);
 the Lab already drives a locally installed Axon.

@@ -3,9 +3,10 @@
 //             (OpenBible.info) sized by how often Scripture names it.
 //   People    every named person (STEPBible TIPNR) with their family.
 //   Timeline  the eras, with conventional dates (approximate, and said so).
+//   Hell      under the rose only: Botticelli's map of Dante's hell (HellMap).
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, SectionLabel,Spinner, cn, useReducedMotion } from "@nexis/design";
+import { Button, SectionLabel,Spinner, cn } from "@nexis/design";
 import { m } from "motion/react";
 import type { OrnamentName } from "@/art/ornaments";
 import { Ornament } from "@/art/Art";
@@ -19,25 +20,32 @@ import { useAtlas } from "./VerseAtlas";
 import { Choice, SearchField } from "@/app/controls";
 import { PageMark } from "@/art/SidebarArt";
 import { Sections } from "@/app/Sections";
+import { useStill } from "@/lib/power";
+import { HellMap } from "./HellMap";
 
-type Tab = "places" | "people" | "timeline";
+type Tab = "places" | "people" | "timeline" | "hell";
 
 export function AtlasView() {
   const atlas = useStudy((s) => s.atlas);
   const translation = useStudy((s) => s.translation);
-  const [tab, setTab] = useState<Tab>(atlas?.kind === "person" ? "people" : "places");
+  const tabOf = (kind?: string): Tab => (kind === "person" ? "people" : kind === "hell" ? "hell" : "places");
+  const [tab, setTab] = useState<Tab>(tabOf(atlas?.kind));
   const [t, error] = useTranslation(translation);
   const [index] = useIndex();
   const { places, people } = useAtlas();
+  const rose = useStudy((s) => s.subRosa);
   useEffect(() => {
-    if (atlas) setTab(atlas.kind === "person" ? "people" : "places");
+    if (!rose && tab === "hell") setTab("places");
+  }, [rose, tab]);
+  useEffect(() => {
+    if (atlas) setTab(tabOf(atlas.kind));
   }, [atlas]);
 
   if (error) return <DataMissing message={error} />;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="border-b border-border/60">
-        <div className="mx-auto w-full max-w-6xl px-8 pb-3 pt-8">
+        <div className="mx-auto w-full max-w-6xl px-(--gutter) pb-3 pt-8">
           <h1 className="flex items-center gap-3 font-blackletter text-4xl"><PageMark page="atlas" />Atlas</h1>
           <p className="mt-1 text-sm text-muted-foreground">The places Scripture names, the people in it, and the ages they lived in.</p>
           <Sections
@@ -49,11 +57,14 @@ export function AtlasView() {
               { id: "places", name: "Places", gist: "the engraved map", mark: "compass" },
               { id: "people", name: "People", gist: "families and verses", mark: "angel" },
               { id: "timeline", name: "Timeline", gist: "the ages, in order", mark: "sun" },
+              ...(rose ? [{ id: "hell" as const, name: "Hell", gist: "Botticelli's map of Dante", mark: "pentagram-inverted" as const }] : []),
             ]}
           />
         </div>
       </div>
-      {!t || !index || !places || !people ? (
+      {tab === "hell" ? (
+        <HellMap />
+      ) : !t || !index || !places || !people ? (
         <div className="grid flex-1 place-items-center"><Spinner /></div>
       ) : !places.length && !people.length ? (
         <DataMissing message="places.json and people.json are missing: run node scripts/data/atlas.mjs" />
@@ -264,7 +275,7 @@ function EngravedMap({ land, places, selected, onSelect }: { land: Land; places:
   const svg = useRef<SVGSVGElement>(null);
   // Choosing a place glides the map there (and closer in, if it is far out)
   // rather than jumping: half a second, eased.
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   useEffect(() => {
     if (!selected) return;
     const [x, y] = at(selected.lon, selected.lat);
@@ -438,7 +449,7 @@ function People({ t, index, people, initial }: { t: Translation; index: VerseInd
       </aside>
       <div className="min-w-0 flex-1 overflow-y-auto">
         {person ? (
-          <div className="mx-auto max-w-4xl px-8 py-8">
+          <div className="mx-auto max-w-4xl px-(--gutter) py-8">
             <h2 className="font-garamond text-4xl">{personName(person)}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {[person.era, person.tribe].filter(Boolean).join(" · ")} · named in {person.verses.length} verse{person.verses.length === 1 ? "" : "s"}
@@ -451,7 +462,7 @@ function People({ t, index, people, initial }: { t: Translation; index: VerseInd
             </div>
           </div>
         ) : (
-          <div className="grid h-full place-items-center px-8 text-center">
+          <div className="grid h-full place-items-center px-(--gutter) text-center">
             <div className="max-w-sm">
               <p className="font-garamond text-2xl">Choose a person</p>
               <p className="mt-2 text-sm text-muted-foreground">Their family, their age and every verse that names them. Names come from STEPBible's register of every individual in Scripture.</p>
@@ -517,14 +528,14 @@ const ERA_ORNAMENTS: OrnamentName[] = ["sun", "compass", "lamp", "fleuron", "urn
 
 function Timeline({ people, onPerson }: { people: Person[]; onPerson: (id: string) => void }) {
   const [hover, setHover] = useState<string | null>(null);
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const dated = ERAS.filter((e) => !Number.isNaN(e.from));
   const byId = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
   const start = -2100, end = 120;
   const pct = (y: number) => ((y - start) / (end - start)) * 100;
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-6xl px-8 py-8">
+      <div className="mx-auto max-w-6xl px-(--gutter) py-8">
         <div className="relative h-20">
           <div className="absolute inset-x-0 top-9 h-px bg-border" />
           {dated.map((e, i) => (

@@ -8,8 +8,22 @@ let worker: Worker | null = null;
 let seq = 0;
 const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
 const builds = new Map<string, Promise<unknown>>();
+let idle: ReturnType<typeof setTimeout> | undefined;
+
+/** A suffix array per translation adds up; drop them all after a few quiet minutes. */
+const IDLE_MS = 4 * 60_000;
+function stopWhenIdle() {
+  clearTimeout(idle);
+  idle = setTimeout(() => {
+    if (pending.size > 0) return stopWhenIdle();
+    worker?.terminate();
+    worker = null;
+    builds.clear();
+  }, IDLE_MS);
+}
 
 function call<T>(msg: Record<string, unknown>): Promise<T> {
+  stopWhenIdle();
   if (!worker) {
     worker = new Worker(new URL("./suffix.worker.ts", import.meta.url), { type: "module" });
     worker.onmessage = (e: MessageEvent<{ id: number; ok: boolean; error?: string }>) => {

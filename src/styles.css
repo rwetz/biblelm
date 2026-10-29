@@ -14,6 +14,42 @@
   --color-rubric: var(--brand);
 }
 
+/* ── Laptop spacing ───────────────────────────────────────────────────── */
+
+/* Page margins and the space above a page's first line follow the window,
+   so a 1280x720 laptop (a 1080p panel at 150%) keeps its room for text and a
+   wide monitor still breathes. Used as px-(--gutter) and pt-(--page-top). */
+:root {
+  --gutter: clamp(1rem, 2.4vw, 2rem);
+  --page-top: clamp(1.5rem, 4.5vh, 3rem);
+}
+
+/* A sideways swipe turns pages in the app (App.tsx), not the webview's history. */
+html,
+body {
+  overscroll-behavior-x: none;
+}
+
+:root[data-compact] {
+  --gutter: clamp(0.75rem, 1.6vw, 1.25rem);
+  --page-top: clamp(1rem, 2.5vh, 1.75rem);
+}
+
+/* Glass without its blur when the system asks for less transparency or the
+   battery is being saved (src/lib/power.ts): a blur over a picture is costly
+   on integrated graphics. The shell's entrance plays only on full power. */
+@media (prefers-reduced-transparency: reduce) {
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+  }
+}
+:root[data-saver] [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+}
+:root[data-saver] :is(.nexis-shell-header, .nexis-shell-body, .nexis-shell-status, .nexis-view-enter, .nexis-content-enter) {
+  animation: none;
+}
+
 /* ── Reading ──────────────────────────────────────────────────────────── */
 
 .scripture {
@@ -23,6 +59,9 @@
   text-wrap: pretty;
   hanging-punctuation: first;
   font-feature-settings: "liga", "dlig", "onum";
+}
+:root[data-compact] .scripture {
+  line-height: 1.6;
 }
 .scripture .vnum {
   font-family: var(--font-sans);
@@ -257,4 +296,21 @@
   border-color: color-mix(in oklab, var(--foreground) 18%, transparent) !important;
   box-shadow: none !important;
   background-color: color-mix(in oklab, var(--input) 75%, transparent);
+}
+
+/* ── Sub Rosa ─────────────────────────────────────────────────────────── */
+
+/* Under the rose (src/app/subrosa.ts). The rose was hung over the table where
+   things were said in confidence, so the mark hangs head down. */
+:root[data-subrosa] [data-rose] {
+  transform: rotate(180deg);
+}
+/* The sidebar carries one more page under the rose (the cabinet), and the
+   rose's plates are inked to their top edge where Doré's open on sky, so the
+   vignette gives way on a taller window than usual (680px): the nav never
+   sits on a figure. */
+@media (max-height: 800px) {
+  :root[data-subrosa] [data-sidebar-art] {
+    display: none;
+  }
 }

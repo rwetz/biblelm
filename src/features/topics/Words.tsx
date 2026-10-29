@@ -30,7 +30,7 @@ export function Words({ t }: { t: Translation }) {
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-8 py-6 lg:grid-cols-3">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-(--gutter) py-6 lg:grid-cols-3">
         <section>
           <SectionLabel>A book's own words</SectionLabel>
           <Choice size="sm" label="Book" value={book} onChange={setBook} options={books.map((b) => ({ value: b.osis, label: b.name }))} className="mt-2 w-full" />

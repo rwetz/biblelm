@@ -45,6 +45,11 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 > Tenebrae, Home opens on the day's painting instead of a Doré plate. Its light
 > variant (gesso and umber) is reached only by forcing light while in it.
 
+> **As built (Sub Rosa):** a fourth theme that is not a scheme: it comes
+> and goes with the curiosities mode (docs/SUBROSA.md) and hides the scheme
+> choice while on. Cold where the others are warm: green-black `#0a0c0a`,
+> ash and bone `#d8d6c6`, brimstone `#cdbf45` as the one accent.
+
 > **As built (palette and controls):** the command palette is the app's own
 > (`src/app/Palette.tsx`, Mod+Shift+P or the title bar): every page, setting
 > and Lab room, and nothing from Scripture, which stays in Search. It ranks
@@ -74,8 +79,8 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 | Book titles, chapter numbers, drop caps, hero verse | **UnifrakturMaguntia** | OFL (Google Fonts) | True textura blackletter. Display only, 28 px and up. |
 | Same, when readability matters more | **Grenze Gotisch** (variable) | OFL | Blackletter shapes, modern legibility; good at 18 to 24 px. |
 | Verse text (reading view) | **EB Garamond** or **IM Fell English** | OFL | Fell types are real 17th-century English faces, period-matched to the KJV. |
-| UI chrome | Geist (Nexis default) | OFL | Unchanged. |
-| References, Strong's numbers, code | Geist Mono / JetBrains Mono | OFL | `tabular-nums`. |
+| UI chrome | Inter (Nexis default) | OFL | From @nexis/design; follows the interface scale. |
+| References, Strong's numbers, code | Geist Mono / JetBrains Mono | OFL | `tabular-nums`. Numbers in readouts are Inter with `tabular-nums`. |
 
 **When blackletter is appropriate:** headings, the verse of the day, a verse
 "plate" you export as an image, drop caps, and an opt-in "Gothic reading" mode.

@@ -5,7 +5,7 @@
 import { cn } from "@nexis/design";
 
 /** The Lab's column: the same width as the hero's title row above it. */
-export const LAB_COLUMN = "mx-auto w-full max-w-6xl px-8";
+export const LAB_COLUMN = "mx-auto w-full max-w-6xl px-(--gutter)";
 
 export function LabSection({
   title,
