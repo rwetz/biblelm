@@ -160,7 +160,7 @@ export function TrainingView() {
         {/* Config panel */}
         <div className="flex flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/6 dark:ring-foreground/10">
           <div className="flex h-10 items-center justify-between border-b border-border/60 px-4">
-            <p className="font-heading text-[13px] font-medium">Settings</p>
+            <p className="text-body font-semibold">Settings</p>
             <Button
               size="sm"
               variant="ghost"

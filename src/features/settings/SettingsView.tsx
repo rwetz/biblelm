@@ -6,7 +6,11 @@ import {
   Icon,
   IN_TAURI,
   Input,
+  INTERFACE_SCALES,
+  interfaceScaleLabel,
+  MOD_KEY,
   Panel,
+  parseInterfaceSize,
   Segmented,
   Slider,
   Switch,
@@ -107,6 +111,15 @@ export function SettingsView() {
             </Field>
             <Field label={`Text size · ${study.textSize}px`} inline>
               <Slider className="w-56" min={14} max={28} step={1} value={[study.textSize]} onValueChange={([v]) => study.set({ textSize: v })} />
+            </Field>
+            <Field label="Interface size" hint={`Menus, panels and pages together. Auto follows the window's width (now ${interfaceScaleLabel(theme.interfaceScale)}); ${MOD_KEY}+= and ${MOD_KEY}+- step it, ${MOD_KEY}+0 returns to Auto.`} inline>
+              <Segmented
+                label="Interface size"
+                size="sm"
+                value={String(theme.interfaceSize)}
+                onChange={(v) => theme.setInterfaceSize(parseInterfaceSize(v))}
+                segments={[{ id: "auto", label: "Auto" }, ...INTERFACE_SCALES.map((s) => ({ id: String(s), label: interfaceScaleLabel(s) }))]}
+              />
             </Field>
             <Field label="Red letter" hint="The words of Christ in red, in the KJV and WEB." inline>
               <Switch checked={study.redLetter} onCheckedChange={(redLetter) => study.set({ redLetter })} />

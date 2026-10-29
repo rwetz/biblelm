@@ -420,6 +420,7 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
       setting("Illustrations", ["art", "pictures", "engravings", "paintings", "off"]),
       setting("Reading face", ["font", "typeface", "garamond", "fell", "gothic", "blackletter"]),
       setting("Text size", ["font size", "bigger", "smaller", "zoom"]),
+      setting("Interface size", ["zoom", "scale", "bigger", "smaller", "ui size", "large monitor", "4k"]),
       setting("Red letter", ["words of christ", "jesus", "red"]),
       setting("Two columns", ["columns", "layout", "printed bible"]),
       setting("Ornaments", ["decorations", "flair", "dither", "emblems", "turn off"]),

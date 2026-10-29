@@ -79,8 +79,8 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 | Book titles, chapter numbers, drop caps, hero verse | **UnifrakturMaguntia** | OFL (Google Fonts) | True textura blackletter. Display only, 28 px and up. |
 | Same, when readability matters more | **Grenze Gotisch** (variable) | OFL | Blackletter shapes, modern legibility; good at 18 to 24 px. |
 | Verse text (reading view) | **EB Garamond** or **IM Fell English** | OFL | Fell types are real 17th-century English faces, period-matched to the KJV. |
-| UI chrome | Geist (Nexis default) | OFL | Unchanged. |
-| References, Strong's numbers, code | Geist Mono / JetBrains Mono | OFL | `tabular-nums`. |
+| UI chrome | Inter (Nexis default) | OFL | From @nexis/design; follows the interface scale. |
+| References, Strong's numbers, code | Geist Mono / JetBrains Mono | OFL | `tabular-nums`. Numbers in readouts are Inter with `tabular-nums`. |
 
 **When blackletter is appropriate:** headings, the verse of the day, a verse
 "plate" you export as an image, drop caps, and an opt-in "Gothic reading" mode.

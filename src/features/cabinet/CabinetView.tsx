@@ -254,7 +254,7 @@ function LibraryReader({ entry, section, onPlace, onClose }: { entry: LibraryEnt
         <ol className="mt-3 space-y-0.5">{contents}</ol>
       </nav>
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
-        <article className="mx-auto max-w-[42rem] px-(--gutter) pb-24 pt-(--page-top)" style={{ ["--scripture-size" as string]: `${textSize}px` }}>
+        <article className="mx-auto max-w-[42rem] px-(--gutter) pb-24 pt-(--page-top)" style={{ ["--scripture-size" as string]: `${textSize / 16}rem` }}>
           <Button variant="ghost" size="sm" onClick={onClose} className="mb-4 lg:hidden">
             <Icon name="chevron-left" /> The cabinet
           </Button>

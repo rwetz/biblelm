@@ -32,6 +32,12 @@ All notable changes to BibleLM. Format based on
 
 ### Changed
 
+- **@nexis/design follows the family rules** (`cfb2b06`): the chrome is set
+  in Inter (Geist and Space Grotesk are gone, so `font-heading` is too), and
+  the whole interface scales with the window. Settings has an Interface size
+  (Auto, 100% to 150%; Ctrl+= / Ctrl+- / Ctrl+0), and the reading text size is
+  in rem so Scripture scales with it. Selects open below, overlays no longer
+  pop a tooltip as they open. BibleLM's rubric selection tints stay.
 - **Sub Rosa says less.** The acknowledgement before going under is gone; so
   are the "Not Scripture" kickers over the library, the bestiary and the omen,
   the cabinet's subtitle and the footers that repeated what the tags show.
