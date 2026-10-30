@@ -1,16 +1,22 @@
-<div align="center">
+<p align="center">
+  <img src="public/icon.svg" width="128" alt="BibleLM logo: a heptagram in a double ring">
+</p>
 
-<img src="public/icon.svg" width="80" height="80" alt="BibleLM" />
+<h1 align="center">BibleLM</h1>
 
-# BibleLM
+<p align="center">
+  An illustrated Bible study tool, with a language model trained from scratch inside it.
+</p>
 
-**An illustrated Bible study tool, with a language model trained from scratch inside it.**
+<p align="center"><sub>Tauri 2 · React 19 · @nexis/design · transformers.js · PyTorch or Axon</sub></p>
 
-Tauri 2 · React 19 · @nexis/design · transformers.js · PyTorch or Axon
+<p align="center">
+  <a href="https://github.com/rwetz/biblelm/actions/workflows/ci.yml"><img src="https://github.com/rwetz/biblelm/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/rwetz/biblelm/releases/latest"><img src="https://img.shields.io/github/v/release/rwetz/biblelm?color=8494A9&labelColor=090B10" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-343D4B?labelColor=090B10" alt="License"></a>
+</p>
 
-</div>
-
----
+![BibleLM home: a Doré engraving, search bar and verse of the day](docs/main.png)
 
 BibleLM is two things in one window. A **study Bible**: six public-domain
 translations and 1 Enoch, all 241 of Gustave Doré's 1866 Bible engravings
@@ -94,6 +100,12 @@ Faces: UnifrakturMaguntia, Grenze Gotisch, IM Fell English, EB Garamond (OFL).
 ## License
 
 [MIT](LICENSE).
+
+## Keys
+
+| Keys | |
+|---|---|
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> | Command palette |
 
 ---
 
