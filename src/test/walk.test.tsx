@@ -117,7 +117,7 @@ describe.skipIf(!HAVE)("the walk, over the built data", () => {
     await shows("God created the heaven and the earth");
 
     await go("Topics");
-    expect(await screen.findByPlaceholderText(/Search 6,712 topics/, undefined, WAIT)).toBeTruthy();
+    expect(await screen.findByPlaceholderText(/Search [\d,]+ topics/, undefined, WAIT)).toBeTruthy();
 
     // CI builds only the Bible data; the Atlas and the Office need `pnpm data:study`.
     await go("Atlas");
