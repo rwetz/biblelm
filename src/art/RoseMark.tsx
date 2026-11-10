@@ -49,7 +49,8 @@ export function RoseMark({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
     const style = getComputedStyle(canvas);
     const wave = rgbOf(style.getPropertyValue("--brand").trim() || "#d4a94f");
     const ground = rgbOf(style.getPropertyValue("--card").trim() || "#14110d");

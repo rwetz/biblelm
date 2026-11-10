@@ -20,3 +20,23 @@ describe("Sub Rosa", () => {
     expect(useStudy.getState().beforeSubRosa?.themeId).toBe("scriptorium");
   });
 });
+
+describe("the verse panel", () => {
+  const matt25 = { book: "Matt", chapter: 25, verse: 14 };
+  beforeEach(() => useStudy.setState({ selected: null, selection: [] }));
+
+  it("closes when you turn to another chapter", () => {
+    useStudy.getState().select(matt25);
+    useStudy.getState().read({ book: "Acts", chapter: 1, verse: 0 });
+    expect(useStudy.getState().selected).toBeNull();
+    expect(useStudy.getState().selection).toEqual([]);
+  });
+
+  it("stays open within its chapter, and opens on a verse you jump to", () => {
+    useStudy.getState().select(matt25);
+    useStudy.getState().read({ book: "Matt", chapter: 25, verse: 30 });
+    expect(useStudy.getState().selected).toEqual(matt25);
+    useStudy.getState().read({ book: "Acts", chapter: 2, verse: 4 }, { select: true });
+    expect(useStudy.getState().selected).toMatchObject({ book: "Acts", chapter: 2, verse: 4 });
+  });
+});

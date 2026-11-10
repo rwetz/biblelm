@@ -1,8 +1,9 @@
 // Jev (TypeSafe System One): small bounded judgments, never text. Per the
 // workspace rules, Jev only ranks, routes or flags; exact rules, lookups and
 // arithmetic stay in code (a book's genre is a table below, not a question).
-// The request is made by Rust with TYPESAFE_API_KEY from the user's own
-// environment; the key never reaches this page. With no key, every function
+// The request is made by Rust with the user's key, from the system keychain
+// (saved in Settings) or TYPESAFE_API_KEY; the page can hand a key over once
+// but never reads one back. With no key, every function
 // here returns null and the app behaves exactly as without Jev.
 
 import { backend } from "./backend";
@@ -19,6 +20,12 @@ let available: Promise<boolean> | null = null;
 export function jevAvailable(): Promise<boolean> {
   available ??= backend.jevAvailable().catch(() => false);
   return available;
+}
+/** Ask again (after a key is saved or removed in Settings). */
+export function recheckJev(): Promise<boolean> {
+  available = null;
+  cache.clear();
+  return jevAvailable();
 }
 
 /** Bypass for a session ("bypass jev"). */

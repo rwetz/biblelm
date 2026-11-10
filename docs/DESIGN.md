@@ -72,6 +72,11 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 > rail without its art (`useNarrow` in App.tsx) and the title-bar search
 > narrows.
 
+> **As built (November polish):** when the verse panel floats, its top starts
+> below the toolbar so translation and chapter controls remain reachable.
+> The Gallery description is below the hero, on clear paper. Theme transition
+> snapshots ignore pointer input so the live app receives the next click.
+
 ## Typography
 
 | Use | Face | Licence | Notes |

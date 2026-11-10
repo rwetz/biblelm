@@ -3,7 +3,7 @@
 // dots); Doré's plates as engravings.
 
 import { useMemo, useState } from "react";
-import {cn } from "@nexis/design";
+import { cn } from "@nexis/design";
 import { DitherHero, Engraving, usePaintings, usePlates } from "@/art/Art";
 import { byBibleOrder, pagePainting, paintingCredit, paintingUrl, plateCredit, type Painting, type Plate } from "@/lib/art";
 import { bookName, formatRef } from "@/lib/canon";
@@ -12,6 +12,7 @@ import { PageMark } from "@/art/SidebarArt";
 import { Sections } from "@/app/Sections";
 
 type Show = "paintings" | "plates";
+const DETAILS = new Set(["empty notebook", "ophan", "living creature"]);
 
 export function GalleryView() {
   const paintings = usePaintings();
@@ -20,10 +21,10 @@ export function GalleryView() {
   const [show, setShow] = useState<Show>("paintings");
   const rose = useStudy((s) => s.subRosa);
   const hero = paintings.find((p) => p.id === pagePainting("gallery", rose));
+  const galleryPlates = useMemo(() => plates.filter((p) => !DETAILS.has(p.role ?? "")).sort(byBibleOrder), [plates]);
   const groups = useMemo(() => {
     // A detail cut from a plate already shown (Jerome's lion, Merian's wheel) is not a picture of its own.
-    const DETAILS = new Set(["empty notebook", "ophan", "living creature"]);
-    const items: (Painting | Plate)[] = show === "paintings" ? [...paintings].sort(byBibleOrder) : plates.filter((p) => !DETAILS.has(p.role ?? ""));
+    const items: (Painting | Plate)[] = show === "paintings" ? [...paintings].sort(byBibleOrder) : galleryPlates;
     const out: [string, (Painting | Plate)[]][] = [];
     for (const it of items) {
       const key = it.ref ? it.ref.book : "";
@@ -31,7 +32,7 @@ export function GalleryView() {
       else out.push([key, [it]]);
     }
     return out;
-  }, [show, paintings, plates]);
+  }, [show, paintings, galleryPlates]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -39,23 +40,23 @@ export function GalleryView() {
         <div className="mx-auto flex w-full max-w-6xl flex-1 items-end gap-4 px-(--gutter) pb-4">
           <div>
             <h1 className="flex items-center gap-3 font-blackletter text-5xl"><PageMark page="gallery" />Gallery</h1>
-            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-              {rose
-                ? "Under the rose, hell joins the collection: Bosch, Bruegel and the painters of the Last Judgment in oil; Doré's Inferno, Dürer's Apocalypse and the demons of the Dictionnaire infernal in engraving."
-                : "Caravaggio, Rembrandt and their followers in oil; Doré, Dürer, Schnorr and Blake in engraving and woodcut."}{" "}
-              Each opens beside the passage it shows.
-            </p>
           </div>
         </div>
       </DitherHero>
       <div className="mx-auto w-full max-w-6xl px-(--gutter) pt-2">
+        <p className="mb-4 max-w-xl text-sm text-muted-foreground">
+          {rose
+            ? "Under the rose, hell joins the collection: Bosch, Bruegel and the painters of the Last Judgment in oil; Doré's Inferno, Dürer's Apocalypse and the demons of the Dictionnaire infernal in engraving."
+            : "Caravaggio, Rembrandt, their followers and John Martin in oil; Doré, Dürer, Schnorr and Blake in engraving and woodcut."}{" "}
+          Each opens beside the passage it shows.
+        </p>
         <Sections
           label="Gallery"
           value={show}
           onChange={setShow}
           sections={[
             { id: "paintings", name: "Paintings", gist: `${paintings.length} in oil, in colour`, mark: "lamp" },
-            { id: "plates", name: "Engravings", gist: `${plates.length} plates and woodcuts`, mark: "fleuron" },
+            { id: "plates", name: "Engravings", gist: `${galleryPlates.length} plates and woodcuts`, mark: "fleuron" },
           ]}
         />
       </div>

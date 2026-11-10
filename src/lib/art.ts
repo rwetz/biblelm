@@ -241,7 +241,7 @@ export function easterSunday(y: number): Date {
 
 // ── Paintings (scripts/art/paintings.mjs) ───────────────────────────────
 
-/** An oil painting or etching: Caravaggio, Rembrandt and their followers. */
+/** An oil painting or etching: Caravaggio, Rembrandt and their followers, John Martin. */
 export interface Painting {
   id: string;
   title: string;

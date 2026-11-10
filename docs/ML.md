@@ -69,8 +69,15 @@ the text of the Bible. Generated text is always labelled.
 ### 2. Jev (bounded judgments)
 
 Per the workspace rules: Jev ranks, routes and flags; it never writes text, and
-`TYPESAFE_API_KEY` stays in the user's environment. If unset, the feature hides
+the key stays out of the page: Rust reads it from the system keychain (saved in
+Settings, Keys) or `TYPESAFE_API_KEY`. If neither is set, the feature hides
 and the app says so once.
+
+As built (2.2): Settings has a Keys section. A key typed there goes once to
+`jev_key_save`, which stores it with the `keyring` crate (Windows Credential
+Manager, macOS Keychain, Linux kernel keyring); `jev_key_source` tells the page
+only where a key was found, never the key. The keychain wins over the
+environment.
 
 - **Route a query**: reference lookup, exact phrase, or topic? (Saves a wrong
   search mode.)

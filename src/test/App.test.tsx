@@ -10,11 +10,14 @@ import { useStudy } from "@/store/study";
 // their "data not built" paths, which must render rather than crash.
 beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn(async () => new Response("not found", { status: 404 })));
+  // Exercise the supported no-canvas path without jsdom's diagnostic noise.
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   // A returning reader: the first-start welcome (a modal) has been seen.
   useStudy.setState({ welcomed: true });
 });
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
@@ -51,6 +54,7 @@ describe("App", () => {
       fireEvent.click(screen.getByRole("button", { name: "Begin" }));
     });
     expect(useStudy.getState()).toMatchObject({ welcomed: true, name: "Ryan" });
+    expect(screen.queryByText("This page stumbled")).toBeNull();
   });
 
   it.each(PAGES)("opens %s without crashing", async (label) => {
@@ -61,5 +65,6 @@ describe("App", () => {
       fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${label}`) }));
     });
     expect(screen.getByRole("navigation", { name: "BibleLM" })).toBeTruthy();
+    expect(screen.queryByText("This page stumbled")).toBeNull();
   });
 });

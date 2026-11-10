@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="https://github.com/rwetz/biblelm/actions/workflows/ci.yml"><img src="https://github.com/rwetz/biblelm/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/rwetz/biblelm/releases/latest"><img src="https://img.shields.io/github/v/release/rwetz/biblelm?color=8494A9&labelColor=090B10" alt="Latest release"></a>
+  <a href="https://github.com/rwetz/biblelm/releases/latest"><img src="https://img.shields.io/github/v/release/rwetz/biblelm?color=F2A93B&labelColor=18181B" alt="Latest release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-343D4B?labelColor=090B10" alt="License"></a>
 </p>
 
@@ -29,6 +29,19 @@ GPT you train from scratch on Scripture and can look inside, layer by layer.
 The rule throughout: **the machine finds, Scripture speaks.** Every ML feature
 returns real verses with their references. Anything generated is labelled, and
 never shown as Scripture.
+
+## See it in use
+
+[Watch the 30-second walkthrough](docs/media/biblelm-walkthrough.mp4)
+([WebM](docs/media/biblelm-walkthrough.webm)): the reader, Hebrew word study,
+the Gallery, and a painting beside its passage. Silent, captured from the
+running study app.
+
+| Reader and word study | Paintings beside Scripture |
+|---|---|
+| ![Genesis 1 with Hebrew word study open](docs/media/word-study.png) | ![Caravaggio's Sacrifice of Isaac beside Genesis 22](docs/media/painting.png) |
+
+[More screenshots and capture details](docs/media/README.md).
 
 ## Study
 
@@ -60,7 +73,8 @@ Python) when it is installed; nothing else in the app needs either.
 ## Optional machine help
 
 - **Jev** (TypeSafe): routes queries and reranks results with bounded
-  judgments, using `TYPESAFE_API_KEY` from your own environment.
+  judgments, using your own TypeSafe key, saved in Settings to your system
+  keychain (or read from `TYPESAFE_API_KEY`).
 
 No large hosted model is used: everything else runs on your computer.
 

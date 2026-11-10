@@ -1,5 +1,6 @@
 // Paintings: Caravaggio and the painters of his light (Rembrandt, Honthorst,
-// Georges de La Tour), each tied to the passage it depicts. Unlike the Doré
+// Georges de La Tour), and John Martin's apocalyptic canvases, each tied to
+// the passage it depicts. Unlike the Doré
 // plates these are oil paintings in colour (and two Rembrandt etchings), so
 // they are kept as they are: resized, never levelled, sharpened or regraded.
 // The app lays its dots over them live and only in part (src/art/painting.ts),
@@ -25,6 +26,7 @@ const UA = { "User-Agent": "BibleLM art build (+https://github.com/rwetz/biblelm
 
 const CARAVAGGIO = "Caravaggio";
 const REMBRANDT = "Rembrandt";
+const MARTIN = "John Martin";
 
 /**
  * The catalogue. `ref` is the verse the painting shows; `place` where it
@@ -60,6 +62,18 @@ export const PAINTINGS = [
   // Caravaggio's followers
   { id: "christ-before-the-high-priest", title: "Christ before the High Priest", artist: "Gerrit van Honthorst", year: "c. 1617", ref: "Matt.26.63", place: "National Gallery, London", file: "Gerard van Honthorst - Christ before the High Priest - WGA11650.jpg" },
   { id: "dream-of-joseph", title: "The Dream of Saint Joseph", artist: "Georges de La Tour", year: "c. 1640", ref: "Matt.1.20", place: "Musée d'Arts, Nantes", file: "Le Songe de saint Joseph de Georges de La Tour - Musée d'Art de Nantes.jpg" },
+  // John Martin (1789-1854): the catastrophes, small figures under vast skies
+  { id: "martin-deluge", title: "The Deluge", artist: MARTIN, year: "1834", ref: "Gen.7.11-12", place: "Yale Center for British Art, New Haven", file: "John Martin - The Deluge - Google Art Project.jpg" },
+  { id: "martin-eve-of-the-deluge", title: "The Eve of the Deluge", artist: MARTIN, year: "1840", ref: "Gen.6.13", place: "Royal Collection, London", file: "John Martin - The Eve of the Deluge - WGA14146.jpg" },
+  { id: "martin-assuaging-of-the-waters", title: "The Assuaging of the Waters", artist: MARTIN, year: "1840", ref: "Gen.8.3", place: "Fine Arts Museums of San Francisco", file: "The Assuaging of the Waters by John Martin, 1840.jpg" },
+  { id: "martin-sodom-and-gomorrah", title: "The Destruction of Sodom and Gomorrah", artist: MARTIN, year: "1852", ref: "Gen.19.24-25", place: "Laing Art Gallery, Newcastle upon Tyne", file: "John Martin - Sodom and Gomorrah.jpg" },
+  { id: "martin-seventh-plague", title: "The Seventh Plague of Egypt", artist: MARTIN, year: "1823", ref: "Exod.9.23", place: "Museum of Fine Arts, Boston", file: "Martin, John - The Seventh Plague - 1823.jpg" },
+  { id: "martin-joshua", title: "Joshua Commanding the Sun to Stand Still upon Gibeon", artist: MARTIN, year: "1816", ref: "Josh.10.12-13", place: "National Gallery of Art, Washington", file: "Joshua Commanding the Sun to Stand Still upon Gibeon (1816) John Martin - NGA 2004.64.1.jpg", licence: "CC0 (National Gallery of Art)" },
+  { id: "martin-belshazzars-feast", title: "Belshazzar's Feast", artist: MARTIN, year: "1820", ref: "Dan.5.25", place: "Yale Center for British Art, New Haven", file: "John Martin - Belshazzar's Feast - Google Art Project.jpg" },
+  { id: "martin-destruction-of-tyre", title: "The Destruction of Tyre", artist: MARTIN, year: "1840", ref: "Ezek.26.3-4", place: "Toledo Museum of Art", file: "John Martin - Destruction of Tyre - Google Art Project.jpg" },
+  { id: "martin-great-day-of-his-wrath", title: "The Great Day of His Wrath", artist: MARTIN, year: "1851-53", ref: "Rev.6.16-17", place: "Tate Britain, London", file: "John Martin - The Great Day of His Wrath - Google Art Project.jpg" },
+  { id: "martin-last-judgement", title: "The Last Judgement", artist: MARTIN, year: "1853", ref: "Rev.20.12", place: "Tate Britain, London", file: "John Martin - The Last Judgement - Google Art Project.jpg" },
+  { id: "martin-plains-of-heaven", title: "The Plains of Heaven", artist: MARTIN, year: "1851-53", ref: "Rev.21.1", place: "Tate Britain, London", file: "John Martin - The Plains of Heaven - Google Art Project.jpg" },
 ];
 
 const WIDTH = 2000; // long side of the shown painting: a 2x hero up to 1000 css px tall

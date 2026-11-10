@@ -6,8 +6,43 @@ All notable changes to BibleLM. Format based on
 
 ## Unreleased
 
+## [2.2.0] — 2026-11-09
+
+### Media
+
+- Re-recorded the 30-second browser walkthrough at native 3840 × 2160 in
+  MP4 and WebM, with matching exports for the personal website.
+
+### Fixed
+
+- Printing one book or one chapter from Export no longer prints the Export
+  dialog itself: on paper, everything but the illustrated sheet is hidden,
+  including dialogs portaled outside the app.
+- Turning to another chapter closes the verse panel that belonged to the last
+  one, instead of leaving its notes beside the new text.
+- Translation changes clear the previous text immediately while the selected
+  edition loads; late responses cannot replace the current edition.
+- Copy actions wait for the clipboard, report failures, and credit companion
+  passages to their own source. Missing verses cannot be copied as empty text.
+- The rose mark tolerates an unavailable canvas. App smoke tests check for the
+  crash screen as well as the shell.
+- The Gallery's description sits below its hero on clear paper; engravings
+  follow Bible order and the count excludes detail crops.
+- Floating verse panels start below the reader toolbar. Theme crossfades no
+  longer intercept clicks on the app.
+
 ### Added
 
+- Eleven John Martin paintings, each opening the chapter it depicts: The
+  Deluge, The Eve of the Deluge, The Assuaging of the Waters, Sodom and
+  Gomorrah, The Seventh Plague, Joshua Commanding the Sun, Belshazzar's Feast,
+  The Destruction of Tyre, and the Last Judgement triptych.
+- Settings, Keys: paste a TypeSafe key for Jev and it is saved in the system
+  keychain (Windows Credential Manager, macOS Keychain) through the `keyring`
+  crate. The page can save or remove the key but never reads it back;
+  `TYPESAFE_API_KEY` still works as a fallback.
+- Seven screenshots in Vellum and Nocturne, a refreshed README image, and a
+  silent 30-second walkthrough in MP4 and WebM (`docs/media/`).
 - **Sub Rosa's symbols are a database** (`src/lib/symbols.ts`): 74 signs in
   six families (planets and metals, alchemy, magic and the occult, Masonic,
   Christian, ancient), each drawn (`src/art/sigils.ts`) and dithered in a halo

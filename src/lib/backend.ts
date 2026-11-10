@@ -51,12 +51,28 @@ async function dataDir(): Promise<string | null> {
 /** Jev (TypeSafe) bounded judgments: made by Rust with the user's own key. */
 async function jev(req: { task: string; input: unknown }): Promise<unknown> {
   if (!IN_TAURI && LAB_DEMO) return demoJev(req);
-  if (!IN_TAURI) throw new Error("Jev runs from the desktop app with TYPESAFE_API_KEY from your environment.");
+  if (!IN_TAURI) throw new Error("Jev runs from the desktop app with your TypeSafe key.");
   return tauriInvoke("jev", req);
 }
 
 async function jevAvailable(): Promise<boolean> {
   return IN_TAURI ? tauriInvoke<boolean>("jev_available") : LAB_DEMO;
+}
+
+/** Where Rust finds the Jev key: the system keychain, the environment, or nowhere. Never the key itself. */
+export type JevKeySource = "keychain" | "environment" | null;
+async function jevKeySource(): Promise<JevKeySource> {
+  return IN_TAURI ? tauriInvoke<JevKeySource>("jev_key_source") : null;
+}
+
+/** Hand a key typed in Settings to Rust, which saves it in the system keychain. Write only. */
+async function jevKeySave(key: string): Promise<void> {
+  if (!IN_TAURI) throw new Error("The key can be saved from the desktop app.");
+  await tauriInvoke("jev_key_save", { key });
+}
+
+async function jevKeyClear(): Promise<void> {
+  if (IN_TAURI) await tauriInvoke("jev_key_clear");
 }
 
 /**
@@ -81,6 +97,9 @@ export const backend = {
   dataDir,
   jev,
   jevAvailable,
+  jevKeySource,
+  jevKeySave,
+  jevKeyClear,
 };
 
 // ── the Lab (Python workers) ─────────────────────────────────────────────

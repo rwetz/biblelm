@@ -195,7 +195,16 @@ export const useStudy = create<StudyState>((set, get) => ({
     const chapter = { book: ref.book, chapter: ref.chapter, verse: 0 };
     const history = [chapter, ...get().history.filter((h) => h.book !== ref.book || h.chapter !== ref.chapter)].slice(0, 12);
     const pick = opts?.select && ref.verse;
-    set({ page: "read", location: ref, history, selected: pick ? ref : get().selected, selection: pick ? [ref.verse] : get().selection });
+    // The verse panel belongs to its chapter: turning to another closes it.
+    const prev = get().selected;
+    const keep = prev && prev.book === ref.book && prev.chapter === ref.chapter;
+    set({
+      page: "read",
+      location: ref,
+      history,
+      selected: pick ? ref : keep ? prev : null,
+      selection: pick ? [ref.verse] : keep ? get().selection : [],
+    });
     save(get());
   },
   select: (selected) => set({ selected, selection: selected?.verse ? [selected.verse] : [] }),

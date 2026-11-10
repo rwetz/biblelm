@@ -157,9 +157,14 @@ body {
   display: none;
 }
 @media print {
-  #root,
+  /* Everything but the sheet: the app, toasts, and any dialog portaled to
+     <body> (the Export dialog is still fading out when the print runs). */
+  body > *:not(.print-sheet),
   [data-sonner-toaster] {
     display: none !important;
+  }
+  body {
+    overflow: visible !important;
   }
   .print-sheet {
     display: block;
@@ -313,4 +318,8 @@ body {
   :root[data-subrosa] [data-sidebar-art] {
     display: none;
   }
+}
+/* A theme crossfade must not intercept the next click on the live app. */
+::view-transition {
+  pointer-events: none;
 }

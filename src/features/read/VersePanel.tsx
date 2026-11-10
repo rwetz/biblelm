@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Icon, ScrollArea, SectionLabel, Spinner, Textarea, toast, Tooltip, TooltipContent, TooltipTrigger, cn } from "@nexis/design";
+import { Badge, Button, Icon, ScrollArea, SectionLabel, Spinner, Textarea, Tooltip, TooltipContent, TooltipTrigger, cn } from "@nexis/design";
 import { listTranslations, loadTranslation, type Translation, type VerseIndex } from "@/lib/bible";
 import { book as bookOf, formatRef, osisOf, parseOsis, type Ref, type Shelf } from "@/lib/canon";
 import { useCatalog, useGraph, useIndex } from "@/lib/hooks";
@@ -18,13 +18,14 @@ import { depicts, paintingCredit, paintingUrl, plateCredit, plateUrl } from "@/l
 import { PlacesAndPeople } from "@/features/atlas/VerseAtlas";
 import { NoteBody } from "@/features/notebooks/NoteBody";
 import { companionLinks } from "@/lib/companions";
+import { copyText } from "@/lib/clipboard";
 
 // Beside the text while the reader is wide enough to hold both; on a narrower
 // one (a small laptop, a half-screen window) it floats over the text instead
 // of squeezing it to a ribbon (the reader is the `reader` container).
 const PANEL = cn(
   "flex w-[clamp(18rem,34vw,25rem)] shrink-0 flex-col border-l border-border/60 bg-card/60",
-  "@max-[60rem]/reader:absolute @max-[60rem]/reader:inset-y-0 @max-[60rem]/reader:right-0 @max-[60rem]/reader:z-30 @max-[60rem]/reader:bg-card @max-[60rem]/reader:shadow-xl",
+  "@max-[60rem]/reader:absolute @max-[60rem]/reader:top-11 @max-[60rem]/reader:bottom-0 @max-[60rem]/reader:right-0 @max-[60rem]/reader:z-30 @max-[60rem]/reader:bg-card @max-[60rem]/reader:shadow-xl",
 );
 
 const label = (osis: string) => {
@@ -63,8 +64,7 @@ function PassagePanel({ book, chapter, verses, translations, onClose }: { book: 
   const allLit = !!active && osisList.every((o) => lit.has(o));
   const copy = () => {
     const text = ranges.map((r) => main.range(r).map((v) => v.text).join(" ")).join(" ... ");
-    navigator.clipboard?.writeText(`${text} (${title}, ${main.meta.abbr})`);
-    toast.success("Copied");
+    void copyText(`${text} (${title}, ${main.sourceOf(book).abbr})`);
   };
 
   return (
@@ -103,7 +103,7 @@ function PassagePanel({ book, chapter, verses, translations, onClose }: { book: 
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-6 p-4">
           <section>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{main.meta.abbr} · {verses.length} verses</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{main.sourceOf(book).abbr} · {verses.length} verses</p>
             <div className="scripture mt-1 space-y-2 !text-base !leading-7">
               {ranges.map((r, i) => (
                 <p key={r.verse}>
@@ -155,9 +155,9 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
               variant="ghost"
               size="icon-sm"
               aria-label="Copy verse"
+              disabled={!v}
               onClick={() => {
-                navigator.clipboard?.writeText(`${v?.text ?? ""} (${formatRef(refSel)}, ${main.meta.abbr})`);
-                toast.success("Copied");
+                void copyText(`${v?.text ?? ""} (${formatRef(refSel)}, ${main.sourceOf(refSel.book).abbr})`);
               }}
             >
               <Icon name="copy" />

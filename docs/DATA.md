@@ -44,7 +44,7 @@ node scripts/data/check-semantic.mjs "your query"   # spot-check the index
 | `data/moby-dick.txt` | daily | Moby-Dick's letters only (Gutenberg, public domain): the control text for the Bible-codes lesson |
 | `data/communities.json` | graph | 347 communities in the cross-reference graph (Louvain at resolution 12, split into connected parts as Leiden requires), each with its central verses and the readers' topic that best covers it |
 | `data/allusions.json` | graph | 536 New Testament verses that quote the Old word for word (KJV), found by Smith-Waterman alignment seeded by rare shared three-word runs |
-| `art/paintings/*.jpg`, `paintings.json` | art/paintings | 25 paintings and etchings (Caravaggio, Rembrandt, Honthorst, de La Tour) at 2000 px and 520 px, as painted: resized only. Each records whether it is in colour, how dark it is and where its light falls |
+| `art/paintings/*.jpg`, `paintings.json` | art/paintings | 36 paintings and etchings (Caravaggio, Rembrandt, Honthorst, de La Tour, John Martin) at 2000 px and 520 px, as painted: resized only. Each records whether it is in colour, how dark it is and where its light falls |
 
 Licences: texts public domain (eBible.org; 1 Enoch from Project Gutenberg); cross references and topics CC-BY
 (OpenBible.info, credited in Settings, About); Strong's dictionaries CC-BY-SA

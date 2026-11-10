@@ -150,14 +150,34 @@ fn agent() -> &'static ureq::Agent {
 const JEV_ENDPOINT: &str = "https://api.typesafe.ai/v1/systemone";
 const JEV_MODELS: &str = "https://api.typesafe.ai/v1/models";
 
-/// The key from the process environment, or, on Windows, from the user's saved
-/// environment (HKCU\Environment). An app started from a terminal that was
-/// open before the key was set never inherits it; reading the saved value
-/// means a restart of the app is enough.
+const KEYCHAIN_SERVICE: &str = "BibleLM";
+const KEYCHAIN_USER: &str = "TYPESAFE_API_KEY";
+
+fn keychain() -> Option<keyring::Entry> {
+    keyring::Entry::new(KEYCHAIN_SERVICE, KEYCHAIN_USER).ok()
+}
+
+/// The key saved in the system keychain (Windows Credential Manager, the macOS
+/// Keychain, the Linux kernel keyring) from Settings.
+fn keychain_key() -> Option<String> {
+    keychain()?.get_password().ok()
+}
+
+/// Where the key comes from: the keychain first, then the process environment,
+/// then, on Windows, the user's saved environment (HKCU\Environment). An app
+/// started from a terminal that was open before the key was set never inherits
+/// it; reading the saved value means a restart of the app is enough.
+fn key_with_source() -> Option<(String, &'static str)> {
+    let found = keychain_key()
+        .map(|k| (k, "keychain"))
+        .or_else(|| std::env::var("TYPESAFE_API_KEY").ok().map(|k| (k, "environment")))
+        .or_else(|| saved_user_key().map(|k| (k, "environment")))?;
+    let key = found.0.trim().to_string();
+    (!key.is_empty()).then_some((key, found.1))
+}
+
 fn api_key() -> Option<String> {
-    let found = std::env::var("TYPESAFE_API_KEY").ok().or_else(saved_user_key)?;
-    let key = found.trim().to_string();
-    (!key.is_empty()).then_some(key)
+    key_with_source().map(|(k, _)| k)
 }
 
 #[cfg(windows)]
@@ -169,6 +189,32 @@ fn saved_user_key() -> Option<String> {
 #[cfg(not(windows))]
 fn saved_user_key() -> Option<String> {
     None
+}
+
+/// Where the key was found ("keychain", "environment"), or None. Never the key.
+#[tauri::command]
+pub fn jev_key_source() -> Option<String> {
+    key_with_source().map(|(_, s)| s.to_string())
+}
+
+/// Save a key typed in Settings to the system keychain. The page sends it once
+/// and can never read it back.
+#[tauri::command]
+pub fn jev_key_save(key: String) -> Result<(), String> {
+    let key = key.trim();
+    if key.is_empty() {
+        return Err("The key is empty".into());
+    }
+    keychain().ok_or("The system keychain is not available")?.set_password(key).map_err(|e| e.to_string())
+}
+
+/// Remove the key from the keychain (an environment variable, if set, stays).
+#[tauri::command]
+pub fn jev_key_clear() -> Result<(), String> {
+    match keychain().ok_or("The system keychain is not available")?.delete_credential() {
+        Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 #[tauri::command]
@@ -184,12 +230,12 @@ pub fn jev_available() -> bool {
     true
 }
 
-/// One bounded judgment. The key comes from the user's environment and never
+/// One bounded judgment. The key comes from the keychain or the environment and never
 /// crosses into the webview; only the request body (a short query, or verse
 /// references with their text) leaves the machine.
 #[tauri::command]
 pub async fn jev(task: String, input: serde_json::Value) -> Result<serde_json::Value, String> {
-    let key = api_key().ok_or_else(|| "TYPESAFE_API_KEY is not set".to_string())?;
+    let key = api_key().ok_or_else(|| "No TypeSafe key is saved".to_string())?;
     if !matches!(task.as_str(), "route" | "rerank" | "verse" | "xref" | "judge" | "answer") {
         return Err(format!("unknown Jev task {task}"));
     }

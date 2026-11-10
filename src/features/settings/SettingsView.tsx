@@ -14,15 +14,17 @@ import {
   Segmented,
   Slider,
   Switch,
+  toast,
   useTheme,
 } from "@nexis/design";
 import { PlatePage, usePagePlate } from "@/art/Art";
 import { RoseMark } from "@/art/RoseMark";
 import { PAGE_PLATES } from "@/lib/art";
-import { backend } from "@/lib/backend";
+import { backend, type JevKeySource } from "@/lib/backend";
 import { SHELVES } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
-import { jevAvailable, setJevBypass } from "@/lib/jev";
+import { copyText } from "@/lib/clipboard";
+import { jevAvailable, recheckJev, setJevBypass } from "@/lib/jev";
 import { useStudy } from "@/store/study";
 import { DeveloperPanel } from "./DeveloperPanel";
 import { useScheme } from "@/app/scheme";
@@ -211,7 +213,7 @@ export function SettingsView() {
             </Field>
             <Field
               label="Jev (TypeSafe)"
-              hint="Bounded judgments only: how to read a query, how to rank candidate verses. Reads TYPESAFE_API_KEY from your environment; the key never enters the app."
+              hint="Bounded judgments only: how to read a query, how to rank candidate verses. Uses your TypeSafe key, set under Keys below."
               inline
             >
               <div className="flex items-center gap-2">
@@ -225,9 +227,12 @@ export function SettingsView() {
                 )}
               </div>
             </Field>
-            {jev === false && <JevSetup />}
             {jev && <JevUses />}
           </div>
+        </Panel>
+
+        <Panel title="Keys" meta="kept in your system keychain">
+          <JevKey onChange={setJev} />
         </Panel>
 
         <SubRosaPanel />
@@ -246,7 +251,7 @@ export function SettingsView() {
               <li>Cross references and topics: OpenBible.info, CC-BY.</li>
               <li>Illustrations: Gustave Doré, La Grande Bible de Tours (1866), public domain, via Wikimedia Commons.</li>
               <li>Woodcuts and engravings: Albrecht Dürer (the Met, CC0), Julius Schnorr von Carolsfeld, William Blake (Yale Center for British Art, CC0), the Nuremberg Chronicle, the 1534 Luther Bible, Matthäus Merian's Vision of Ezekiel (1630) and the four evangelists (Rijksmuseum, CC0); public domain, via Wikimedia Commons.</li>
-              <li>Paintings: Caravaggio, Rembrandt, Honthorst and Georges de La Tour, public domain (Wikimedia Commons; the Met and the Rijksmuseum, CC0).</li>
+              <li>Paintings: Caravaggio, Rembrandt, Honthorst, Georges de La Tour and John Martin, public domain (Wikimedia Commons; the Met, the Rijksmuseum and the National Gallery of Art, CC0).</li>
               {study.subRosa && (
                 <li>
                   Under the rose: Doré's Inferno, Louis Le Breton's demons for the Dictionnaire infernal (1863), Dürer, Schongauer, Bruegel, Callot, Goya, Blake
@@ -276,37 +281,110 @@ export function SettingsView() {
 
 const SET_KEY = '[Environment]::SetEnvironmentVariable("TYPESAFE_API_KEY", "paste-your-key-here", "User")';
 
+const SOURCE_LABEL: Record<NonNullable<JevKeySource>, string> = {
+  keychain: "Saved in your system keychain",
+  environment: "Read from TYPESAFE_API_KEY in your environment",
+};
+
 /**
- * There is deliberately no field for the key: it stays in your environment,
- * Rust reads it, and the page never holds it (AGENTS.md). This says how.
+ * The TypeSafe key for Jev. Typed here once and handed to Rust, which keeps it
+ * in the system keychain (Windows Credential Manager, the macOS Keychain); the
+ * page can save or remove a key but never reads one back.
  */
-function JevSetup() {
+function JevKey({ onChange }: { onChange: (on: boolean) => void }) {
+  const [source, setSource] = useState<JevKeySource | undefined>(undefined);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [showEnv, setShowEnv] = useState(false);
   const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    backend.jevKeySource().then(setSource).catch(() => setSource(null));
+  }, []);
+  const refresh = async () => {
+    setSource(await backend.jevKeySource().catch(() => null));
+    onChange(await recheckJev());
+  };
+  const save = async () => {
+    setBusy(true);
+    try {
+      await backend.jevKeySave(draft);
+      setDraft("");
+      await refresh();
+      toast.success("Key saved", { description: "Kept in your system keychain." });
+    } catch (e) {
+      toast.error("Could not save the key", { description: String(e) });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const remove = async () => {
+    setBusy(true);
+    try {
+      await backend.jevKeyClear();
+      await refresh();
+      toast.success("Key removed from the keychain");
+    } catch (e) {
+      toast.error("Could not remove the key", { description: String(e) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!IN_TAURI) {
+    return <p className="text-sm text-muted-foreground">The TypeSafe key for Jev is saved from the desktop app.</p>;
+  }
   return (
-    <div className="rounded-xl bg-muted/40 p-4 text-sm">
-      <p className="font-medium text-foreground">Turning Jev on</p>
-      <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-muted-foreground">
-        <li>
-          Get a key from TypeSafe (<span className="font-mono text-xs">typesafe.ai</span>).
-        </li>
-        <li>
-          In PowerShell, run this with your key in place of the placeholder. It saves the key for your Windows user only:
-          <div className="mt-1.5 flex items-start gap-2">
-            <code className="min-w-0 flex-1 break-all rounded-md bg-background px-2 py-1.5 font-mono text-xs text-foreground">{SET_KEY}</code>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigator.clipboard.writeText(SET_KEY).then(() => setCopied(true))}
-            >
-              <Icon name={copied ? "success" : "copy"} size="sm" /> {copied ? "Copied" : "Copy"}
+    <div className="space-y-4">
+      <Field
+        label="TypeSafe key for Jev"
+        hint={source ? SOURCE_LABEL[source] : source === null ? "No key yet. Get one from typesafe.ai and paste it here." : "Checking…"}
+      >
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (draft.trim()) save();
+          }}
+        >
+          <Input
+            type="password"
+            autoComplete="off"
+            spellCheck={false}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={source === "keychain" ? "Paste a new key to replace it" : "Paste your key"}
+            aria-label="TypeSafe key"
+            className="min-w-0 flex-1 font-mono"
+          />
+          <Button type="submit" size="sm" disabled={busy || !draft.trim()}>
+            <Icon name="key" size="sm" /> Save
+          </Button>
+          {source === "keychain" && (
+            <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={remove}>
+              Remove
             </Button>
-          </div>
-        </li>
-        <li>Quit and reopen BibleLM (and any terminal that started it), so it reads the new variable.</li>
-      </ol>
-      <p className="mt-3 text-xs text-muted-foreground">
-        The key is never shown, stored or sent by the page. Only the request (your query, or verse references with their text) leaves this computer.
+          )}
+        </form>
+      </Field>
+      <p className="text-xs text-muted-foreground">
+        The key goes straight to your system keychain and is never shown again or stored by the page. Only the request (your query, or verse references
+        with their text) leaves this computer.
       </p>
+      {source !== "keychain" && (
+        <div className="text-xs text-muted-foreground">
+          <button type="button" className="underline-offset-2 hover:underline" onClick={() => setShowEnv((v) => !v)}>
+            {showEnv ? "Hide" : "Or set it as an environment variable"}
+          </button>
+          {showEnv && (
+            <div className="mt-2 flex items-start gap-2">
+              <code className="min-w-0 flex-1 break-all rounded-md bg-muted/40 px-2 py-1.5 font-mono text-xs text-foreground">{SET_KEY}</code>
+              <Button variant="ghost" size="sm" onClick={async () => setCopied(await copyText(SET_KEY))}>
+                <Icon name={copied ? "success" : "copy"} size="sm" /> {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -319,8 +397,8 @@ function JevUses() {
       <ul className="mt-2 space-y-2 text-muted-foreground">
         <li>
           <span className="text-foreground">Reading your query, as you type.</span> On Search and the Home search box, a moment after you stop typing Jev is
-          asked one question: are you after exact words, a theme, a story or person, or an answer? The odds and the round trip in milliseconds show under the
-          box. Each query is asked once; it changes no results.
+          asked one question: are you after exact words, a theme, a story or person, or an answer? The reading appears as an emblem whose clarity reflects
+          its certainty. Each query is asked once.
         </li>
         <li>
           <span className="text-foreground">The verse panel.</span> Opening a verse asks what kind of passage it is (narrative, law, praise, lament,

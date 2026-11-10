@@ -5,20 +5,22 @@ import { loadTopics, type Topic } from "./topics";
 
 /** Resolve a promise-returning loader into [value, error]. */
 function useLoad<T>(load: () => Promise<T>, deps: unknown[]): [T | null, string | null] {
-  const [state, setState] = useState<[T | null, string | null]>([null, null]);
+  const [state, setState] = useState<{ deps: unknown[]; result: [T | null, string | null] }>({ deps, result: [null, null] });
   useEffect(() => {
     let live = true;
-    setState(([v]) => [v, null]);
+    setState({ deps, result: [null, null] });
     load().then(
-      (v) => live && setState([v, null]),
-      (e) => live && setState([null, String(e?.message ?? e)]),
+      (v) => live && setState({ deps, result: [v, null] }),
+      (e) => live && setState({ deps, result: [null, String(e?.message ?? e)] }),
     );
     return () => {
       live = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
-  return state;
+  // Effects run after render. Never expose the previous translation under a
+  // newly selected label, even on the render before the loading effect runs.
+  return deps.length === state.deps.length && deps.every((dep, i) => Object.is(dep, state.deps[i])) ? state.result : [null, null];
 }
 
 export const useTranslation = (id: string) => useLoad<Translation>(() => loadTranslation(id), [id]);

@@ -76,8 +76,9 @@ scripts/data|art/   offline builders (pnpm data); outputs are git-ignored
   only; anything smaller or longer is Garamond.
 - Never commit `data/`, `runs/`, `data-src/`, `art-src/`, `public/data`,
   `public/art/dore|heroes|paintings|woodcuts|curios`, `public/models`, weights or keys.
-  `TYPESAFE_API_KEY` stays in the user's environment and never reaches the
-  webview. No hosted large model (Opus 5.5 or larger) is used: ask first.
+  The TypeSafe key lives in the system keychain (saved from Settings, `keyring`
+  in `study.rs`) or `TYPESAFE_API_KEY`; the webview may hand a key to Rust once
+  but never reads one back. No hosted large model (Opus 5.5 or larger) is used: ask first.
 - Importers parse downloads as text; never execute downloaded content.
 
 ## Verify
