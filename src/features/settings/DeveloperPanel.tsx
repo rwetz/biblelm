@@ -3,14 +3,15 @@
 // waiting for the church year or reading to the right chapter.
 
 import { useMemo } from "react";
-import { Button, Field, Icon, Panel, Slider, Switch, cn } from "@nexis/design";
+import { Button, Icon, Slider, Switch, cn } from "@nexis/design";
 import { Dither, Engraving, Ornament, useHeroes, usePlates } from "@/art/Art";
 import { ORNAMENTS, type OrnamentName } from "@/art/ornaments";
 import { heroUrl, plateUrl, seasonalHero } from "@/lib/art";
 import { formatRef } from "@/lib/canon";
 import { useStudy } from "@/store/study";
+import { Group, Row } from "./SettingsView";
 
-export function DeveloperPanel() {
+export function DeveloperSettings() {
   const { devMode, devHero, devPlate, set, read, go } = useStudy();
   const heroes = useHeroes();
   const plates = usePlates();
@@ -20,15 +21,16 @@ export function DeveloperPanel() {
   const step = (d: number) => set({ devPlate: Math.min(plates.length || 241, Math.max(1, n + d)) });
 
   return (
-    <Panel title="Developer" meta="for finding art and layout bugs">
-      <div className="space-y-6">
-        <Field label="Developer mode" hint="Choose the Home hero and the sidebar plate yourself instead of the church year and your reading." inline>
-          <Switch checked={devMode} onCheckedChange={(on) => set({ devMode: on })} />
-        </Field>
+    <>
+      <Group id="devmode" title="Developer mode">
+        <Row id="Developer mode" description="Choose the Home hero and the sidebar plate yourself instead of the church year and your reading.">
+          <Switch aria-label="Developer mode" checked={devMode} onCheckedChange={(on) => set({ devMode: on })} />
+        </Row>
+      </Group>
 
-        {devMode && (
-          <>
-            <section>
+      {devMode && (
+        <Group id="art" title="Art on demand">
+            <section data-setting="Home hero" className="py-4">
               <div className="mb-2 flex items-baseline justify-between gap-3">
                 <p className="text-sm font-medium">Home hero</p>
                 <button
@@ -63,7 +65,7 @@ export function DeveloperPanel() {
               </Button>
             </section>
 
-            <section>
+            <section data-setting="Plates" className="py-4">
               <div className="mb-2 flex items-center gap-3">
                 <p className="text-sm font-medium">Plates</p>
                 <span className="text-xs text-muted-foreground">
@@ -110,7 +112,7 @@ export function DeveloperPanel() {
               )}
             </section>
 
-            <section>
+            <section data-setting="Ornament sheet" className="py-4">
               <p className="mb-2 text-sm font-medium">Ornaments</p>
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
                 {(Object.keys(ORNAMENTS) as OrnamentName[]).map((name) => (
@@ -123,9 +125,8 @@ export function DeveloperPanel() {
                 ))}
               </div>
             </section>
-          </>
-        )}
-      </div>
-    </Panel>
+        </Group>
+      )}
+    </>
   );
 }

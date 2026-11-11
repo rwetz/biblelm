@@ -38,12 +38,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: public-data
+          # Every git-ignored folder under public/ (release.test.mjs checks
+          # this list against .gitignore). public/art whole, so a new art
+          # folder (woodcuts, curios) can never be left out of the installer.
           path: |
             public/data
-            public/art/dore
-            public/art/heroes
-            public/art/paintings
+            public/art
             public/models
+          if-no-files-found: error
           retention-days: 3
 
   build:

@@ -6,6 +6,32 @@ All notable changes to BibleLM. Format based on
 
 ## Unreleased
 
+### Fixed
+
+- The 2.2.0 installers shipped without Sub Rosa's art (the Bestiary's seals,
+  its plates and paintings) and the woodcuts: the release job built them but
+  never handed them to the installer builds. It now uploads all of
+  `public/art`, fails if anything is missing, and a test checks the upload
+  against every git-ignored folder under `public/`.
+- A book with no Hebrew or Greek (the deuterocanon, the Pseudepigrapha) no
+  longer spins forever in interlinear reading. The app answers a missing data
+  file with its own page rather than a 404; data loading now treats that as
+  missing everywhere.
+
+### Changed
+
+- Studies for young men: eighteen studies in four groups, up from eight.
+  New: money and betting, bitterness and forgiving, guilt and shame,
+  darkness and despair, the tongue, going along and the fear of men, dating
+  and marriage, fathers and family, doubt, and prayer and a cold heart. Every
+  study has more passages per idea, more ideas and stories, and twenty
+  readers' passages instead of twelve; every reference is checked against
+  the KJV.
+- Settings is a tree: seven chapters in a contents nav with a search, one
+  chapter at a time on the Nexis settings template. Notes folder and name
+  have their own chapter; the command palette's settings come from the same
+  tree.
+
 ## [2.2.0] — 2026-11-09
 
 ### Media

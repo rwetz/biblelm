@@ -1,19 +1,19 @@
 // Settings, Sub Rosa: the switch. See docs/SUBROSA.md.
 
-import { Field, Panel, Switch } from "@nexis/design";
+import { Switch } from "@nexis/design";
 import { useSubRosa } from "@/app/subrosa";
+import { Group, Row } from "./SettingsView";
 
-export function SubRosaPanel() {
+export function SubRosaSettings() {
   const [on, setOn] = useSubRosa();
   return (
-    <Panel title="Sub Rosa" meta="under the rose">
-      <Field
-        label="Sub Rosa"
-        hint={on ? "You are under the rose." : "A cabinet of curiosities: angels and demons, hell and its maps, the Goetia, the Masons, and a database of symbols."}
-        inline
+    <Group id="rose" title="Under the rose">
+      <Row
+        id="Sub Rosa"
+        description={on ? "You are under the rose." : "A cabinet of curiosities: angels and demons, hell and its maps, the Goetia, the Masons, and a database of symbols."}
       >
-        <Switch checked={on} onCheckedChange={setOn} />
-      </Field>
-    </Panel>
+        <Switch aria-label="Sub Rosa" checked={on} onCheckedChange={setOn} />
+      </Row>
+    </Group>
   );
 }

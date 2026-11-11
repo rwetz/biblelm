@@ -10,7 +10,7 @@ import { Ornament } from "@/art/Art";
 import type { Translation, VerseIndex } from "@/lib/bible";
 import { formatRef, osisOf, type Ref } from "@/lib/canon";
 import { useGraph, useTopics } from "@/lib/hooks";
-import { readersPassages, STRUGGLES, studyRef, TO_YOUNG_MEN, type Struggle } from "@/lib/studies";
+import { readersPassages, STRUGGLES, studiesByGroup, studyRef, TO_YOUNG_MEN, type Struggle } from "@/lib/studies";
 import { studyWalk } from "@/lib/xrefs";
 import { useNotebooks } from "@/store/notebooks";
 import { useStudy } from "@/store/study";
@@ -39,21 +39,28 @@ export function Studies({ t, index }: { t: Translation; index: VerseIndex }) {
           <div>
             <SectionLabel>Studies for young men</SectionLabel>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              For men around 18 to 25 fighting temptation. Pick what you are up against; each study has ideas to work through, the stories where
-              Scripture shows it, and where readers keep turning.
+              For men around 18 to 25 fighting temptation. Pick what you are up against: {STRUGGLES.length} studies, each with ideas and passages to
+              work through, the stories where Scripture shows it, and where readers keep turning.
             </p>
           </div>
-          <nav className="space-y-0.5" aria-label="Struggles">
-            {STRUGGLES.map((x) => (
-              <button
-                key={x.id}
-                type="button"
-                aria-current={x.id === s.id}
-                onClick={() => setId(x.id)}
-                className={cn("block w-full rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted/60", x.id === s.id && "bg-muted font-medium")}
-              >
-                {x.title}
-              </button>
+          <nav className="space-y-4" aria-label="Struggles">
+            {studiesByGroup().map(({ group, studies }) => (
+              <div key={group.id}>
+                <p className="px-3 pb-1 font-garamond text-sm italic text-muted-foreground">{group.label}</p>
+                <div className="space-y-0.5">
+                  {studies.map((x) => (
+                    <button
+                      key={x.id}
+                      type="button"
+                      aria-current={x.id === s.id}
+                      onClick={() => setId(x.id)}
+                      className={cn("block w-full rounded-lg px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted/60", x.id === s.id && "bg-muted font-medium")}
+                    >
+                      {x.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </nav>
           <YoungMen t={t} />

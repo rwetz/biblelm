@@ -14,10 +14,12 @@ const books = new Map<string, Promise<BookWords | null>>();
 export function loadInterlinear(book: string): Promise<BookWords | null> {
   let p = books.get(book);
   if (!p) {
-    p = getBinary(`interlinear/${book}.json`).then(
-      (b) => JSON.parse(new TextDecoder().decode(b)) as BookWords,
-      () => null,
-    );
+    // A book with no file (the deuterocanon, the Pseudepigrapha) is null, and
+    // so is one that will not parse: left unhandled, the reader waited on it
+    // forever.
+    p = getBinary(`interlinear/${book}.json`)
+      .then((b) => JSON.parse(new TextDecoder().decode(b)) as BookWords)
+      .catch(() => null);
     books.set(book, p);
   }
   return p;

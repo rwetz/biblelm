@@ -205,16 +205,24 @@ export function wholeSentence(verse: (r: Ref) => { raw: string } | undefined, st
 
 const BASE = `${import.meta.env.BASE_URL}data`;
 
-export async function getJson<T>(path: string): Promise<T> {
+/**
+ * A data file, or an error if it is missing. The desktop app and the dev
+ * server answer a missing file with the app's own page (200, text/html)
+ * rather than a 404, so that counts as missing too.
+ */
+async function fetchData(path: string): Promise<Response> {
   const res = await fetch(`${BASE}/${path}`);
-  if (!res.ok) throw new Error(`${path}: ${res.status}. Run "pnpm data" to build the Bible data.`);
-  return res.json() as Promise<T>;
+  const missing = !res.ok || (res.headers.get("content-type") ?? "").includes("text/html");
+  if (missing) throw new Error(`${path}: ${res.ok ? "missing" : res.status}. Run "pnpm data" to build the Bible data.`);
+  return res;
+}
+
+export async function getJson<T>(path: string): Promise<T> {
+  return (await fetchData(path)).json() as Promise<T>;
 }
 
 export async function getBinary(path: string): Promise<ArrayBuffer> {
-  const res = await fetch(`${BASE}/${path}`);
-  if (!res.ok) throw new Error(`${path}: ${res.status}. Run "pnpm data" to build the Bible data.`);
-  return res.arrayBuffer();
+  return (await fetchData(path)).arrayBuffer();
 }
 
 let catalog: Promise<TranslationMeta[]> | null = null;

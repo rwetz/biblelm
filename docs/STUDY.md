@@ -135,9 +135,17 @@ tag(note, name)
 
 > **As built (Studies for young men):** Topics, Studies (`src/lib/studies.ts`,
 > `src/features/topics/Studies.tsx`) is a study finder for men around 18 to 25
-> fighting temptation: eight struggles (lust and pornography, anger, pride
-> and comparison, laziness and screens, drink and escape, loneliness, fear
-> about the future, identity and purpose). Each has hand-written ideas with
+> fighting temptation: eighteen struggles in four groups. The flesh: lust and
+> pornography, drink and escape, laziness and screens, money and betting. The
+> heart: anger, pride and comparison, bitterness and forgiving, guilt and
+> shame, fear about the future, darkness and despair (which gives the 988
+> line in its first lines). With others: loneliness, the tongue, going along
+> and the fear of men, dating and marriage, fathers and family. Faith and
+> calling: doubt, prayer and a cold heart, identity and purpose (2.3; the
+> first eight came in 2.1, with fewer passages each). Ideas carry two to
+> five passages, studies five to seven ideas and stories, and twenty
+> readers' passages; `studies.test.ts` checks every reference against the
+> KJV and every topic against OpenBible's list when the data is built. Each has hand-written ideas with
 > their verses quoted and a question, the stories where Scripture shows it,
 > the passages OpenBible readers vote for across its topics (merged by
 > reciprocal rank), and a study walk seeded with every verse the study quotes.

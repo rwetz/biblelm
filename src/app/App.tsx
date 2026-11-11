@@ -23,7 +23,7 @@ import { Heptagram } from "@/art/Art";
 import { Palette } from "./Palette";
 import { Welcome } from "./Welcome";
 import { SidebarArt, SidebarOrnament } from "@/art/SidebarArt";
-import { formatRef, SHELVES, type Shelf } from "@/lib/canon";
+import { formatRef, SHELVES } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
 import { refreshGpuInfo } from "@/lib/gpu";
 import { listen } from "@/lib/backend";
@@ -42,6 +42,7 @@ import { ViewBoundary } from "./ViewBoundary";
 import { NotebooksView } from "@/features/notebooks/NotebooksView";
 import { LabView } from "@/features/lab/LabView";
 import { SettingsView } from "@/features/settings/SettingsView";
+import { SETTINGS, SHELF_WORDS } from "@/features/settings/sections";
 import { CabinetView } from "@/features/cabinet/CabinetView";
 import { useNotebooks } from "@/store/notebooks";
 import { loadPaintings, loadRosePaintings, paintingForDay, type Painting } from "@/lib/art";
@@ -50,12 +51,6 @@ import { useSubRosa, useSubRosaSync } from "@/app/subrosa";
 import { SCHEMES } from "@/app/theme";
 import { useStudy, type Page } from "@/store/study";
 
-const SHELF_WORDS: Record<Shelf, string[]> = {
-  protestant: ["protestant", "66 books"],
-  deuterocanon: ["deuterocanon", "catholic", "tobit", "judith", "wisdom", "sirach", "baruch", "maccabees"],
-  apocrypha: ["apocrypha", "esdras", "manasseh", "psalm 151", "1611"],
-  pseudepigrapha: ["pseudepigrapha", "enoch", "watchers", "charles", "jubilees", "solomon", "nicodemus", "harrowing", "apocalypse of paul", "james"],
-};
 
 const NAV: SidebarNavSection<Page>[] = [
   {
@@ -414,30 +409,11 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
         setTimeout(() => window.dispatchEvent(new CustomEvent("biblelm:setting", { detail: label })), 120);
       },
     });
-    const settings: PaletteCommand[] = [
-      setting("Scheme", ["theme", "dark mode", "light mode", "vellum", "nocturne", "tenebrae", "colours"]),
-      setting("Follow the system's light and dark", ["dark mode", "auto", "system theme"]),
-      setting("Illustrations", ["art", "pictures", "engravings", "paintings", "off"]),
-      setting("Reading face", ["font", "typeface", "garamond", "fell", "gothic", "blackletter"]),
-      setting("Text size", ["font size", "bigger", "smaller", "zoom"]),
-      setting("Interface size", ["zoom", "scale", "bigger", "smaller", "ui size", "large monitor", "4k"]),
-      setting("Red letter", ["words of christ", "jesus", "red"]),
-      setting("Two columns", ["columns", "layout", "printed bible"]),
-      setting("Ornaments", ["decorations", "flair", "dither", "emblems", "turn off"]),
-      setting("Compact spacing", ["density", "small screen", "laptop", "margins", "tight"]),
-      setting("Fold the sidebar to icons", ["collapse", "nav", "room"]),
-      setting("Save battery", ["power", "low power", "laptop", "animation", "blur", "motion"]),
-      setting("Your name", ["name", "print", "title page", "profile"]),
-      // Each shelf by its own books, so "enoch" finds the Pseudepigrapha alone.
-      ...SHELVES.map((s) => setting(s.label, ["canon", "shelf", "books", ...SHELF_WORDS[s.id]])),
-      setting("Translations", ["kjv", "web", "asv", "version", "bible"]),
-      setting("Lab in the sidebar", ["machine", "gpt", "train", "hide", "simpler", "study only"]),
-      setting("Semantic search", ["meaning", "embedding", "machine"]),
-      setting("Jev", ["typesafe", "rerank", "api key", "machine help", "bypass"]),
-      setting("Developer mode", ["debug", "hero", "plates", "art", "ornaments sheet"]),
-      setting("Sub Rosa", ["curiosities", "dark", "occult", "angels", "demons", "hell", "goetia", "solomon", "masons", "symbols", "under the rose"]),
-      setting("About", ["credits", "licence", "version", "sources"]),
-    ];
+    // From the settings tree (src/features/settings/sections.ts), all but
+    // the developer's art sheets, which show only in developer mode.
+    const settings: PaletteCommand[] = SETTINGS.flatMap((c) =>
+      c.groups.filter((g) => g.id !== "art").flatMap((g) => g.settings.map((x) => setting(x.label, [...(x.keywords ?? []), c.label.toLowerCase()]))),
+    );
     const lab: PaletteCommand[] = ([["corpus", "Corpus"], ["train", "Training"], ["generate", "Generate"], ["model", "Model"], ["inside", "Inside the model"], ["lessons", "Lessons"]] as const).map(([t, name]) => ({
       id: `lab-${t}`,
       label: `Lab: ${name}`,

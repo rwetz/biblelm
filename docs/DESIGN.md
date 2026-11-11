@@ -63,6 +63,22 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 > (`src/app/Sections.tsx`): a Roman numeral, a name, a line on what is there and
 > a dithered ornament in place of an icon tab.
 
+> **As built (Settings as a tree, 2.3):** Settings outgrew one long column,
+> so it follows Nexis R4.2 (`SettingsPage`, `SettingsGroup`, `SettingRow`:
+> left-aligned, hairline rows, controls in a 280px column) with one change:
+> the flat `SidebarNav` becomes `SettingsTree`
+> (`src/features/settings/SettingsTree.tsx`), a contents page. Seven chapters
+> carry Roman numerals in Garamond; a chapter's groups hang from a hairline
+> spine under it. Two rails from Nexis's `useGlidingRail` glide: a soft
+> highlight between chapters and a short accent mark down the spine to the
+> group in view (a scroll spy follows the page). Moving to a chapter folds the
+> others. "Find a setting" filters the tree to matching settings with their
+> group beside them; Enter opens the first and flashes its row. The tree
+> itself is `src/features/settings/sections.ts`, which also makes the
+> palette's "Settings:" commands, so the two never disagree. `SettingsTree`
+> knows nothing about BibleLM and is meant to move into @nexis/design beside
+> `SidebarNav`, as R4.2's answer for apps with deep settings.
+
 > **As built (narrow windows):** the reader column is a container: below 36rem
 > its toolbar folds Interlinear, Two columns and the chapter arrows into a
 > More menu, and the translation name and "Parallel" drop to their icons;
