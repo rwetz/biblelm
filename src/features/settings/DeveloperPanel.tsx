@@ -28,8 +28,19 @@ export function DeveloperSettings() {
         </Row>
       </Group>
 
-      {devMode && (
-        <Group id="art" title="Art on demand">
+      {/* Always drawn, so the tree's "Art on demand" has somewhere to go. */}
+      <Group id="art" title="Art on demand">
+        {!devMode ? (
+          <div className="flex items-center gap-4 py-4">
+            <p className="min-w-0 flex-1 text-body text-muted-foreground">
+              Every Home hero, every plate and the sheet of ornaments, to look at on demand. Shown while developer mode is on.
+            </p>
+            <Button variant="outline" size="sm" onClick={() => set({ devMode: true })}>
+              Turn it on
+            </Button>
+          </div>
+        ) : (
+          <>
             <section data-setting="Home hero" className="py-4">
               <div className="mb-2 flex items-baseline justify-between gap-3">
                 <p className="text-sm font-medium">Home hero</p>
@@ -125,8 +136,9 @@ export function DeveloperSettings() {
                 ))}
               </div>
             </section>
-        </Group>
-      )}
+          </>
+        )}
+      </Group>
     </>
   );
 }

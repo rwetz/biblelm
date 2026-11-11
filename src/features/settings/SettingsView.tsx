@@ -416,8 +416,8 @@ function Machine() {
       </Group>
 
       <Group id="meaning" title="Search by meaning">
-        <Row id="Semantic search" description="A small embedding model (bge-small, MIT) that runs on this computer. Finds verses by meaning.">
-          <span className="text-xs text-success">On, offline</span>
+        <Row id="Semantic search" description="Finds verses by meaning, with a small embedding model (bge-small, MIT) that runs on this computer. Nothing you search for leaves it, and it works without the internet.">
+          <span className="text-xs text-success">Always on</span>
         </Row>
       </Group>
 
