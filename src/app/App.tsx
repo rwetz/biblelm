@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   fmtShortcut,
+  GlassBackdrop,
   Icon,
   MOD_KEY,
   MOD_PROP,
@@ -249,7 +250,8 @@ export default function App() {
   }, [loadNotes]);
 
   return (
-    <div className={`flex h-full flex-col bg-background text-foreground ${redLetter ? "red-letter" : ""}`}>
+    <div data-app-shell className={`flex h-full flex-col bg-background text-foreground ${redLetter ? "red-letter" : ""}`}>
+      <GlassBackdrop />
       <WindowResizeEdges />
       <TitleBar
         brand={<Heptagram className="size-[18px] text-brand" />}
@@ -296,7 +298,7 @@ function ModeToggle() {
     <Tooltip>
       <TooltipTrigger asChild>
         <Button variant="ghost" size="icon-sm" aria-label={`Switch to ${label}`} onClick={() => setScheme(next)}>
-          <Icon name={scheme === "vellum" ? "theme-dark" : scheme === "nocturne" ? "contrast" : "theme-light"} />
+          <Icon name={scheme === "vellum" ? "theme-dark" : scheme === "nocturne" ? "contrast" : "theme-light"} swap />
         </Button>
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>

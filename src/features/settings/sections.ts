@@ -96,6 +96,7 @@ export const SETTINGS: SettingsChapter[] = [
         label: "Layout",
         settings: [
           { label: "Interface size", keywords: ["zoom", "scale", "bigger", "smaller", "ui size", "large monitor", "4k"] },
+          { label: "Glass", keywords: ["window glass", "tint", "transparency", "frosted", "blur"] },
           { label: "Compact spacing", keywords: ["density", "small screen", "laptop", "margins", "tight"] },
           { label: "Fold the sidebar to icons", keywords: ["collapse", "nav", "room"] },
         ],
