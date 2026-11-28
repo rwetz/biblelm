@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   fmtShortcut,
-  GlassBackdrop,
   Icon,
   MOD_KEY,
   MOD_PROP,
@@ -54,7 +53,7 @@ import { loadPaintings, loadRosePaintings, paintingForDay, type Painting } from 
 import { nextScheme, useScheme } from "@/app/scheme";
 import { useSubRosa, useSubRosaSync } from "@/app/subrosa";
 import { SCHEMES } from "@/app/theme";
-import { useStudy, type Page } from "@/store/study";
+import { GLASS_COLORS, GLASS_SCOPES, GLASS_STYLES, READING_FACES, useStudy, type Page } from "@/store/study";
 
 
 const NAV: SidebarNavSection<Page>[] = [
@@ -183,6 +182,31 @@ function useSwipeHistory(history: { back: () => void; forward: () => void }) {
 }
 
 export default function App() {
+  const glassScope = useStudy((s) => s.glassScope);
+  const glassStyle = useStudy((s) => s.glassStyle);
+  const glassColor = useStudy((s) => s.glassColor);
+  const glassOpacity = useStudy((s) => s.glassOpacity);
+  const { glassChrome, setGlassChrome } = useTheme();
+  useEffect(() => {
+    if (glassChrome === "off") return;
+    // The saved scope already includes the legacy window preset at startup.
+    useStudy.getState().set({ glassScope });
+    setGlassChrome("off");
+  }, [glassChrome, glassScope, setGlassChrome]);
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.biblelmGlass = glassScope;
+    root.dataset.glassStyle = glassStyle;
+    root.dataset.glassColor = glassColor;
+    if (glassStyle === "custom") root.style.setProperty("--glass-custom-opacity", `${glassOpacity}%`);
+    else root.style.removeProperty("--glass-custom-opacity");
+    return () => {
+      delete root.dataset.biblelmGlass;
+      delete root.dataset.glassStyle;
+      delete root.dataset.glassColor;
+      root.style.removeProperty("--glass-custom-opacity");
+    };
+  }, [glassScope, glassStyle, glassColor, glassOpacity]);
   const page = useStudy((s) => s.page);
   const showLab = useStudy((s) => s.showLab);
   const compact = useStudy((s) => s.compact);
@@ -256,7 +280,6 @@ export default function App() {
 
   return (
     <div data-app-shell className={`isolate flex h-full flex-col bg-background text-foreground ${redLetter ? "red-letter" : ""}`}>
-      <GlassBackdrop className="biblelm-glass-backdrop" />
       <WindowResizeEdges />
       <TitleBar
         className={trafficLights ? "pl-[88px]" : "pl-gutter"}
@@ -315,7 +338,8 @@ function ModeToggle() {
 function Status() {
   const { translation, location, shelves, page } = useStudy();
   const [catalog] = useCatalog();
-  const abbr = catalog?.find((t) => t.id === translation)?.abbr ?? translation.toUpperCase();
+  const companion = page === "read" ? catalog?.find((t) => t.companion && t.books.includes(location.book)) : undefined;
+  const abbr = companion?.abbr ?? catalog?.find((t) => t.id === translation)?.abbr ?? translation.toUpperCase();
   const notebook = useNotebooks((s) => s.notebooks.find((b) => b.id === s.active));
   return (
     <StatusBar
@@ -373,12 +397,12 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
       { id: "ui-bigger", label: "Larger interface", group: "Appearance", icon: "zoom-in", shortcut: fmtShortcut(MOD_KEY, "="), keywords: ["interface size", "scale", "zoom", "4k"], run: () => stepInterface(1) },
       { id: "ui-smaller", label: "Smaller interface", group: "Appearance", icon: "zoom-out", shortcut: fmtShortcut(MOD_KEY, "-"), keywords: ["interface size", "scale", "zoom"], run: () => stepInterface(-1) },
       { id: "ui-auto", label: "Reset interface size", group: "Appearance", icon: "refresh", shortcut: fmtShortcut(MOD_KEY, "0"), keywords: ["interface size", "scale", "zoom", "reset", "auto"], run: resetInterface },
-      ...(["garamond", "fell", "gothic"] as const).map((f) => ({
-        id: `face-${f}`,
-        label: `Reading face: ${{ garamond: "Garamond", fell: "Fell English", gothic: "Gothic (blackletter)" }[f]}`,
+      ...READING_FACES.map(({ id, label }) => ({
+        id: `face-${id}`,
+        label: `Reading face: ${label}`,
         group: "Read",
         icon: "text" as const,
-        run: () => study.set({ face: f }),
+        run: () => study.set({ face: id }),
       })),
     ];
     const translations = (catalog ?? []).map<PaletteCommand>((t) => ({
@@ -409,6 +433,22 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
     }));
     const appearance: PaletteCommand[] = [
       ...art,
+      ...GLASS_SCOPES.map(({ id, label }): PaletteCommand => ({
+        id: `glass-${id}`, label: `Glass: ${label}`, group: "Appearance",
+        icon: "layers", run: () => study.set({ glassScope: id }),
+      })),
+      ...GLASS_STYLES.map((id): PaletteCommand => ({
+        id: `glass-style-${id}`, label: `Glass style: ${id[0].toUpperCase()}${id.slice(1)}`, group: "Appearance",
+        icon: "layers", run: () => study.set({ glassStyle: id, glassScope: study.glassScope === "off" ? "components" : study.glassScope }),
+      })),
+      ...GLASS_COLORS.map(({ id, label }): PaletteCommand => ({
+        id: `glass-color-${id}`, label: `Glass colour: ${label}`, group: "Appearance",
+        icon: "layers", run: () => study.set({
+          glassColor: id,
+          glassStyle: study.glassStyle === "custom" ? "custom" : "tinted",
+          glassScope: study.glassScope === "off" ? "components" : study.glassScope,
+        }),
+      })),
       { id: "dev", label: study.devMode ? "Turn developer mode off" : "Turn developer mode on", group: "Appearance", icon: "code", keywords: ["debug", "art", "hero", "plates"], run: () => { study.set({ devMode: !study.devMode }); if (!study.devMode) study.go("settings"); } },
       ...(subRosa ? [] : SCHEMES).map((sc) => ({ id: `scheme-${sc.id}`, label: `Scheme: ${sc.label}`, group: "Appearance", icon: "contrast" as const, keywords: ["theme", sc.id === "vellum" ? "light mode" : "dark mode", sc.blurb], run: () => setScheme(sc.id) })),
     ];

@@ -7,7 +7,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Button,
-  GlassTintControl,
   Icon,
   IN_TAURI,
   Input,
@@ -31,7 +30,8 @@ import { SHELVES } from "@/lib/canon";
 import { useCatalog } from "@/lib/hooks";
 import { copyText } from "@/lib/clipboard";
 import { jevAvailable, recheckJev, setJevBypass } from "@/lib/jev";
-import { useStudy } from "@/store/study";
+import { GLASS_COLORS, GLASS_SCOPES, GLASS_STYLES, READING_FACES, useStudy } from "@/store/study";
+import { Choice, SearchField } from "@/app/controls";
 import { DeveloperSettings } from "./DeveloperPanel";
 import { useScheme } from "@/app/scheme";
 import { SCHEMES } from "@/app/theme";
@@ -160,13 +160,12 @@ export function SettingsView() {
   const ch = SETTINGS.find((c) => c.id === chapter)!;
 
   return (
-    // PlatePage pads for a centred column; this one is left-aligned (R4.2),
-    // tree, page and gutters about 70rem together, so it needs one plate's width, not two.
+    // Settings uses the full page width and reserves a margin for the corner plate.
     <PlatePage
       plate={plate}
       corner="tr"
-      column="calc(70rem - var(--corner-plate-width))"
-      style={{ "--corner-plate-width": "clamp(0px, calc(100cqw - 51rem), min(28%, 20rem))" } as React.CSSProperties}
+      column="100%"
+      style={{ "--corner-plate-width": "clamp(0px, calc(100cqw - 51rem), min(20%, var(--corner-plate-limit)))" } as React.CSSProperties}
     >
       <div className="relative flex w-full gap-x-12 gap-y-8 px-(--gutter) pb-24 pt-(--page-top) @max-[42rem]/study-pane:flex-col">
         <aside className="@min-[42rem]/study-pane:sticky @min-[42rem]/study-pane:top-0 @min-[42rem]/study-pane:w-60 @min-[42rem]/study-pane:shrink-0 @min-[42rem]/study-pane:self-start @min-[42rem]/study-pane:pt-1">
@@ -175,8 +174,7 @@ export function SettingsView() {
             Settings
           </h1>
           <div className="relative mt-5 mb-3">
-            <Icon name="search" size="sm" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
+            <SearchField size="sm"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -185,7 +183,6 @@ export function SettingsView() {
               }}
               placeholder="Find a setting"
               aria-label="Find a setting"
-              className="h-8 pl-8"
             />
           </div>
           {query.trim() && hits.length === 0 ? (
@@ -242,18 +239,14 @@ function Reading() {
   return (
     <>
       <Group id="text" title="The text">
-        <Row id="Reading face">
-          <Segmented
-            label="Face"
-            size="sm"
-            value={study.face}
-            onChange={(face) => study.set({ face })}
-            segments={[
-              { id: "garamond", label: "Garamond" },
-              { id: "fell", label: "Fell English" },
-              { id: "gothic", label: "Gothic" },
-            ]}
-          />
+        <Row id="Reading face" align="stretch" description="Used in the chapter and verse panel.">
+          <div className="space-y-2">
+            <Choice label="Reading face" value={study.face} options={READING_FACES.map(({ id, label }) => ({ value: id, label }))} onChange={(id) => {
+              const face = READING_FACES.find((face) => face.id === id);
+              if (face) study.set({ face: face.id });
+            }} />
+            <p className="scripture text-muted-foreground" data-reading-face={study.face}>The Lord is my shepherd.</p>
+          </div>
         </Row>
         <Row id="Text size" description="The size of Scripture in the reader and the verse panel.">
           <div className="flex w-full items-center gap-3">
@@ -370,9 +363,33 @@ function Appearance() {
         <Row id="Interface size" align="stretch" description="Scale menus, panels and pages. Auto fits the window's width and height.">
           <InterfaceSizeControl />
         </Row>
-        <Row id="Glass" align="stretch" description="Choose a window glass style and adjust its tint.">
-          <GlassTintControl />
+        <Row id="Glass" align="stretch" description="Apply glass to controls and panels, or to the whole window.">
+          <div className="space-y-3">
+            <Segmented label="Glass coverage" size="sm" value={study.glassScope} segments={GLASS_SCOPES.map((scope) => ({ ...scope }))} onChange={(glassScope) => study.set({ glassScope })} />
+            {study.glassScope !== "off" && (
+              <Choice label="Glass style" className="w-full" size="sm" value={study.glassStyle} options={GLASS_STYLES.map((id) => ({ value: id, label: id[0].toUpperCase() + id.slice(1) }))} onChange={(id) => {
+                const glassStyle = GLASS_STYLES.find((style) => style === id);
+                if (glassStyle) study.set({ glassStyle });
+              }} />
+            )}
+          </div>
         </Row>
+        {study.glassScope !== "off" && (study.glassStyle === "tinted" || study.glassStyle === "custom") && (
+          <Row id="Glass colour" align="stretch">
+            <Choice label="Glass colour" size="sm" value={study.glassColor} options={GLASS_COLORS.map(({ id, label }) => ({ value: id, label }))} onChange={(id) => {
+              const color = GLASS_COLORS.find((color) => color.id === id);
+              if (color) study.set({ glassColor: color.id });
+            }} />
+          </Row>
+        )}
+        {study.glassScope !== "off" && study.glassStyle === "custom" && (
+          <Row id="Glass opacity" align="stretch" description="Higher values make glass more opaque.">
+            <div className="flex items-center gap-3">
+              <Slider className="flex-1" thumbLabel="Glass opacity" valueText={(value) => `${value}%`} min={78} max={100} step={1} value={[study.glassOpacity]} onValueChange={([glassOpacity]) => study.set({ glassOpacity })} />
+              <span className="w-11 text-right text-ui tabular-nums">{study.glassOpacity}%</span>
+            </div>
+          </Row>
+        )}
         <Row id="Compact spacing" description="Tighter margins and lines, for a small screen.">
           <Switch aria-label="Compact spacing" checked={study.compact} onCheckedChange={(compact) => study.set({ compact })} />
         </Row>
@@ -382,7 +399,7 @@ function Appearance() {
       </Group>
 
       <Group id="power" title="Power">
-        <Row id="Save battery" description="The pictures hold still and glass loses its blur. Auto does this on battery power.">
+        <Row id="Save battery" description="The pictures hold still and glass surfaces become solid. Auto does this on battery power.">
           <Segmented
             label="Save battery"
             size="sm"
@@ -519,7 +536,7 @@ function About() {
           <li>People and the Hebrew and Greek interlinear: STEPBible (Tyndale House), TIPNR, TAHOT and TAGNT, CC BY 4.0.</li>
           <li>Daily Office: the Book of Common Prayer (1979), public domain; JSON by Reuben Lillie, MIT.</li>
           <li>Moby-Dick (the Bible-codes control text): Project Gutenberg, public domain.</li>
-          <li>Faces: UnifrakturMaguntia, Grenze Gotisch, IM Fell English, EB Garamond (SIL Open Font License).</li>
+          <li>Faces: UnifrakturMaguntia, Grenze Gotisch, IM Fell English, EB Garamond, Crimson Pro, Source Serif 4 (SIL Open Font License).</li>
           <li>Strong's dictionaries: Open Scriptures JSON edition, CC-BY-SA.</li>
           <li>Embeddings: BAAI bge-small-en-v1.5 (MIT).</li>
         </ul>

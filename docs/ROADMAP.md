@@ -192,6 +192,8 @@ the Lab already drives a locally installed Axon.
 
 - [x] Adopt Nexis Design 0.5 with continuous interface scaling, optional window glass and the shared settings tree (DESIGN.md).
 
+- [x] Refine reader type and verse numbers, Gallery browsing, corner artwork and glass controls (DESIGN.md).
+
 ## What changed from the plan
 
 Decisions taken while building 2.0, recorded in each doc's "As built" note:

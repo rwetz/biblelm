@@ -9,7 +9,7 @@ import { formatRef } from "@/lib/canon";
 import { heroArtist, heroSrcUrl, heroUrl, loadHeroes, loadLiterary, loadPaintings, loadPlates, loadRoseHeroes, loadRosePaintings, loadRosePlates, pagePlate, paintingCredit, paintingUrl, plateCredit, plateUrl, rotation, type Hero, type Painting as PaintingData, type Plate } from "@/lib/art";
 import { useStudy } from "@/store/study";
 import { compose, cssColor, revealCells, type Composed, type PaintingLook } from "./painting";
-import { BAYER8, paintScattered, scatterSeeds, dither, fadeEdges, inkColor, loadImage, paint, toneGrid, type DitherAlgo, type Edges } from "./dither";
+import { BAYER8, dither, fadeEdges, inkColor, loadImage, paint, toneGrid, type DitherAlgo, type Edges } from "./dither";
 import { ORNAMENTS, ornamentSrc, type OrnamentName } from "./ornaments";
 import { useStill } from "@/lib/power";
 
@@ -131,7 +131,6 @@ export function Dither({
   label,
   className,
   style,
-  scatter,
   inline = false,
 }: {
   src: string;
@@ -152,8 +151,6 @@ export function Dither({
   label?: string;
   className?: string;
   style?: React.CSSProperties;
-  /** A scrolling element: when it scrolls, the dots blow loose with it and gather again. */
-  scatter?: HTMLElement | null;
   /** Inside running text (a drop cap): a block span, since a div cannot sit in a paragraph. */
   inline?: boolean;
 }) {
@@ -251,38 +248,6 @@ export function Dither({
     return () => cancelAnimationFrame(raf);
   }, [level, reduced, dark]);
 
-  // Scroll stirs the dots: each scroll adds to how far they are carried, and
-  // they settle back home on their own, a little slower than they left.
-  useEffect(() => {
-    if (!scatter || reduced) return;
-    let amp = 0, last = scatter.scrollTop, raf = 0;
-    let seeds: [Float32Array, Float32Array] | null = null;
-    const frame = () => {
-      const d = drawn.current;
-      raf = 0;
-      if (!d) return;
-      amp *= 0.9;
-      if (Math.abs(amp) < 0.004) {
-        amp = 0;
-        return paint(d.ctx, d.out, d.bits, d.w, d.h, d.rgb, dark, d.shown, 0);
-      }
-      if (!seeds || seeds[0].length !== d.w * d.h) seeds = scatterSeeds(d.w * d.h);
-      paintScattered(d.ctx, d.out, d.bits, d.w, d.h, d.rgb, dark, amp, seeds);
-      raf = requestAnimationFrame(frame);
-    };
-    const onScroll = () => {
-      const top = scatter.scrollTop;
-      amp = Math.max(-1, Math.min(1, amp + (top - last) / 500));
-      last = top;
-      if (!raf) raf = requestAnimationFrame(frame);
-    };
-    scatter.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      scatter.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, [scatter, reduced, dark]);
-
   return (
     <Box ref={box as React.Ref<HTMLDivElement & HTMLSpanElement>} className={cn("relative overflow-hidden", inline && "block", className)} style={style}>
       <canvas
@@ -302,18 +267,16 @@ export function Dither({
  * (the host needs `isolate`), so text and cards always cover it.
  */
 /** A corner plate's width, shared with PlatePage's clearance. */
-const PLATE_WIDTH = "var(--corner-plate-width, min(28%, 20rem))";
+const PLATE_WIDTH = "var(--corner-plate-width, min(20%, var(--corner-plate-limit)))";
 
 export function CornerPlate({
   plate,
   corner = "br",
   className,
-  scatter,
 }: {
   plate?: Plate;
   corner?: "br" | "tr" | "bl";
   className?: string;
-  scatter?: HTMLElement | null;
 }) {
   const mode = useStudy((s) => s.illustrations);
   if (!plate || mode === "off") return null;
@@ -323,18 +286,17 @@ export function CornerPlate({
       src={plateUrl(plate.full)}
       algo="floyd"
       dot={1}
+      reveal={false}
       focusY={30}
       edges={{ br: { top: 0.3, left: 0.3 }, tr: { bottom: 0.3, left: 0.3 }, bl: { top: 0.3, right: 0.3 } }[corner]}
-      className={cn("pointer-events-none absolute -z-10 aspect-[4/5] select-none text-muted-foreground opacity-80", pos, className)}
+      className={cn("pointer-events-none absolute -z-10 aspect-[4/5] select-none text-muted-foreground opacity-65", pos, className)}
       style={{ width: PLATE_WIDTH }}
-      scatter={scatter}
     />
   );
 }
 
 /**
- * A scrolling page with a corner plate pinned to the window, not the text: as
- * the page scrolls the plate's dots blow loose and gather again in the corner.
+ * A scrolling page with a corner plate pinned to the window.
  * The page's centred column (`column` wide) is padded clear of the plate when
  * the window is too narrow for both, so no text ever runs over it.
  */
@@ -355,7 +317,6 @@ export function PlatePage({
   style?: React.CSSProperties;
   children: React.ReactNode;
 }) {
-  const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
   const mode = useStudy((s) => s.illustrations);
   // Centred, the column's edge meets the plate once the page is narrower than
   // the column plus the plate on both sides; pad by the difference, but never
@@ -366,8 +327,8 @@ export function PlatePage({
   const pad = plate && !hidePlate && mode !== "off" ? (corner === "bl" ? { paddingLeft: clear } : { paddingRight: clear }) : undefined;
   return (
     <div className="relative isolate flex min-h-0 flex-1 flex-col" style={style}>
-      {!hidePlate && <CornerPlate plate={plate} corner={corner} scatter={scroller} />}
-      <div ref={setScroller} className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto", className)} style={pad}>
+      {!hidePlate && <CornerPlate plate={plate} corner={corner} />}
+      <div className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto", className)} style={pad}>
         {children}
       </div>
     </div>

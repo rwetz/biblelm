@@ -31,7 +31,6 @@ import { BookPicker } from "./BookPicker";
 import { TranslationPicker } from "./TranslationPicker";
 import { VersePanel } from "./VersePanel";
 
-const FACES = { garamond: "var(--font-garamond)", fell: "var(--font-fell)", gothic: "var(--font-gothic)" };
 
 /** Move a chapter forward or back, across books, within the enabled shelves. */
 export async function chapterStep(delta: 1 | -1) {
@@ -120,14 +119,14 @@ export function ReadView() {
   const lastChapter = location.chapter === chapters[chapters.length - 1];
 
   return (
-    <div className="@container/reader relative flex min-h-0 flex-1">
+    <div className="@container/reader relative flex min-h-0 flex-1" data-reading-face={face} style={{ ["--scripture-size" as string]: `${textSize / 16}rem` }}>
       <div className="@container flex min-w-0 flex-1 flex-col">
         <ReaderToolbar t={main} bookId={bookId} />
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
           {chapterPaintings.length > 0 && <Frontispiece key={`${bookId}.${location.chapter}`} paintings={chapterPaintings} />}
           <article
             className="mx-auto px-(--gutter) pb-24 pt-(--page-top)"
-            style={{ maxWidth: columnsOf(ts!, bookId).length > 1 ? "none" : columns ? "68rem" : "42rem", ["--scripture-face" as string]: FACES[face], ["--scripture-size" as string]: `${textSize / 16}rem` }}
+            style={{ maxWidth: columnsOf(ts!, bookId).length > 1 ? "none" : columns ? "68rem" : "42rem" }}
           >
             <header className="mb-8 text-center">
               {firstChapter && <BookHead bookId={bookId} plates={plates} />}
@@ -300,8 +299,7 @@ function Chapter({
                   onClick={(e) => onPick(v, e)}
                   className="cursor-pointer"
                 >
-                  {!first && <sup className="vnum">{v.verse}</sup>}
-                  <VerseText raw={v.raw} dropcap={first} capArt={first && capArt ? plateUrl(capArt) : undefined} />
+                  <VerseText number={v.verse} raw={v.raw} dropcap={first} capArt={first && capArt ? plateUrl(capArt) : undefined} />
                   {hasNote && <Icon name="note" size="xs" className="mx-0.5 inline align-baseline text-brand" />}{" "}
                 </span>
               );
@@ -372,7 +370,7 @@ function RunText({ r }: { r: Run }) {
  * Printed text: the KJV's supplied words in italics, the words of Christ
  * marked (red when red letter is on), an optional drop cap.
  */
-export function VerseText({ raw, dropcap = false, capArt }: { raw: string; dropcap?: boolean; capArt?: string }) {
+export function VerseText({ raw, dropcap = false, capArt, number }: { raw: string; dropcap?: boolean; capArt?: string; number?: number }) {
   const parts = runs(raw);
   if (dropcap && parts[0] && !parts[0].supplied && parts[0].text) {
     const [head, ...rest] = parts;
@@ -384,7 +382,19 @@ export function VerseText({ raw, dropcap = false, capArt }: { raw: string; dropc
           {head.text[0]}
         </span>
         <span className="sr-only">{head.text[0]}</span>
+        {number !== undefined && <sup className="vnum">{number}</sup>}
         <RunText r={{ ...head, text: head.text.slice(1) }} />
+        {rest.map((r, i) => <RunText key={i} r={r} />)}
+      </>
+    );
+  }
+  if (number !== undefined && parts[0]) {
+    const [first, ...rest] = parts;
+    const word = first.text.match(/^\s*\S+/)?.[0] ?? first.text;
+    return (
+      <>
+        <span className="verse-lead"><sup className="vnum">{number}</sup><RunText r={{ ...first, text: word }} /></span>
+        <RunText r={{ ...first, text: first.text.slice(word.length) }} />
         {rest.map((r, i) => <RunText key={i} r={r} />)}
       </>
     );
@@ -458,7 +468,7 @@ function ReaderToolbar({ t, bookId }: { t: Translation; bookId: string }) {
         <TooltipContent>Next chapter ( ] )</TooltipContent>
       </Tooltip>
       <ToolbarSpacer />
-      <TranslationPicker catalog={catalog ?? []} value={translation} onChange={(id) => set({ translation: id })} />
+      <TranslationPicker catalog={catalog ?? []} source={t.sourceOf(bookId)} value={translation} onChange={(id) => set({ translation: id })} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant={parallel.length ? "secondary" : "ghost"} size="sm" aria-label="Parallel">
