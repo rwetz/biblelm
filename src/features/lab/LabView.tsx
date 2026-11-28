@@ -45,7 +45,7 @@ function Frontispiece({ hero }: { hero?: Hero }) {
         <h1 className="min-w-0 font-blackletter text-[clamp(3.5rem,8vw,8.5rem)] leading-[1.05]">The Lab</h1>
       </div>
       <div className="flex min-w-0 flex-col gap-8">
-        <p className="max-w-xl text-[15px] leading-relaxed text-muted-foreground">{LEDE}</p>
+        <p className="max-w-xl text-[0.9375rem] leading-relaxed text-muted-foreground">{LEDE}</p>
         {/* What the model is made of: the translation it reads and its whole alphabet. */}
         <CorpusView front />
         {show && (

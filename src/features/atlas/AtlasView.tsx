@@ -117,11 +117,11 @@ function Verses({ t, index, verses, limit = 60 }: { t: Translation; index: Verse
           </p>
           {books.length > 1 && (
             <div className="flex flex-wrap gap-1">
-              <button type="button" onClick={() => setOnly(null)} className={cn("rounded-full px-2 py-0.5 text-[11px]", only === null ? "bg-foreground/15 text-foreground" : "bg-muted/70 text-muted-foreground hover:bg-foreground/10")}>
+              <button type="button" onClick={() => setOnly(null)} className={cn("rounded-full px-2 py-0.5 text-caption", only === null ? "bg-foreground/15 text-foreground" : "bg-muted/70 text-muted-foreground hover:bg-foreground/10")}>
                 All {verses.length}
               </button>
               {books.map(([b, k]) => (
-                <button key={b} type="button" onClick={() => setOnly(only === b ? null : b)} className={cn("rounded-full px-2 py-0.5 text-[11px]", only === b ? "bg-foreground/15 text-foreground" : "bg-muted/70 text-muted-foreground hover:bg-foreground/10")}>
+                <button key={b} type="button" onClick={() => setOnly(only === b ? null : b)} className={cn("rounded-full px-2 py-0.5 text-caption", only === b ? "bg-foreground/15 text-foreground" : "bg-muted/70 text-muted-foreground hover:bg-foreground/10")}>
                   {bookName(b)} {k}
                 </button>
               ))}
@@ -135,7 +135,7 @@ function Verses({ t, index, verses, limit = 60 }: { t: Translation; index: Verse
         return (
           <button key={i} type="button" onClick={() => read(r, { select: true })} className="block w-full rounded-md px-2 py-1.5 text-left hover:bg-muted/60">
             <span className="text-xs font-semibold text-brand">{formatRef(r)}</span>
-            <span className="mt-0.5 line-clamp-2 block font-garamond text-[15px] leading-6">{v?.text ?? ""}</span>
+            <span className="mt-0.5 line-clamp-2 block font-garamond text-[0.9375rem] leading-6">{v?.text ?? ""}</span>
           </button>
         );
       })}
@@ -173,7 +173,9 @@ function Places({ t, index, places, initial }: { t: Translation; index: VerseInd
 
   return (
     <div className="flex min-h-0 flex-1">
-      <div className="relative min-w-0 flex-1">
+      {/* A size container: the map's furniture scales with the map, so a small
+          window keeps the cartouche and compass off the places they would cover. */}
+      <div className="relative min-w-0 flex-1 [container-type:size]">
         {land ? <EngravedMap land={land} places={shown} selected={place} onSelect={(p) => setSel(p.id)} /> : <div className="grid h-full place-items-center"><Spinner /></div>}
         <div className="absolute left-4 top-4 flex gap-2">
           <SearchField size="sm" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find a place" className="w-52 bg-card/90 backdrop-blur-sm" />
@@ -186,12 +188,12 @@ function Places({ t, index, places, initial }: { t: Translation; index: VerseInd
             className="w-40 bg-card/90 backdrop-blur-sm"
           />
         </div>
-        {land && <Ornament name="compass" className="pointer-events-none absolute bottom-10 right-6 w-24 text-muted-foreground opacity-80" />}
-        <p className="pointer-events-none absolute bottom-3 left-4 text-[11px] text-muted-foreground">
+        {land && <Ornament name="compass" className="pointer-events-none absolute bottom-10 right-6 w-[min(6rem,16cqmin)] text-muted-foreground opacity-80" />}
+        <p className="pointer-events-none absolute bottom-3 left-4 text-caption text-muted-foreground">
           Locations from OpenBible.info; many ancient sites are uncertain. Coastlines from Natural Earth.
         </p>
       </div>
-      <aside className="flex w-[24rem] shrink-0 flex-col border-l border-border/60 bg-card/50">
+      <aside className="flex w-[clamp(16rem,30%,24rem)] shrink-0 flex-col border-l border-border/60 bg-card/50">
         {place ? (
           <div className="min-h-0 flex-1 overflow-y-auto p-5">
             <h2 className="font-garamond text-3xl">{placeName(place)}</h2>
@@ -247,16 +249,17 @@ function MapFurniture({ milesPer100px }: { milesPer100px: number }) {
   const px = (nice / milesPer100px) * 100;
   return (
     <div className="pointer-events-none absolute bottom-10 left-4 flex flex-col items-start gap-3">
-      <div className="relative rounded-sm border border-foreground/40 bg-background/85 px-5 py-2 text-center shadow-sm backdrop-blur-[1px]">
+      {/* Sized in em from a font size that follows the map (cqmin), so it never outgrows it. */}
+      <div className="relative rounded-sm border border-foreground/40 bg-background/85 px-[1.25em] py-[0.5em] text-center shadow-sm backdrop-blur-[1px]" style={{ fontSize: "min(1rem, 3cqmin)" }}>
         <span className="absolute inset-1 rounded-[1px] border border-foreground/20" />
-        <p className="font-blackletter text-2xl leading-none">Terra Sancta</p>
-        <p className="mt-0.5 font-garamond text-[11px] italic text-muted-foreground">and the lands about it</p>
+        <p className="font-blackletter text-[1.5em] leading-none">Terra Sancta</p>
+        <p className="mt-[0.15em] font-garamond text-[0.69em] italic text-muted-foreground">and the lands about it</p>
       </div>
       <div className="flex flex-col gap-1">
         <div className="flex" style={{ width: px }}>
           {[0, 1, 2, 3].map((i) => <span key={i} className={cn("h-1.5 flex-1 border border-foreground/60", i % 2 ? "bg-background" : "bg-foreground/70")} />)}
         </div>
-        <span className="font-garamond text-[11px] italic text-muted-foreground">{nice} miles</span>
+        <span className="font-garamond text-caption italic text-muted-foreground">{nice} miles</span>
       </div>
     </div>
   );
@@ -480,7 +483,7 @@ function FamilyTree({ person, byId, onSelect }: { person: Person; byId: Map<stri
     const p = byId.get(id);
     if (!p) return null;
     return (
-      <button key={(k ?? "") + id} type="button" title={p.brief} onClick={() => onSelect(id)} className="rounded-md border border-border bg-card px-2.5 py-1 font-garamond text-[15px] hover:border-foreground/40">
+      <button key={(k ?? "") + id} type="button" title={p.brief} onClick={() => onSelect(id)} className="rounded-md border border-border bg-card px-2.5 py-1 font-garamond text-[0.9375rem] hover:border-foreground/40">
         {personName(p)}
       </button>
     );
@@ -495,7 +498,7 @@ function FamilyTree({ person, byId, onSelect }: { person: Person; byId: Map<stri
   const row = (label: string, ids: string[]) =>
     ids.length ? (
       <div className="flex flex-wrap items-center justify-center gap-1.5">
-        <span className="w-full text-center text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
+        <span className="w-full text-center text-micro uppercase tracking-widest text-muted-foreground">{label}</span>
         {ids.map((id) => chip(id, label))}
       </div>
     ) : null;
@@ -509,11 +512,11 @@ function FamilyTree({ person, byId, onSelect }: { person: Person; byId: Map<stri
       <div className="space-y-4">
         {row("Parents", person.parents)}
         <div className="flex flex-wrap items-center justify-center gap-1.5">
-          {person.siblings.length > 0 && <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Siblings</span>}
+          {person.siblings.length > 0 && <span className="text-micro uppercase tracking-widest text-muted-foreground">Siblings</span>}
           {person.siblings.map((id) => chip(id, "s"))}
           <span className="mx-2 rounded-md bg-foreground px-3 py-1 font-garamond text-base text-background">{personName(person)}</span>
           {person.partners.map((id) => chip(id, "p"))}
-          {person.partners.length > 0 && <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{person.sex === "f" ? "Husband" : "Wives"}</span>}
+          {person.partners.length > 0 && <span className="text-micro uppercase tracking-widest text-muted-foreground">{person.sex === "f" ? "Husband" : "Wives"}</span>}
         </div>
         {row("Children", person.children)}
       </div>
@@ -556,7 +559,7 @@ function Timeline({ people, onPerson }: { people: Person[]; onPerson: (id: strin
             />
           ))}
           {[-2000, -1500, -1000, -500, 1].map((y) => (
-            <span key={y} className="absolute top-[3.75rem] -translate-x-1/2 text-[10px] text-muted-foreground" style={{ left: `${pct(y)}%` }}>
+            <span key={y} className="absolute top-[3.75rem] -translate-x-1/2 text-micro text-muted-foreground" style={{ left: `${pct(y)}%` }}>
               {yearLabel(y === 1 ? 1 : y)}
             </span>
           ))}

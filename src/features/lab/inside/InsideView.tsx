@@ -266,12 +266,12 @@ function SurpriseList({ title, why, items, onOpen }: { title: string; why: strin
               <span className="text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">{pct(chance(v.loss))}</span> sure of each letter
               </span>
-              <span className="ml-auto font-mono text-[11px] tabular-nums text-muted-foreground">loss {v.loss.toFixed(2)}</span>
+              <span className="ml-auto font-mono text-caption tabular-nums text-muted-foreground">loss {v.loss.toFixed(2)}</span>
             </div>
             <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
               <div className="h-full rounded-full bg-foreground/35" style={{ width: pct(chance(v.loss)) }} />
             </div>
-            <p className="mt-2 font-garamond text-[15px] leading-6">{v.text}</p>
+            <p className="mt-2 font-garamond text-[0.9375rem] leading-6">{v.text}</p>
             {v.refs.length > 1 && (
               <p className="mt-1 text-xs text-muted-foreground">
                 The same words in{" "}

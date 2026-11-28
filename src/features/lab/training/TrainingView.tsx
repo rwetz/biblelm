@@ -327,7 +327,7 @@ export function TrainingView() {
                           <span className="text-xs font-medium">
                             {t === "char" ? "Character-level" : "BPE"}
                           </span>
-                          {unavailable && <span className="text-[11px] text-muted-foreground">coming later</span>}
+                          {unavailable && <span className="text-caption text-muted-foreground">coming later</span>}
                         </label>
                         <InfoTip side="right">
                           {t === "char"

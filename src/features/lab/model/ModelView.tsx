@@ -242,7 +242,7 @@ function PipeStep({
 }) {
   return (
     <li className="flex gap-3">
-      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[10px] font-bold text-brand">
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-brand/10 text-micro font-bold text-brand">
         {n}
       </span>
       <span>

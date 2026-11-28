@@ -105,8 +105,8 @@ export function Structure({ t, index }: { t: Translation; index: VerseIndex }) {
                       const depth = Math.min(i, hi - lo - i);
                       return (
                         <li key={x.verse} style={{ paddingLeft: `${depth * 14}px` }} className="line-clamp-1">
-                          <span className="mr-1 font-sans text-[10px] font-semibold text-brand">{String.fromCharCode(65 + depth)}</span>
-                          <sup className="mr-1 text-[10px] text-muted-foreground">{x.verse}</sup>
+                          <span className="mr-1 font-sans text-micro font-semibold text-brand">{String.fromCharCode(65 + depth)}</span>
+                          <sup className="mr-1 text-micro text-muted-foreground">{x.verse}</sup>
                           {x.text}
                         </li>
                       );
@@ -115,7 +115,7 @@ export function Structure({ t, index }: { t: Translation; index: VerseIndex }) {
                 </div>
               );
             })}
-            <p className="text-[11px] text-muted-foreground/70">
+            <p className="text-caption text-muted-foreground/70">
               A statistical hint, not a finding: likeness by a small model can echo vocabulary rather than design. Read the passage, then the commentaries.
             </p>
           </div>

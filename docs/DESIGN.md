@@ -165,6 +165,18 @@ Coleridge, `scripts/art/literary.mjs`); each page has a corner plate and the
 sidebar a vignette; empty states get an `ArtSpot`. A plate beside its own
 passage is the one place art appears as a positive engraving, undithered.
 
+**As built: pictures keep their proportions.** Sizes were first tuned on a 4K
+screen, and on a laptop the same fixed heights sliced heroes to strips. Now
+every hero band with a window (`width`) or a cleared left (`clearLeft`) keeps
+at least `PLATE_SHOWN` of its picture's height in view, sizing its window from
+the band's height and the picture's own aspect (container units, so it follows
+a resize). Banners hold the picture from the band's middle rightward and centre
+its point of light in the part that stays solid. Home's band keeps at least
+`BAND_SHARE` of the page, both measured from the 4K design, and its plate
+runs the band's full height under a liquid-glass search bar. The sidebar
+vignette and the Atlas cartouche and compass size to the room they have.
+No sizes are per screen.
+
 ### Still to decide
 
 - A sigil for each verse kind (narrative, law, praise, lament, prophecy,

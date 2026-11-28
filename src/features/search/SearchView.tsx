@@ -203,7 +203,7 @@ function VerseRow({ v, onOpen, label }: { v: Verse; onOpen: (r: Ref) => void; la
   return (
     <button type="button" onClick={() => onOpen(v)} className="block w-full rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted/60">
       <span className="text-xs font-semibold text-brand">{label ?? formatRef(v)}</span>
-      <span className="scripture mt-0.5 block !text-[17px] !leading-7"><VerseText raw={v.raw} /></span>
+      <span className="scripture mt-0.5 block !text-[1.0625rem] !leading-7"><VerseText raw={v.raw} /></span>
     </button>
   );
 }
@@ -386,7 +386,7 @@ function Meaning({ query, t, index, onOpen }: { query: string; t: Translation; i
         })}
       </div>
       {hits && (
-        <p className={cn("mt-2 px-3 text-[11px] text-muted-foreground/70")}>
+        <p className={cn("mt-2 px-3 text-caption text-muted-foreground/70")}>
           Ranked by a small embedding model on this computer, which matches meaning rather than words. It can be wrong; the verses are the text.
         </p>
       )}

@@ -66,7 +66,7 @@ export function Words({ t }: { t: Translation }) {
             {coll.map((c) => (
               <li key={c.word}>
                 <button type="button" onClick={() => searchFor(`${word} ${c.word}`)} className="flex w-full items-baseline gap-2 rounded px-1 py-0.5 text-left hover:bg-muted/60">
-                  <span className="font-garamond text-[17px]">{c.word}</span>
+                  <span className="font-garamond text-[1.0625rem]">{c.word}</span>
                   <span className="text-xs text-muted-foreground">together {c.together} times</span>
                 </button>
               </li>
@@ -85,7 +85,7 @@ export function Words({ t }: { t: Translation }) {
             {onceShown.map((h) => (
               <li key={h.word}>
                 <button type="button" onClick={() => read({ book: h.verse.book, chapter: h.verse.chapter, verse: h.verse.verse }, { select: true })} className="flex w-full items-baseline gap-2 rounded px-1 py-0.5 text-left hover:bg-muted/60">
-                  <span className="font-garamond text-[16px]">{h.word}</span>
+                  <span className="font-garamond text-base">{h.word}</span>
                   <span className="text-xs text-muted-foreground">{formatRef({ book: h.verse.book, chapter: h.verse.chapter, verse: h.verse.verse })}</span>
                 </button>
               </li>

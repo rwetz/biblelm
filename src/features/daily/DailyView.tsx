@@ -60,7 +60,7 @@ export function DailyView() {
 function RefButton({ label, r }: { label: string; r: Ref | null }) {
   const read = useStudy((s) => s.read);
   return (
-    <button type="button" disabled={!r} onClick={() => r && read(r, { select: !!r.verse })} className="rounded-md px-1.5 py-0.5 text-left font-garamond text-[17px] hover:bg-muted disabled:opacity-60">
+    <button type="button" disabled={!r} onClick={() => r && read(r, { select: !!r.verse })} className="rounded-md px-1.5 py-0.5 text-left font-garamond text-[1.0625rem] hover:bg-muted disabled:opacity-60">
       {label}
     </button>
   );
@@ -244,7 +244,7 @@ function ByHeart({ t }: { t: Translation | null }) {
             ) : (
               GRADES.map(([g, label]) => (
                 <Button key={g} variant={g === 3 ? "brand" : "outline"} size="sm" onClick={() => reviewCard(card.id, g)}>
-                  {label} <span className="text-[11px] opacity-70">{when(next![g])}</span>
+                  {label} <span className="text-caption opacity-70">{when(next![g])}</span>
                 </Button>
               ))
             )}

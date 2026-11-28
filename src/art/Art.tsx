@@ -356,8 +356,11 @@ export function PlatePage({
   const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
   const mode = useStudy((s) => s.illustrations);
   // Centred, the column's edge meets the plate once the page is narrower than
-  // the column plus the plate on both sides; pad by the difference.
-  const clear = `max(0px, calc(${column} + 2 * ${PLATE_WIDTH} - 100%))`;
+  // the column plus the plate on both sides; pad by the difference, but never
+  // by more than the plate is wide: past that the column already sits clear
+  // of it, and more would only squeeze the text (a narrow window at a larger
+  // interface size).
+  const clear = `clamp(0px, calc(${column} + 2 * ${PLATE_WIDTH} - 100%), ${PLATE_WIDTH})`;
   const pad = plate && !hidePlate && mode !== "off" ? (corner === "bl" ? { paddingLeft: clear } : { paddingRight: clear }) : undefined;
   return (
     <div className="relative isolate flex min-h-0 flex-1 flex-col">
@@ -540,6 +543,14 @@ export function heroArt(a: HeroArt) {
 }
 
 /**
+ * How much of a windowed hero's height stays in view: the home page's
+ * composition as designed on a 4K screen (at 2560 by 1440, the full 84rem
+ * window over a Doré plate), kept on every screen rather than sliced to a
+ * strip on a short one.
+ */
+export const PLATE_SHOWN = 0.46;
+
+/**
  * Tier 1: a hero, faded into the page in dots. A Doré hero is dithered whole,
  * one bit per dot (finer than the corner plates); a painting is kept as
  * painted and dotted only where it dissolves (src/art/painting.ts). `width`
@@ -549,6 +560,7 @@ export function heroArt(a: HeroArt) {
 export function DitherHero({
   hero,
   className,
+  style,
   height = "58vh",
   focusY,
   width,
@@ -556,10 +568,13 @@ export function DitherHero({
   fadeFrom = 55,
   caption = true,
   dot,
+  minShown,
+  foot = "0px",
   children,
 }: {
   hero?: HeroArt;
   className?: string;
+  style?: React.CSSProperties;
   height?: string;
   /** Vertical focus of the crop, in percent; a painting's own light by default. */
   focusY?: number;
@@ -570,17 +585,47 @@ export function DitherHero({
   fadeFrom?: number;
   caption?: boolean;
   dot?: number;
+  /**
+   * The least of the picture's height kept in view, 0 to 1. A windowed hero
+   * (one with `width`) keeps PLATE_SHOWN unless told otherwise.
+   */
+  minShown?: number;
+  /**
+   * Room kept at the band's foot, as a CSS length, for what sits on the
+   * picture's dissolving edge (the home search card): the picture is
+   * proportioned to the band above it.
+   */
+  foot?: string;
   children?: React.ReactNode;
 }) {
   const mode = useStudy((s) => s.illustrations);
   const show = hero && mode === "full";
   const art = hero ? heroArt(hero) : null;
   const painted = !!hero && isPainting(hero);
+  // The window keeps the plate's own proportions at every size: never so wide
+  // that less than `shown` of its height is in view. 100cqh is the picture
+  // layer's height (a size container), so this follows the band as it resizes.
+  // A band that clears its left for a title holds its picture to the right.
+  const dims = !hero ? null : isPainting(hero) ? hero.full : hero;
+  const shown = minShown ?? (width || clearLeft ? PLATE_SHOWN : 0);
+  const fit = shown && dims?.width && dims.height ? `calc(100cqh * ${(dims.width / dims.height / shown).toFixed(4)})` : null;
   const side = width ? (painted ? 0.24 : 0.1) : 0;
-  // A windowed picture dissolves on every side, the top a little too, so no edge reads as a cut.
-  const edges: Edges = { top: width ? 0.05 : 0, bottom: 1 - fadeFrom / 100, right: side, left: clearLeft ? 0.85 : side };
+  // A windowed picture dissolves on every side, the top a little too, so no
+  // edge reads as a cut. A right-hand picture held to its proportions is
+  // narrower than the band, so it dissolves over less of itself toward the title.
+  const edges: Edges = { top: width ? 0.05 : 0, bottom: 1 - fadeFrom / 100, right: side, left: clearLeft ? (fit ? 0.55 : 0.85) : side };
+  const frame = fit ? (width ? `min(${width}, ${fit})` : fit) : width;
+  // Centred, or for a banner, from the band's middle (beside the page's
+  // content on a wide screen), moved left only as far as it needs to fit.
+  const place = clearLeft ? "" : "left-1/2 -translate-x-1/2";
+  const box: React.CSSProperties = { maxWidth: frame, ...(clearLeft && { left: frame ? `min(50%, calc(100% - min(100%, ${frame})))` : 0 }) };
+  // A banner dissolves below `fadeFrom`, so its picture's point of light is
+  // centred in the part that stays solid, not in the whole window.
+  const light = focusY ?? art?.focusY ?? 40;
+  const fy = clearLeft && fit ? Math.min(100, light + shown * (50 - fadeFrom / 2)) : light;
   return (
-    <div className={cn("relative w-full shrink-0 overflow-hidden", className)} style={{ height }}>
+    <div className={cn("relative w-full shrink-0 overflow-hidden", className)} style={{ height, ...style }}>
+      <div className="pointer-events-none absolute inset-x-0 top-0 [container-type:size]" style={{ bottom: foot }}>
       {show && art && !painted && (
         // Every edge breaks up into dots (fadeEdges), never a blur.
         <Dither
@@ -588,11 +633,11 @@ export function DitherHero({
           src={heroUrl(hero as Hero)}
           algo={(hero as Hero).algo === "bayer" ? "bayer" : (hero as Hero).algo === "blue" ? "blue" : "atkinson"}
           dot={dot ?? 1.5}
-          focusY={focusY ?? art.focusY}
+          focusY={fy}
           label={art.label}
           edges={edges}
-          className="absolute inset-y-0 left-1/2 w-full -translate-x-1/2 text-foreground opacity-90 dark:opacity-80"
-          style={{ maxWidth: width }}
+          className={cn("absolute inset-y-0 w-full text-foreground opacity-90 dark:opacity-80", place)}
+          style={box}
         />
       )}
       {show && art && painted && (
@@ -600,18 +645,19 @@ export function DitherHero({
           key={art.key}
           src={art.src}
           dot={dot ?? 2}
-          look={{ colour: art.colour, focusX: art.focusX, focusY: focusY ?? art.focusY, edges, shadow: art.shadow, grain: 0.06 }}
+          look={{ colour: art.colour, focusX: art.focusX, focusY: fy, edges, shadow: art.shadow, grain: 0.06 }}
           label={art.label}
-          className="absolute inset-y-0 left-1/2 w-full -translate-x-1/2"
-          style={{ maxWidth: width }}
+          className={cn("absolute inset-y-0 w-full", place)}
+          style={box}
         />
       )}
       {show && art && caption && (
         // The credit hangs under the picture's own right edge, not the band's.
-        <div className="pointer-events-none absolute inset-x-0 bottom-2 z-20 mx-auto flex justify-end px-6" style={{ maxWidth: width }}>
+        <div className={cn("pointer-events-none absolute inset-x-0 z-20 flex justify-end px-6", !clearLeft && "mx-auto")} style={{ ...box, bottom: `calc(0.5rem - ${foot})` }}>
           <span className="font-garamond text-xs italic text-muted-foreground">{art.credit}</span>
         </div>
       )}
+      </div>
       {children && <div className="relative z-10 flex h-full flex-col">{children}</div>}
     </div>
   );

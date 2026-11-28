@@ -154,7 +154,7 @@ function LetterGrid({ text, hit, len }: { text: string; hit: ElsHit; len: number
   const top = hit.skip > 0 ? hit.start - d : hit.start + hit.skip * (len - 1) - d;
   const on = new Set(Array.from({ length: len }, (_, k) => hit.start + hit.skip * k));
   return (
-    <div className="mt-3 overflow-x-auto font-mono text-[12px] leading-5">
+    <div className="mt-3 overflow-x-auto font-mono text-ui leading-5">
       {Array.from({ length: rows }, (_, r) => {
         const centre = top + r * d;
         return (
@@ -170,7 +170,7 @@ function LetterGrid({ text, hit, len }: { text: string; hit: ElsHit; len: number
           </div>
         );
       })}
-      <p className="mt-1 font-sans text-[11px] text-muted-foreground">Every {d}th letter{hit.skip < 0 ? ", read backwards" : ""}.</p>
+      <p className="mt-1 font-sans text-caption text-muted-foreground">Every {d}th letter{hit.skip < 0 ? ", read backwards" : ""}.</p>
     </div>
   );
 }

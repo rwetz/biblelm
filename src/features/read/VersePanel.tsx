@@ -119,7 +119,7 @@ function PassagePanel({ book, chapter, verses, translations, onClose }: { book: 
             </div>
           </section>
           <Notes spans={spans} verses={osisList} />
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
+          <p className="text-caption leading-relaxed text-muted-foreground">
             Ctrl-click a verse to add or drop it, shift-click to take every verse from the last one clicked. Click one verse alone for its cross references and words.
           </p>
         </div>
@@ -176,7 +176,7 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
               const tv = t.verse(refSel);
               return (
                 <div key={t.meta.id}>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{t.sourceOf(refSel.book).abbr}</p>
+                  <p className="text-micro font-semibold uppercase tracking-widest text-muted-foreground">{t.sourceOf(refSel.book).abbr}</p>
                   <p className="scripture mt-1 !text-base !leading-7">{tv ? <VerseText raw={tv.raw} /> : <span className="text-muted-foreground">Not in this translation.</span>}</p>
                 </div>
               );
@@ -246,7 +246,7 @@ function BeyondCanon({ refSel, main, onNavigate }: { refSel: Ref; main: Translat
               <button type="button" className="font-semibold text-brand hover:underline" onClick={() => onNavigate(other)}>{formatRef(other)}</button>
               {beyond && <Badge variant="outline">Pseudepigrapha</Badge>}
             </p>
-            {text && <p className="mt-1 font-garamond text-[15px] leading-relaxed">{text}</p>}
+            {text && <p className="mt-1 font-garamond text-[0.9375rem] leading-relaxed">{text}</p>}
             <p className="mt-1 text-xs italic text-muted-foreground">Study note: {link.note}</p>
           </div>
         );
@@ -273,7 +273,7 @@ function SeenInArt({ refSel }: { refSel: Ref }) {
           <button key={a.id} type="button" className="group text-left" onClick={() => openLook({ kind: a.kind, id: a.id })}>
             <img src={a.src} alt="" loading="lazy" decoding="async" className={cn("aspect-[4/3] w-full rounded-sm object-cover", !a.colour && "engraving")} />
             <span className="mt-1 block font-garamond text-sm leading-tight group-hover:underline">{a.title}</span>
-            <span className="text-[11px] text-muted-foreground">{a.by}</span>
+            <span className="text-caption text-muted-foreground">{a.by}</span>
           </button>
         ))}
       </div>
@@ -351,8 +351,8 @@ function CompareAll({ refSel, base }: { refSel: Ref; base: Translation }) {
           const tv = t.verse(refSel);
           return (
             <div key={t.meta.id}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{t.meta.abbr} · {t.meta.language}</p>
-              <p className="mt-0.5 font-garamond text-[15px] leading-6">
+              <p className="text-micro font-semibold uppercase tracking-widest text-muted-foreground">{t.meta.abbr} · {t.meta.language}</p>
+              <p className="mt-0.5 font-garamond text-[0.9375rem] leading-6">
                 {tv
                   ? t.meta.language === base.meta.language
                     ? wordDiff(baseText, tv.text).map((d, i) => (
@@ -416,10 +416,10 @@ function Notes({ spans, verses }: { spans: Span[]; verses: string[] }) {
           <NoteBody
             value={n.body}
             onChange={(body) => updateNote(n.id, { body })}
-            className="p-1 font-garamond text-[15px] leading-relaxed"
-            editClassName="min-h-16 resize-y rounded-none border-none bg-transparent p-1 font-garamond text-[15px] leading-relaxed shadow-none focus-visible:border-none focus-visible:ring-0"
+            className="p-1 font-garamond text-[0.9375rem] leading-relaxed"
+            editClassName="min-h-16 resize-y rounded-none border-none bg-transparent p-1 font-garamond text-[0.9375rem] leading-relaxed shadow-none focus-visible:border-none focus-visible:ring-0"
           />
-          <div className="flex items-center gap-2 px-1 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-2 px-1 text-caption text-muted-foreground">
             {(many || n.end || n.more) && <span className="font-garamond text-xs text-brand">{spansLabel(noteSpans(n), label)}</span>}
             {n.translation && <Badge variant="outline">{n.translation.toUpperCase()} wording</Badge>}
             {n.textHash && hashOf(n.translation) && n.textHash !== hashOf(n.translation) && (
@@ -436,7 +436,7 @@ function Notes({ spans, verses }: { spans: Span[]; verses: string[] }) {
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         placeholder={many ? "Write a note on these verses. Markdown is fine." : "Write a note on this verse. Markdown is fine."}
-        className="min-h-20 font-garamond text-[15px] focus-visible:border-foreground/30 focus-visible:ring-0"
+        className="min-h-20 font-garamond text-[0.9375rem] focus-visible:border-foreground/30 focus-visible:ring-0"
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) add();
         }}
@@ -508,7 +508,7 @@ function CrossRefs({ vi, index, main, onNavigate }: { vi: number; index: VerseIn
             type="button"
             disabled={!jev}
             onClick={() => setByJev(!byJev)}
-            className="rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className="rounded-md px-1.5 py-0.5 text-caption text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
             title={byJev ? "Order by reader votes instead" : "Order by closeness to this verse"}
           >
             {asking ? "Ordering…" : byJev ? "Closest first" : "Most voted"}
@@ -530,7 +530,7 @@ function CrossRefs({ vi, index, main, onNavigate }: { vi: number; index: VerseIn
                   ))}
                 </span>
               ) : (
-                <span className="font-mono text-[10px] text-muted-foreground">{l.votes}</span>
+                <span className="font-mono text-micro text-muted-foreground">{l.votes}</span>
               )}
             </span>
             {text && <span className="mt-0.5 line-clamp-2 block font-garamond text-sm text-foreground/85">{text}</span>}
@@ -542,7 +542,7 @@ function CrossRefs({ vi, index, main, onNavigate }: { vi: number; index: VerseIn
           {all ? "Fewer" : `All ${links.length}`}
         </Button>
       )}
-      <p className="text-[10px] text-muted-foreground/70">
+      <p className="text-micro text-muted-foreground/70">
         References and votes from OpenBible.info readers (CC-BY).{ranked ? " The top twelve are ordered by how closely each speaks to this verse." : ""}
       </p>
     </section>
@@ -603,7 +603,7 @@ function Similar({ vi, index, main, shelves, onNavigate }: { vi: number; index: 
           </button>
         );
       })}
-      {hits && <p className="text-[10px] text-muted-foreground/70">Found by meaning with a small embedding model, run on this computer. The verses are the text; the ranking is the machine's.</p>}
+      {hits && <p className="text-micro text-muted-foreground/70">Found by meaning with a small embedding model, run on this computer. The verses are the text; the ranking is the machine's.</p>}
     </section>
   );
 }

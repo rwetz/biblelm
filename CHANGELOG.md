@@ -188,6 +188,19 @@ All notable changes to BibleLM. Format based on
 
 ### Changed
 
+- **Home**: the plate runs the band's full height, under the search bar,
+  which is now liquid glass tinted with the page's own tone (`.liquid-glass`
+  in styles.css). Saving battery, reduced transparency, high contrast and
+  Linux get the tint without the blur.
+- **@nexis/design 0.4.0** (from an October commit; now a `semver:^0.4.0`
+  range). Inter replaces Geist as the interface sans. The interface follows
+  the window (125% at 2560 wide, 150% at 3000), so every fixed px text size
+  moved onto the package's type steps (`text-micro` to `text-body`) or rem,
+  and the reading size is in rem, so text grows with everything else on a 4K
+  screen and is unchanged on a laptop. `font-heading` is gone upstream.
+- **Interface size** in Settings, Appearance (and in the palette): Auto
+  follows the window, or pick 100, 112, 125 or 150%. Cmd = and Cmd - step it,
+  Cmd 0 returns to Auto. The Scripture keeps its own Text size.
 - **Laptop spacing**: the window opens at 90% of the screen's work area (in
   logical pixels, so a 1080p panel at 150% counts as 1280 by 720), capped at
   1440 by 960, instead of a fixed 1280 by 840. Page margins and the space above
@@ -198,6 +211,20 @@ All notable changes to BibleLM. Format based on
 
 ### Fixed
 
+- **macOS traffic lights** sit centred on the title bar, and follow it as
+  the interface size changes (src-tauri/src/traffic_lights.rs, ported from
+  Nexis; nexis-design APP-FINDINGS, Nexis #1 and #2). Not Tauri's
+  `trafficLightPosition`, which strands them in fullscreen. In fullscreen the
+  bar drops their inset, and a double-click on it leaves fullscreen.
+- A page with a corner plate (Settings, Search and others) no longer pads
+  its column by more than the plate is wide, which squeezed the text on a
+  narrow window or at a larger interface size.
+- **Pictures on a laptop screen**: heroes keep their proportions instead of
+  being sliced to a strip on a short window. Home keeps at least its 4K share
+  of the plate and of the page, and banners (Daily, Gallery, Topics, the Lab)
+  hold their painting to the right, beside the title rather than under it.
+  The sidebar vignette sizes to the room under the nav, so it no longer
+  covers Settings, and the Atlas cartouche and compass scale with the map.
 - **Small screens**: the window opens inside the screen's work area, centred,
   instead of at 1280 by 840 with its right and bottom edges off screen on a
   13-inch laptop (the hero and its credit looked cut, the status bar was gone).

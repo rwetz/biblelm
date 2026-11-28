@@ -96,7 +96,7 @@ function Quote({ r, text, words, onRead }: { r: ReturnType<VerseIndex["ref"]>; t
   return (
     <div>
       <button type="button" onClick={onRead} className="text-xs font-semibold text-brand hover:underline">{formatRef(r)}</button>
-      <p className="mt-1 font-garamond text-[16px] leading-7">
+      <p className="mt-1 font-garamond text-base leading-7">
         {parts.map((w, i) => (best.has(i) ? <span key={i} className="underline decoration-brand/60 decoration-1 underline-offset-4">{w}</span> : <span key={i}>{w}</span>))}
       </p>
     </div>

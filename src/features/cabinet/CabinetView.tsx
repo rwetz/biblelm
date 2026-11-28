@@ -137,7 +137,7 @@ function Cabinet({
                 <li key={d.id}>
                   <button type="button" onClick={() => onCurio(d.id)} className="group block w-full text-left">
                     <span className="block font-garamond text-2xl leading-tight group-hover:underline">{d.title}</span>
-                    <span className="mt-1.5 block font-garamond text-[15px] leading-snug text-foreground/85">{d.lede}</span>
+                    <span className="mt-1.5 block font-garamond text-[0.9375rem] leading-snug text-foreground/85">{d.lede}</span>
                     <TagCounts c={d} />
                   </button>
                 </li>
@@ -152,8 +152,8 @@ function Cabinet({
                   <span className="block font-garamond text-2xl leading-tight group-hover:underline">{t.title}</span>
                   {t.sub && <span className="block font-garamond text-sm italic text-muted-foreground">{t.sub}</span>}
                   <span className="mt-0.5 block text-xs text-muted-foreground">{byline(t)}</span>
-                  <span className="mt-2 block font-garamond text-[15px] leading-snug text-foreground/85">{t.gist}</span>
-                  <span className="mt-1.5 block text-[11px] text-muted-foreground">
+                  <span className="mt-2 block font-garamond text-[0.9375rem] leading-snug text-foreground/85">{t.gist}</span>
+                  <span className="mt-1.5 block text-caption text-muted-foreground">
                     {t.sections.length} sections{t.excerpt ? ", in part" : ""}
                   </span>
                 </button>
@@ -235,7 +235,7 @@ function LibraryReader({ entry, section, onPlace, onClose }: { entry: LibraryEnt
             type="button"
             aria-current={i === section ? "page" : undefined}
             onClick={() => onPlace(i)}
-            className={cn("w-full rounded-md px-2 py-1 text-left font-garamond text-[15px] leading-snug transition-colors hover:bg-muted/60", i === section ? "bg-muted/70 text-foreground" : "text-foreground/75")}
+            className={cn("w-full rounded-md px-2 py-1 text-left font-garamond text-[0.9375rem] leading-snug transition-colors hover:bg-muted/60", i === section ? "bg-muted/70 text-foreground" : "text-foreground/75")}
           >
             {x.title}
           </button>

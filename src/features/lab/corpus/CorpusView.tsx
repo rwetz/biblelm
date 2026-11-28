@@ -337,7 +337,7 @@ function TranslationRow({
       {downloading && progress && (
         <div className="mt-2.5 space-y-1">
           <Progress value={progress.total > 0 ? (progress.bytes / progress.total) * 100 : 0} />
-          <p className="text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+          <p className="text-right font-mono text-caption tabular-nums text-muted-foreground">
             {(progress.bytes / 1_048_576).toFixed(1)}
             {progress.total > 0 && ` / ${(progress.total / 1_048_576).toFixed(1)}`} MB
           </p>
@@ -407,7 +407,7 @@ function AddForm({
         />
       </Field>
       <div className="flex items-center justify-between gap-3">
-        <span className="min-w-0 truncate text-[11px] text-muted-foreground/60">
+        <span className="min-w-0 truncate text-caption text-muted-foreground/60">
           {blocker ? blocker : <span className="font-mono">id: {id}</span>}
         </span>
         <Button
@@ -452,7 +452,7 @@ function slugify(name: string): string {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1">
-      <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
+      <span className="text-caption font-medium text-muted-foreground">{label}</span>
       {children}
     </label>
   );
