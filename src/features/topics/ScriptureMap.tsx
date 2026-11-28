@@ -347,7 +347,7 @@ export function ScriptureMap({ t, index }: { t: Translation; index: VerseIndex }
               key={g}
               type="button"
               onClick={() => { setFocus(focus === g ? null : g); setFocusBook(null); }}
-              className={`inline-flex items-center gap-1.5 rounded-full bg-card/90 px-2 py-0.5 text-[11px] ring-1 ring-foreground/8 transition-colors hover:text-foreground ${focus === g ? "text-foreground ring-foreground/30" : "text-muted-foreground"}`}
+              className={`inline-flex items-center gap-1.5 rounded-full bg-card/90 px-2 py-0.5 text-caption ring-1 ring-foreground/8 transition-colors hover:text-foreground ${focus === g ? "text-foreground ring-foreground/30" : "text-muted-foreground"}`}
             >
               <span className="size-2 rounded-full" style={{ background: `var(${TONES[i]})` }} />
               {g}
@@ -370,10 +370,10 @@ export function ScriptureMap({ t, index }: { t: Translation; index: VerseIndex }
       {hv && (
         <div className="pointer-events-none absolute bottom-6 left-6 max-w-md rounded-xl bg-card/95 p-3 shadow-sm ring-1 ring-foreground/8">
           <p className="text-xs font-semibold text-brand">{formatRef(hv)}</p>
-          <p className="mt-1 font-garamond text-[15px] leading-6">{t.verse(hv)?.text ?? index.refs[hover!]}</p>
+          <p className="mt-1 font-garamond text-[0.9375rem] leading-6">{t.verse(hv)?.text ?? index.refs[hover!]}</p>
         </div>
       )}
-      <p className="absolute bottom-2 right-4 text-[10px] text-muted-foreground/70">
+      <p className="absolute bottom-2 right-4 text-micro text-muted-foreground/70">
         Each dot is a verse, placed by meaning. Zoom in to read them, hover one to trace its chapter, click to open it.
       </p>
     </div>

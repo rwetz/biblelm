@@ -29,6 +29,13 @@ export function verseOfTheDay(date = new Date()): Ref {
   return parseOsis(DAILY[day % DAILY.length])!;
 }
 
+/**
+ * The picture band's least share of the page's height: its share as designed
+ * on a 4K screen (876 of 1372px at 2560 by 1440). On a shorter window the
+ * verse of the day moves below the fold rather than the picture shrinking.
+ */
+const BAND_SHARE = 0.64;
+
 export function HomeView() {
   const heroes = useHeroes();
   const devHero = useStudy((s) => (s.devMode ? s.devHero : null));
@@ -50,11 +57,14 @@ export function HomeView() {
   const abbr = catalog?.find((c) => c.id === translation)?.abbr;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto [container-type:size]">
       {/* The first screen is the picture, the search box and the verse of the
-          day, filling the window exactly; your reading and notebooks wait below. */}
+          day; the picture keeps at least BAND_SHARE of it, and fills whatever a
+          tall window leaves. The plate runs the band's full height, under the
+          search bar, which is liquid glass over it (.liquid-glass in styles.css). Your
+          reading and notebooks wait below. */}
       <div className="flex min-h-full shrink-0 flex-col">
-      <DitherHero hero={hero} height="auto" width="84rem" fadeFrom={64} focusY={30} className="min-h-[clamp(13rem,39vh,22rem)] flex-1">
+      <DitherHero hero={hero} height="auto" width="84rem" fadeFrom={80} focusY={30} className="flex-1" style={{ minHeight: `calc(100cqh * ${BAND_SHARE})` }}>
         <div className="mt-auto flex flex-col items-center px-6 pb-10">
           <form
             className="w-full max-w-2xl"
@@ -63,7 +73,7 @@ export function HomeView() {
               if (q.trim()) searchFor(q.trim());
             }}
           >
-            <div className="rounded-2xl bg-card/90 p-2 shadow-sm ring-1 ring-foreground/8 backdrop-blur-[2px]">
+            <div className="liquid-glass rounded-2xl p-2">
               <SearchField size="lg" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search the Scriptures, or type a reference" className="bg-transparent hover:bg-transparent focus-within:bg-transparent" />
               <QueryReading query={q} className="px-2" />
               <div className="flex items-center gap-2 px-2 pb-1 pt-1 text-xs text-muted-foreground">
@@ -87,7 +97,7 @@ export function HomeView() {
 
         <section className="mx-auto w-full max-w-3xl shrink-0 px-(--gutter) pb-8 text-center">
           <TrinityMark className="mx-auto mb-3 mt-6 size-14 [@media(max-height:760px)]:mt-3 [@media(max-height:760px)]:size-10" />
-          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
+          <p className="text-caption font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
           {passage?.verses.length ? (
             <blockquote className="mt-4">
               <p className="font-garamond text-[2rem] leading-snug text-foreground md:text-[clamp(2rem,3.6vh,2.4rem)]">
@@ -163,7 +173,7 @@ export function HomeView() {
               <img src={paintingUrl(today.thumb)} loading="lazy" decoding="async" alt={`${today.title}, ${paintingCredit(today)}`} className="h-28 w-24 rounded-sm object-cover" style={{ objectPosition: `${today.focusX}% ${today.focusY}%` }} />
             </button>
             <div className="min-w-0">
-              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">To look at today</p>
+              <p className="text-caption font-medium uppercase tracking-[0.22em] text-muted-foreground">To look at today</p>
               <button type="button" onClick={() => openLook({ kind: "painting", id: today.id })} className="mt-1 block text-left font-garamond text-2xl hover:underline">
                 {today.title}
               </button>

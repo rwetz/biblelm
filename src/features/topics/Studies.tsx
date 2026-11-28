@@ -82,7 +82,7 @@ function Study({ s, t, index }: { s: Struggle; t: Translation; index: VerseIndex
       <header className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
           <h2 className="font-garamond text-4xl">{s.title}</h2>
-          <p className="mt-1 text-[15px] text-muted-foreground">{s.lede}</p>
+          <p className="mt-1 text-[0.9375rem] text-muted-foreground">{s.lede}</p>
         </div>
         <NotebookButton s={s} ideas={ideas} />
       </header>
@@ -99,7 +99,7 @@ function Study({ s, t, index }: { s: Struggle; t: Translation; index: VerseIndex
                 ))}
               </div>
               <p className="mt-3 border-l-2 border-brand/40 pl-3 text-sm leading-relaxed">
-                <span className="mr-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Question</span>
+                <span className="mr-1.5 text-micro font-semibold uppercase tracking-widest text-muted-foreground">Question</span>
                 {i.question}
               </p>
             </div>
@@ -117,7 +117,7 @@ function Study({ s, t, index }: { s: Struggle; t: Translation; index: VerseIndex
               <button key={x.ref} type="button" onClick={() => read(x.r, { select: true })} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-muted/60">
                 <span className="font-garamond text-lg">{x.title}</span>
                 <span className="ml-2 text-xs font-semibold text-brand">{formatRef(x.r)}</span>
-                <span className="mt-0.5 line-clamp-2 block font-garamond text-[15px] text-foreground/80">{t.range(x.r).map((v) => v.text).join(" ")}</span>
+                <span className="mt-0.5 line-clamp-2 block font-garamond text-[0.9375rem] text-foreground/80">{t.range(x.r).map((v) => v.text).join(" ")}</span>
               </button>
             ))}
           </div>
@@ -125,7 +125,7 @@ function Study({ s, t, index }: { s: Struggle; t: Translation; index: VerseIndex
 
         <section>
           <SectionLabel>Where readers keep turning</SectionLabel>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-caption text-muted-foreground">
             From OpenBible.info's topics {s.topics.slice(0, 4).join(", ")} and more, ordered by readers' votes (CC-BY).
           </p>
           <div className="mt-2 space-y-1">
@@ -143,7 +143,7 @@ function Study({ s, t, index }: { s: Struggle; t: Translation; index: VerseIndex
             </Button>
           )}
         </div>
-        <p className="mt-1 text-[11px] text-muted-foreground">
+        <p className="mt-1 text-caption text-muted-foreground">
           A study walk over 341,000 cross references, starting from every verse in this study at once: the passages most bound up with all of them.
         </p>
         {walking && !walk && <Spinner className="mt-3" />}
@@ -161,7 +161,7 @@ function Quote({ r, t, onOpen }: { r: Ref; t: Translation; onOpen: () => void })
   return (
     <blockquote>
       <button type="button" onClick={onOpen} className="text-xs font-semibold text-brand hover:underline">{formatRef(r)}</button>
-      <p className="scripture !text-[16px] !leading-7">
+      <p className="scripture !text-base !leading-7">
         {t.range(r).map((v) => (
           <span key={v.verse}>
             {r.verseEnd && <sup className="vnum">{v.verse}</sup>}
@@ -181,7 +181,7 @@ function IndexRow({ t, index, start, end }: { t: Translation; index: VerseIndex;
   return (
     <button type="button" onClick={() => read(a, { select: true })} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-muted/60">
       <span className="text-xs font-semibold text-brand">{formatRef(r)}</span>
-      <span className="mt-0.5 line-clamp-2 block font-garamond text-[15px] text-foreground/85">{t.range(r).map((v) => v.text).join(" ")}</span>
+      <span className="mt-0.5 line-clamp-2 block font-garamond text-[0.9375rem] text-foreground/85">{t.range(r).map((v) => v.text).join(" ")}</span>
     </button>
   );
 }
@@ -197,7 +197,7 @@ function YoungMen({ t }: { t: Translation }) {
         {refs.map((r) => (
           <button key={osisOf(r)} type="button" onClick={() => read(r, { select: true })} className="block w-full text-left hover:underline" title={t.range(r).map((v) => v.text).join(" ")}>
             <span className="text-xs font-semibold text-brand">{formatRef(r)}</span>
-            <span className="line-clamp-2 block font-garamond text-[13px] leading-5 text-foreground/80">{t.range(r).map((v) => v.text).join(" ")}</span>
+            <span className="line-clamp-2 block font-garamond text-body leading-5 text-foreground/80">{t.range(r).map((v) => v.text).join(" ")}</span>
           </button>
         ))}
       </div>
@@ -242,7 +242,7 @@ function NotebookButton({ s, ideas }: { s: Struggle; ideas: { title: string; que
       >
         <Icon name={existing ? "document" : "add"} /> {existing ? "Open its notebook" : "Work through it in a notebook"}
       </Button>
-      {!existing && <Badge variant="outline" className="text-[10px]">A note per question</Badge>}
+      {!existing && <Badge variant="outline" className="text-micro">A note per question</Badge>}
     </div>
   );
 }

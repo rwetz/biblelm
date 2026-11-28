@@ -138,7 +138,7 @@ export function ModelView() {
           {/* Pipeline steps */}
           <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/6 dark:ring-foreground/10">
             <div className="border-b border-border/60 px-4 py-2.5">
-              <p className="font-heading text-[13px] font-medium">Export, step by step</p>
+              <p className="text-body font-medium">Export, step by step</p>
             </div>
             <div className="divide-y divide-border/50">
               {steps.map((step, i) => (
@@ -242,7 +242,7 @@ function PipeStep({
 }) {
   return (
     <li className="flex gap-3">
-      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[10px] font-bold text-brand">
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-brand/10 text-micro font-bold text-brand">
         {n}
       </span>
       <span>

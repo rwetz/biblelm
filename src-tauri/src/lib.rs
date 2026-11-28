@@ -1,4 +1,5 @@
 mod study;
+mod traffic_lights;
 
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -1139,6 +1140,7 @@ pub fn run() {
         .manage(AppState {
             training: Arc::new(Mutex::new(TrainingState::default())),
         })
+        .manage(traffic_lights::TrafficLights::default())
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
             if let Some(win) = app.get_webview_window("main") {
@@ -1181,8 +1183,10 @@ pub fn run() {
             model_status,
             model_import,
             power_state,
+            traffic_lights::window_traffic_lights,
         ])
         .on_window_event(|win, event| {
+            traffic_lights::on_window_event(win, event);
             if let tauri::WindowEvent::CloseRequested { .. } = event {
                 save_place(win);
             }

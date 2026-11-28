@@ -13,13 +13,16 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  stepInterfaceScale,
   useCommandPaletteShortcut,
+  useTheme,
   ViewEnter,
   WindowResizeEdges,
   type PaletteCommand,
   type SidebarNavSection,
 } from "@nexis/design";
 import { Heptagram } from "@/art/Art";
+import { useTrafficLights } from "./titleBar";
 import { Palette } from "./Palette";
 import { Welcome } from "./Welcome";
 import { SidebarArt, SidebarOrnament } from "@/art/SidebarArt";
@@ -194,6 +197,7 @@ export default function App() {
   const subRosa = useStudy((s) => s.subRosa);
   const [palette, setPalette] = useState(false);
   const narrow = useNarrow();
+  const trafficLights = useTrafficLights();
   const nav = useMemo(() => navFor(showLab, subRosa), [showLab, subRosa]);
   const history = usePageHistory(page, go);
   useSwipeHistory(history);
@@ -257,8 +261,9 @@ export default function App() {
     <div className={`flex h-full flex-col bg-background text-foreground ${redLetter ? "red-letter" : ""}`}>
       <WindowResizeEdges />
       <TitleBar
+        className={trafficLights ? "pl-[88px]" : "pl-gutter"}
         brand={<Heptagram className="size-[18px] text-brand" />}
-        title={<span className="font-blackletter text-[17px] tracking-wide">BibleLM</span>}
+        title={<span className="font-blackletter text-[1.0625rem] tracking-wide">BibleLM</span>}
         center={
           <button
             type="button"
@@ -267,7 +272,7 @@ export default function App() {
           >
             <Icon name="search" size="xs" />
             <span className="flex-1 truncate text-left transition-colors group-hover:text-foreground">Find a page, setting or command</span>
-            <kbd className="hidden font-mono text-[10px] opacity-70 md:inline">{fmtShortcut(MOD_KEY, SHIFT_KEY, "P")}</kbd>
+            <kbd className="hidden font-mono text-micro opacity-70 md:inline">{fmtShortcut(MOD_KEY, SHIFT_KEY, "P")}</kbd>
           </button>
         }
         actions={subRosa ? undefined : <ModeToggle />}
@@ -338,6 +343,7 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
   const [subRosa, setSubRosa] = useSubRosa();
   const [catalog] = useCatalog();
   const { notebooks, setActive } = useNotebooks();
+  const { interfaceScale, setInterfaceSize } = useTheme();
   return useMemo(() => {
     const nav = NAV.flatMap((s) => s.items).filter((i) => shown(i.id, study.showLab, subRosa)).map<PaletteCommand>((i) => ({
       id: `go-${i.id}`,
@@ -358,6 +364,9 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
       { id: "red-letter", label: study.redLetter ? "Words of Christ in black" : "Words of Christ in red", group: "Read", icon: "quote", keywords: ["red letter", "jesus"], run: () => study.set({ redLetter: !study.redLetter }) },
       { id: "bigger", label: "Larger text", group: "Read", icon: "zoom-in", run: () => study.set({ textSize: Math.min(28, study.textSize + 1) }) },
       { id: "smaller", label: "Smaller text", group: "Read", icon: "zoom-out", run: () => study.set({ textSize: Math.max(14, study.textSize - 1) }) },
+      { id: "ui-bigger", label: "Larger interface", group: "Appearance", icon: "zoom-in", shortcut: fmtShortcut(MOD_KEY, "="), keywords: ["interface size", "scale", "zoom", "4k"], run: () => setInterfaceSize(stepInterfaceScale(interfaceScale, 1)) },
+      { id: "ui-smaller", label: "Smaller interface", group: "Appearance", icon: "zoom-out", shortcut: fmtShortcut(MOD_KEY, "-"), keywords: ["interface size", "scale", "zoom"], run: () => setInterfaceSize(stepInterfaceScale(interfaceScale, -1)) },
+      { id: "ui-auto", label: "Interface size: follow the window", group: "Appearance", icon: "refresh", shortcut: fmtShortcut(MOD_KEY, "0"), keywords: ["interface size", "scale", "zoom", "reset", "auto"], run: () => setInterfaceSize("auto") },
       ...(["garamond", "fell", "gothic"] as const).map((f) => ({
         id: `face-${f}`,
         label: `Reading face: ${{ garamond: "Garamond", fell: "Fell English", gothic: "Gothic (blackletter)" }[f]}`,
@@ -419,6 +428,7 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
       setting("Follow the system's light and dark", ["dark mode", "auto", "system theme"]),
       setting("Illustrations", ["art", "pictures", "engravings", "paintings", "off"]),
       setting("Reading face", ["font", "typeface", "garamond", "fell", "gothic", "blackletter"]),
+      setting("Interface size", ["zoom", "scale", "bigger", "smaller", "4k", "high resolution"]),
       setting("Text size", ["font size", "bigger", "smaller", "zoom"]),
       setting("Red letter", ["words of christ", "jesus", "red"]),
       setting("Two columns", ["columns", "layout", "printed bible"]),
@@ -466,5 +476,5 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
     }));
     void openPalette;
     return [...nav, ...reading, ...settings, welcome, ...(study.showLab ? lab : []), labToggle, ...layout, ...translations, ...shelves, ...nbs, ...appearance, ...(subRosa ? [rose, ...curios] : [])];
-  }, [study, setScheme, subRosa, setSubRosa, catalog, notebooks, setActive, openPalette, history]);
+  }, [study, setScheme, subRosa, setSubRosa, catalog, notebooks, setActive, openPalette, history, interfaceScale, setInterfaceSize]);
 }

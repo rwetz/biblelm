@@ -127,7 +127,7 @@ export function ReadView() {
           {chapterPaintings.length > 0 && <Frontispiece key={`${bookId}.${location.chapter}`} paintings={chapterPaintings} />}
           <article
             className="mx-auto px-(--gutter) pb-24 pt-(--page-top)"
-            style={{ maxWidth: columnsOf(ts!, bookId).length > 1 ? "none" : columns ? "68rem" : "42rem", ["--scripture-face" as string]: FACES[face], ["--scripture-size" as string]: `${textSize}px` }}
+            style={{ maxWidth: columnsOf(ts!, bookId).length > 1 ? "none" : columns ? "68rem" : "42rem", ["--scripture-face" as string]: FACES[face], ["--scripture-size" as string]: `${textSize / 16}rem` }}
           >
             <header className="mb-8 text-center">
               {firstChapter && <BookHead bookId={bookId} plates={plates} />}

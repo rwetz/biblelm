@@ -253,11 +253,11 @@ export function ModelCard() {
                 )} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-mono text-xs text-foreground">{f.file}</p>
-                <p className="truncate text-[11px] text-muted-foreground">
+                <p className="truncate text-caption text-muted-foreground">
                   {describeImport(f)}
                 </p>
               </div>
-              <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{f.kind}</span>
+              <span className="shrink-0 font-mono text-caption text-muted-foreground">{f.kind}</span>
             </div>
           ))}
         </div>
@@ -301,7 +301,7 @@ function Fact({
 }) {
   return (
     <div className={cn(wide && "col-span-2")}>
-      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="text-caption text-muted-foreground">{label}</p>
       <p className="font-mono text-xs tabular-nums text-foreground">{value}</p>
     </div>
   );

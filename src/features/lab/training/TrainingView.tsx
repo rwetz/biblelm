@@ -160,7 +160,7 @@ export function TrainingView() {
         {/* Config panel */}
         <div className="flex flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/6 dark:ring-foreground/10">
           <div className="flex h-10 items-center justify-between border-b border-border/60 px-4">
-            <p className="font-heading text-[13px] font-medium">Settings</p>
+            <p className="text-body font-medium">Settings</p>
             <Button
               size="sm"
               variant="ghost"
@@ -327,7 +327,7 @@ export function TrainingView() {
                           <span className="text-xs font-medium">
                             {t === "char" ? "Character-level" : "BPE"}
                           </span>
-                          {unavailable && <span className="text-[11px] text-muted-foreground">coming later</span>}
+                          {unavailable && <span className="text-caption text-muted-foreground">coming later</span>}
                         </label>
                         <InfoTip side="right">
                           {t === "char"

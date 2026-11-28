@@ -89,7 +89,7 @@ function Cabinet({ library, shelf, onShelf, onOpen, onCurio }: { library: Librar
                 <li key={d.id}>
                   <button type="button" onClick={() => onCurio(d.id)} className="group block w-full text-left">
                     <span className="block font-garamond text-2xl leading-tight group-hover:underline">{d.title}</span>
-                    <span className="mt-1.5 block font-garamond text-[15px] leading-snug text-foreground/85">{d.lede}</span>
+                    <span className="mt-1.5 block font-garamond text-[0.9375rem] leading-snug text-foreground/85">{d.lede}</span>
                     <TagCounts c={d} />
                   </button>
                 </li>
@@ -105,7 +105,7 @@ function Cabinet({ library, shelf, onShelf, onOpen, onCurio }: { library: Librar
                     <SymbolArt c={c} className="h-28" />
                   </span>
                   <span className="mt-2 block font-garamond text-xl leading-tight group-hover:underline">{c.title}</span>
-                  <span className="mt-1 block font-garamond text-[14px] leading-snug text-muted-foreground">{c.lede}</span>
+                  <span className="mt-1 block font-garamond text-sm leading-snug text-muted-foreground">{c.lede}</span>
                 </button>
               </li>
             ))}
@@ -118,8 +118,8 @@ function Cabinet({ library, shelf, onShelf, onOpen, onCurio }: { library: Librar
                   <span className="block font-garamond text-2xl leading-tight group-hover:underline">{t.title}</span>
                   {t.sub && <span className="block font-garamond text-sm italic text-muted-foreground">{t.sub}</span>}
                   <span className="mt-0.5 block text-xs text-muted-foreground">{byline(t)}</span>
-                  <span className="mt-2 block font-garamond text-[15px] leading-snug text-foreground/85">{t.gist}</span>
-                  <span className="mt-1.5 block text-[11px] text-muted-foreground">
+                  <span className="mt-2 block font-garamond text-[0.9375rem] leading-snug text-foreground/85">{t.gist}</span>
+                  <span className="mt-1.5 block text-caption text-muted-foreground">
                     {t.sections.length} sections{t.excerpt ? ", in part" : ""}
                   </span>
                 </button>
@@ -128,7 +128,7 @@ function Cabinet({ library, shelf, onShelf, onOpen, onCurio }: { library: Librar
           </ul>
         ) : (
           <>
-            <p className="mb-5 max-w-2xl font-garamond text-[15px] text-muted-foreground">
+            <p className="mb-5 max-w-2xl font-garamond text-[0.9375rem] text-muted-foreground">
               These read in the Bible itself, on the Pseudepigrapha shelf, with a badge on every verse. Under the rose the shelf is on.
             </p>
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-x-8 gap-y-6">
@@ -136,7 +136,7 @@ function Cabinet({ library, shelf, onShelf, onOpen, onCurio }: { library: Librar
                 <li key={b.osis}>
                   <button type="button" onClick={() => read({ book: b.osis, chapter: 1, verse: 0 })} className="group block w-full text-left">
                     <span className="block font-blackletter text-2xl leading-tight group-hover:underline">{bookName(b.osis)}</span>
-                    <span className="mt-1 block font-garamond text-[15px] leading-snug text-foreground/85">{BESIDE[b.osis]}</span>
+                    <span className="mt-1 block font-garamond text-[0.9375rem] leading-snug text-foreground/85">{BESIDE[b.osis]}</span>
                   </button>
                 </li>
               ))}
@@ -176,7 +176,7 @@ function Tag({ tag }: { tag: ClaimTag }) {
 function TagCounts({ c }: { c: Curio }) {
   const n = (t: ClaimTag) => c.claims.filter((x) => x.tag === t).length;
   return (
-    <span className="mt-1.5 block text-[11px] text-muted-foreground">
+    <span className="mt-1.5 block text-caption text-muted-foreground">
       {(Object.keys(TAGS) as ClaimTag[])
         .filter((t) => n(t))
         .map((t) => `${n(t)} ${TAGS[t].label.toLowerCase()}`)
@@ -235,7 +235,7 @@ function CurioView({ c, library, onClose, onRead }: { c: Curio; library: Library
             <li key={i} className="space-y-2">
               <div className="flex items-start gap-3">
                 <Tag tag={x.tag} />
-                <p className="font-garamond text-[17px] leading-relaxed">{x.text}</p>
+                <p className="font-garamond text-[1.0625rem] leading-relaxed">{x.text}</p>
               </div>
               {t && x.refs && (
                 <div className="ml-4 space-y-2 border-l border-border pl-4">
@@ -290,7 +290,7 @@ function ReadOnLink({ r, library, onRead, onPassage }: { r: ReadOn; library: Lib
     const ref = studyRef(r.passage);
     if (!ref) return null;
     return (
-      <button type="button" onClick={() => onPassage(ref)} className="font-garamond text-[16px] text-brand hover:underline">
+      <button type="button" onClick={() => onPassage(ref)} className="font-garamond text-base text-brand hover:underline">
         {formatRef(ref)}
       </button>
     );
@@ -299,7 +299,7 @@ function ReadOnLink({ r, library, onRead, onPassage }: { r: ReadOn; library: Lib
   const section = text?.sections.findIndex((s) => s.title === r.section) ?? -1;
   if (!text || section < 0) return null;
   return (
-    <button type="button" onClick={() => onRead(text.id, section)} className="font-garamond text-[16px] hover:underline">
+    <button type="button" onClick={() => onRead(text.id, section)} className="font-garamond text-base hover:underline">
       <span className="italic">{text.title}</span>, {r.section}
     </button>
   );
@@ -309,7 +309,7 @@ function Quote({ r, t, onOpen }: { r: Ref; t: Translation; onOpen: () => void })
   return (
     <blockquote>
       <button type="button" onClick={onOpen} className="text-xs font-semibold text-brand hover:underline">{formatRef(r)}</button>
-      <p className="scripture !text-[16px] !leading-7">
+      <p className="scripture !text-base !leading-7">
         {t.range(r).map((v) => (
           <span key={v.verse}>
             {r.verseEnd && <sup className="vnum">{v.verse}</sup>}
@@ -343,7 +343,7 @@ function LibraryReader({ entry, section, onPlace, onClose }: { entry: LibraryEnt
             type="button"
             aria-current={i === section ? "page" : undefined}
             onClick={() => onPlace(i)}
-            className={cn("w-full rounded-md px-2 py-1 text-left font-garamond text-[15px] leading-snug transition-colors hover:bg-muted/60", i === section ? "bg-muted/70 text-foreground" : "text-foreground/75")}
+            className={cn("w-full rounded-md px-2 py-1 text-left font-garamond text-[0.9375rem] leading-snug transition-colors hover:bg-muted/60", i === section ? "bg-muted/70 text-foreground" : "text-foreground/75")}
           >
             {x.title}
           </button>
@@ -362,7 +362,7 @@ function LibraryReader({ entry, section, onPlace, onClose }: { entry: LibraryEnt
         <ol className="mt-3 space-y-0.5">{contents}</ol>
       </nav>
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
-        <article className="mx-auto max-w-[42rem] px-(--gutter) pb-24 pt-(--page-top)" style={{ ["--scripture-size" as string]: `${textSize}px` }}>
+        <article className="mx-auto max-w-[42rem] px-(--gutter) pb-24 pt-(--page-top)" style={{ ["--scripture-size" as string]: `${textSize / 16}rem` }}>
           <Button variant="ghost" size="sm" onClick={onClose} className="mb-4 lg:hidden">
             <Icon name="chevron-left" /> The cabinet
           </Button>

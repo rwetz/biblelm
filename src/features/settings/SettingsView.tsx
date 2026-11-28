@@ -6,6 +6,10 @@ import {
   Icon,
   IN_TAURI,
   Input,
+  INTERFACE_SCALES,
+  interfaceScaleLabel,
+  MOD_KEY,
+  parseInterfaceSize,
   Panel,
   Segmented,
   Slider,
@@ -92,6 +96,19 @@ export function SettingsView() {
                 ]}
               />
             </Field>
+            <Field
+              label="Interface size"
+              hint={`Everything but the Scripture's own size. Auto follows the window's width, larger on a big monitor (now ${interfaceScaleLabel(theme.interfaceScale)}). ${MOD_KEY}= and ${MOD_KEY}- step it, ${MOD_KEY}0 returns to Auto.`}
+              inline
+            >
+              <Segmented
+                label="Interface size"
+                size="sm"
+                value={String(theme.interfaceSize)}
+                onChange={(v) => theme.setInterfaceSize(parseInterfaceSize(v))}
+                segments={[{ id: "auto", label: "Auto" }, ...INTERFACE_SCALES.map((x) => ({ id: String(x), label: interfaceScaleLabel(x) }))]}
+              />
+            </Field>
             <Field label="Reading face" inline>
               <Segmented
                 label="Face"
@@ -168,12 +185,12 @@ export function SettingsView() {
                     {t.name} <span className="text-muted-foreground">· {t.abbr} · {t.language} · {t.year}</span>
                   </p>
                   {t.note && <p className="mt-0.5 text-xs text-muted-foreground">{t.note}</p>}
-                  <p className="mt-0.5 text-[11px] text-muted-foreground/80">
+                  <p className="mt-0.5 text-caption text-muted-foreground/80">
                     {t.books.length} books, {t.verses.toLocaleString()} verses · {t.licence} ·{" "}
                     <a href={t.source} target="_blank" rel="noreferrer" className="underline">eBible.org</a>
                   </p>
                   {t.hash && (
-                    <p className="mt-0.5 text-[11px] text-muted-foreground/80" title="The first digits of the SHA-256 of the text: notes about a translation's wording record it, so they know which edition they were written against.">
+                    <p className="mt-0.5 text-caption text-muted-foreground/80" title="The first digits of the SHA-256 of the text: notes about a translation's wording record it, so they know which edition they were written against.">
                       Edition <code className="font-mono">{t.hash}</code>
                     </p>
                   )}

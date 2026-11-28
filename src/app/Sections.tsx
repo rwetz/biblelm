@@ -40,8 +40,8 @@ export function Sections<Id extends string>({
           >
             <span className={cn("w-8 font-garamond text-xl leading-none tracking-wide transition-colors", on ? "text-brand" : "text-muted-foreground group-hover:text-foreground")}>{ROMAN[i] ?? i + 1}</span>
             <span className="min-w-0">
-              <span className={cn("block font-garamond text-[17px] leading-tight", on ? "text-foreground" : "text-foreground/80")}>{s.name}</span>
-              <span className="block truncate text-[11px] text-muted-foreground">{s.gist}</span>
+              <span className={cn("block font-garamond text-[1.0625rem] leading-tight", on ? "text-foreground" : "text-foreground/80")}>{s.name}</span>
+              <span className="block truncate text-caption text-muted-foreground">{s.gist}</span>
             </span>
             <Ornament name={s.mark} reveal={false} level={on ? 1 : 0.7} className="ml-auto h-7" />
             {on && <span aria-hidden className="palette-seek is-seeking absolute inset-x-3 bottom-0.5 h-0.5" />}

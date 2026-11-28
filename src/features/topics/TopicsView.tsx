@@ -103,7 +103,7 @@ function PassageRow({ t, index, start, end, extra }: { t: Translation; index: Ve
     <button type="button" onClick={() => read(a, { select: true })} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-muted/60">
       <span className="text-xs font-semibold text-brand">{formatRef(ref)}</span>
       {extra}
-      <span className="mt-0.5 line-clamp-3 block font-garamond text-[16px] leading-7 text-foreground/90">{text || <span className="text-muted-foreground">Not in the {t.meta.abbr}.</span>}</span>
+      <span className="mt-0.5 line-clamp-3 block font-garamond text-base leading-7 text-foreground/90">{text || <span className="text-muted-foreground">Not in the {t.meta.abbr}.</span>}</span>
     </button>
   );
 }
@@ -230,7 +230,7 @@ function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
           {more && (
             <div className="space-y-3 rounded-lg bg-muted/30 p-2.5">
               <div>
-                <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">Mostly found in</p>
+                <p className="mb-1.5 text-caption font-medium text-muted-foreground">Mostly found in</p>
                 <div className="flex flex-wrap gap-1.5">
                   {WHERE.map(([id, label]) => (
                     <Chip key={id} on={where === id} onClick={() => setWhere(id)}>
@@ -240,7 +240,7 @@ function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
                 </div>
               </div>
               <div>
-                <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">Size</p>
+                <p className="mb-1.5 text-caption font-medium text-muted-foreground">Size</p>
                 <div className="flex flex-wrap gap-1.5">
                   <Chip on={size === "any"} onClick={() => setSize("any")}>Any</Chip>
                   <Chip on={size === "broad"} onClick={() => setSize("broad")}>Broad, 40+ passages</Chip>
@@ -248,7 +248,7 @@ function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
                 </div>
               </div>
               <div>
-                <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">Order</p>
+                <p className="mb-1.5 text-caption font-medium text-muted-foreground">Order</p>
                 <div className="flex flex-wrap gap-1.5">
                   <Chip on={sort === "az"} onClick={() => setSort("az")}>A to Z</Chip>
                   <Chip on={sort === "passages"} onClick={() => setSort("passages")}>Most passages</Chip>
@@ -256,7 +256,7 @@ function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
               </div>
             </div>
           )}
-          <p className="flex items-center text-[11px] text-muted-foreground">
+          <p className="flex items-center text-caption text-muted-foreground">
             <span className="flex-1">
               {list.length.toLocaleString()} {list.length === 1 ? "topic" : "topics"}
             </span>
@@ -281,7 +281,7 @@ function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
                 className={cn("flex h-[30px] w-full items-center gap-2 px-4 text-left text-sm capitalize hover:bg-muted", sel === x.name && "bg-accent text-foreground")}
               >
                 <span className="flex-1 truncate">{x.name}</span>
-                <span className="font-mono text-[10px] text-muted-foreground">{x.p.length / 3}</span>
+                <span className="font-mono text-micro text-muted-foreground">{x.p.length / 3}</span>
               </button>
             );
           }}
@@ -365,7 +365,7 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
           </form>
           <div className="mt-4">
             {results?.map((r, i) => (
-              <PassageRow key={r.verse} t={t} index={index} start={r.verse} end={r.verse} extra={<span className="ml-2 font-mono text-[10px] text-muted-foreground">#{i + 1}</span>} />
+              <PassageRow key={r.verse} t={t} index={index} start={r.verse} end={r.verse} extra={<span className="ml-2 font-mono text-micro text-muted-foreground">#{i + 1}</span>} />
             ))}
             {unread ? (
               <p className="text-xs text-muted-foreground">Could not read “{unread}” as a verse. Try a reference such as Isaiah 53:5 or ps 23:1.</p>
@@ -405,7 +405,7 @@ function Walk({ t, index }: { t: Translation; index: VerseIndex }) {
                 {chain.map((v, i) => (
                   <li key={v} className="relative">
                     <span className="absolute -left-[21px] top-3 size-2.5 rounded-full bg-brand" />
-                    <PassageRow t={t} index={index} start={v} end={v} extra={<span className="ml-2 font-mono text-[10px] text-muted-foreground">step {i}</span>} />
+                    <PassageRow t={t} index={index} start={v} end={v} extra={<span className="ml-2 font-mono text-micro text-muted-foreground">step {i}</span>} />
                   </li>
                 ))}
               </ol>
