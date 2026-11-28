@@ -21,6 +21,19 @@ ureq = { version = "2", features = ["json"] }
 # The Jev key, saved from Settings into the system keychain.
 keyring = { version = "3", features = ["apple-native", "windows-native", "linux-native"] }
 
+[target.'cfg(target_os = "macos")'.dependencies]
+# Already in the tree through tao: used only to centre the traffic lights on
+# the title bar ourselves (src/traffic_lights.rs).
+objc2-app-kit = { version = "0.3.2", default-features = false, features = [
+	"std",
+	"NSButton",
+	"NSControl",
+	"NSResponder",
+	"NSView",
+	"NSWindow",
+] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSGeometry"] }
+
 [target.'cfg(windows)'.dependencies]
 # Reads TYPESAFE_API_KEY from the saved user environment when the process lacks it.
 winreg = "0.52"

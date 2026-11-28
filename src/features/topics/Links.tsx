@@ -81,7 +81,7 @@ export function Links({ t, index }: { t: Translation; index: VerseIndex }) {
                         <li key={v}>
                           <button type="button" onClick={() => read(r, { select: true })} className="block w-full rounded px-1 py-0.5 text-left hover:bg-muted/60">
                             <span className="text-xs font-semibold text-brand">{formatRef(r)}</span>{" "}
-                            <span className="font-garamond text-[15px]">{t.verse(r)?.text ?? ""}</span>
+                            <span className="font-garamond text-[0.9375rem]">{t.verse(r)?.text ?? ""}</span>
                           </button>
                         </li>
                       );
@@ -176,7 +176,7 @@ function ArcDiagram({ arcs, chapters, onRead }: { arcs: [number, number, number]
         role="img"
         aria-label="Arc diagram of cross references between chapters"
       />
-      <div className="pointer-events-none absolute bottom-0 left-0 h-5 w-full text-[10px] text-muted-foreground">
+      <div className="pointer-events-none absolute bottom-0 left-0 h-5 w-full text-micro text-muted-foreground">
         <span className="absolute left-2">Genesis</span>
         <span className="absolute -translate-x-1/2" style={{ left: x(books.find((b) => b.book === "Matt")?.from ?? 0) }}>Matthew</span>
         <span className="absolute right-2">Revelation</span>

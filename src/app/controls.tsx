@@ -39,8 +39,8 @@ export function SearchField({
         type="text"
         {...props}
         className={cn(
-          "min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground/80",
-          size === "sm" ? "text-[13px]" : size === "lg" ? "text-base" : "text-sm",
+          "min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground",
+          size === "sm" ? "text-body" : size === "lg" ? "text-base" : "text-sm",
           inputClassName,
         )}
       />
@@ -77,15 +77,15 @@ export function Choice({
         aria-label={label}
         className={cn(
           "rounded-xl border-none bg-muted/55 shadow-none transition-colors hover:bg-muted/70 focus-visible:ring-0 data-[state=open]:bg-muted/80",
-          size === "sm" ? "h-8 text-[13px]" : "h-10 text-sm",
+          size === "sm" ? "h-8 text-body" : "h-10 text-sm",
           className,
         )}
       >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent className="max-h-80 rounded-xl">
+      <SelectContent className="max-h-80">
         {options.map((o) => (
-          <SelectItem key={o.value || EMPTY} value={o.value || EMPTY} className="rounded-lg">
+          <SelectItem key={o.value || EMPTY} value={o.value || EMPTY}>
             {o.label}
           </SelectItem>
         ))}

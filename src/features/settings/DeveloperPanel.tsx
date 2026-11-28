@@ -66,7 +66,7 @@ export function DeveloperSettings() {
                       )}
                     >
                       <Dither src={heroUrl(h)} algo={h.algo === "bayer" ? "bayer" : "atkinson"} reveal={false} className="h-24 w-full text-foreground" />
-                      <span className="block truncate px-2 py-1 text-[11px] text-muted-foreground">{h.title}</span>
+                      <span className="block truncate px-2 py-1 text-caption text-muted-foreground">{h.title}</span>
                     </button>
                   );
                 })}
@@ -95,11 +95,11 @@ export function DeveloperSettings() {
                 <div className="mt-4 grid grid-cols-2 gap-4">
                   <figure>
                     <Engraving plate={plate} size="thumb" className="w-full" />
-                    <figcaption className="mt-1 text-[11px] text-muted-foreground">Engraving, as beside the text ({plate.full.width} px scan)</figcaption>
+                    <figcaption className="mt-1 text-caption text-muted-foreground">Engraving, as beside the text ({plate.full.width} px scan)</figcaption>
                   </figure>
                   <figure>
                     <Dither key={plate.id} src={plateUrl(plate.full)} algo="floyd" dot={1} focusY={30} className="aspect-[4/5] w-full text-foreground" />
-                    <figcaption className="mt-1 text-[11px] text-muted-foreground">Dithered, as in the sidebar and empty states</figcaption>
+                    <figcaption className="mt-1 text-caption text-muted-foreground">Dithered, as in the sidebar and empty states</figcaption>
                   </figure>
                   <div className="col-span-2 flex items-center gap-3">
                     <div className="min-w-0 flex-1">
@@ -131,7 +131,7 @@ export function DeveloperSettings() {
                     <div className="grid h-20 w-full place-items-center">
                       <Ornament name={name} className={ORNAMENTS[name].w > ORNAMENTS[name].h * 1.5 ? "w-full" : "h-20"} />
                     </div>
-                    <span className="text-[11px] text-muted-foreground">{ORNAMENTS[name].title}</span>
+                    <span className="text-caption text-muted-foreground">{ORNAMENTS[name].title}</span>
                   </div>
                 ))}
               </div>

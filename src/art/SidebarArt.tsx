@@ -56,19 +56,46 @@ function useSidebarPlate(): Plate | undefined {
   }, [plates, page, location.book, location.chapter, cover, devPlate, inText, rose]);
 }
 
+/** The vignette's tallest, and the least worth showing, in rem. */
+const PLATE_MAX = 16;
+const PLATE_MIN = 7;
+
 export function SidebarArt() {
   const plate = useSidebarPlate();
   const pinned = useStudy((s) => s.devMode && s.devPlate !== null);
   const mode = useStudy((s) => s.illustrations);
   const read = useStudy((s) => s.read);
+  const ref = useRef<HTMLButtonElement>(null);
+  const caption = useRef<HTMLSpanElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+  // As tall as the room under the last nav item allows, up to the plate's
+  // full height; hidden when that room would show only a sliver. Measured, so
+  // a short window or a longer nav never puts the plate over an item.
+  useLayoutEffect(() => {
+    const box = ref.current?.parentElement;
+    if (!box) return;
+    const measure = () => {
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const origin = box.getBoundingClientRect().top;
+      const items = box.querySelectorAll("nav button");
+      const top = items.length ? items[items.length - 1].getBoundingClientRect().bottom - origin : 0;
+      const room = box.clientHeight - top - (caption.current?.offsetHeight ?? 0) - rem;
+      setHeight(room >= PLATE_MIN * rem ? Math.min(room, PLATE_MAX * rem) : null);
+    };
+    measure();
+    const resized = new ResizeObserver(measure);
+    resized.observe(box);
+    return () => resized.disconnect();
+  }, [plate, mode]);
   if (!plate || mode === "off") return null;
   return (
     <button
+      ref={ref}
       type="button"
       onClick={() => plate.ref && read(plate.ref, { select: true })}
       aria-label={`${plate.title}. Open the passage`}
       data-sidebar-art
-      className="group absolute inset-x-0 bottom-0 z-20 block text-left outline-none [@media(max-height:680px)]:hidden"
+      className={cn("group absolute inset-x-0 bottom-0 z-20 block text-left outline-none", height === null && "invisible")}
     >
       <Dither
         key={plate.id}
@@ -77,9 +104,10 @@ export function SidebarArt() {
         dot={1}
         focusY={30}
         edges={{ top: 0.18 }}
-        className="h-64 w-full text-sidebar-foreground opacity-85 transition-opacity duration-300 group-hover:opacity-100"
+        className="w-full text-sidebar-foreground opacity-85 transition-opacity duration-300 group-hover:opacity-100"
+        style={{ height: height ?? 0 }}
       />
-      <span className="block truncate px-4 pb-3 font-garamond text-xs italic text-muted-foreground transition-colors group-hover:text-foreground group-focus-visible:text-foreground">
+      <span ref={caption} className="block truncate px-4 pb-3 font-garamond text-xs italic text-muted-foreground transition-colors group-hover:text-foreground group-focus-visible:text-foreground">
         {plate.title}
         {pinned && <span className="not-italic"> · pinned in Developer</span>}
       </span>
@@ -132,7 +160,15 @@ export function SidebarOrnament() {
     measure();
     const resized = new ResizeObserver(measure);
     resized.observe(box);
-    const changed = new MutationObserver(measure);
+    // The vignette sizes itself to its room, so follow it as well.
+    let watched: Element | null = null;
+    const watch = () => {
+      const art = box.querySelector("[data-sidebar-art]");
+      if (art && art !== watched) resized.observe((watched = art));
+      measure();
+    };
+    watch();
+    const changed = new MutationObserver(watch);
     changed.observe(box, { childList: true });
     return () => {
       resized.disconnect();

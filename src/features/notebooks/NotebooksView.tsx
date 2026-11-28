@@ -309,7 +309,7 @@ function NoteCard({ n, onOpen, onChange, onTags, onDelete }: { n: Note; onOpen: 
         </button>
         {n.translation && <Badge variant="outline">{n.translation.toUpperCase()} wording</Badge>}
         <span className="flex-1" />
-        <span className="text-[11px] text-muted-foreground">{new Date(n.updated).toLocaleDateString()}</span>
+        <span className="text-caption text-muted-foreground">{new Date(n.updated).toLocaleDateString()}</span>
         <Button variant="ghost" size="icon-xs" aria-label="Delete note" className="opacity-0 group-hover:opacity-100" onClick={onDelete}>
           <Icon name="delete" size="xs" />
         </Button>
@@ -317,12 +317,12 @@ function NoteCard({ n, onOpen, onChange, onTags, onDelete }: { n: Note; onOpen: 
       <NoteBody
         value={n.body}
         onChange={onChange}
-        className="mt-2 min-h-12 font-garamond text-[16px] leading-7"
-        editClassName="mt-2 min-h-20 resize-y border-none bg-transparent p-0 font-garamond text-[16px] leading-7 shadow-none focus-visible:ring-0"
+        className="mt-2 min-h-12 font-garamond text-base leading-7"
+        editClassName="mt-2 min-h-20 resize-y border-none bg-transparent p-0 font-garamond text-base leading-7 shadow-none focus-visible:ring-0"
       />
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {n.tags.map((t) => (
-          <button key={t} type="button" onClick={() => onTags(n.tags.filter((x) => x !== t))} className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground hover:line-through">
+          <button key={t} type="button" onClick={() => onTags(n.tags.filter((x) => x !== t))} className="rounded-full bg-muted px-2 py-0.5 text-caption text-muted-foreground hover:line-through">
             #{t}
           </button>
         ))}
@@ -336,7 +336,7 @@ function NoteCard({ n, onOpen, onChange, onTags, onDelete }: { n: Note; onOpen: 
             }
           }}
           placeholder="+ tag"
-          className="w-20 bg-transparent text-[11px] text-muted-foreground outline-none placeholder:text-muted-foreground/60"
+          className="w-20 bg-transparent text-caption text-muted-foreground outline-none placeholder:text-muted-foreground"
         />
       </div>
     </article>

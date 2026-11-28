@@ -183,8 +183,8 @@ export function LiveSearch({
                       {people.map((pl) => (
                         <button key={pl.id} type="button" onClick={() => pl.ref && onOpen(pl.ref)} className="group text-left">
                           <Dither src={plateUrl(pl.thumb)} algo="floyd" dot={1} focusY={30} className="aspect-[4/5] w-full rounded-md text-foreground/85 transition-opacity group-hover:opacity-100" />
-                          <span className="mt-1 block truncate font-garamond text-[13px] leading-tight">{pl.title}</span>
-                          {pl.ref && <span className="block text-[11px] text-muted-foreground">{formatRef(pl.ref)}</span>}
+                          <span className="mt-1 block truncate font-garamond text-body leading-tight">{pl.title}</span>
+                          {pl.ref && <span className="block text-caption text-muted-foreground">{formatRef(pl.ref)}</span>}
                         </button>
                       ))}
                     </div>
@@ -212,7 +212,7 @@ export function LiveSearch({
         {lensPlate && (
           <figure className="sticky top-4">
             <Dither src={plateUrl(lensPlate.full)} algo="floyd" dot={1} focusY={30} level={level} className="aspect-[4/5] w-full text-foreground" label={`${lensPlate.title}, after ${lensPlate.artist ?? "Gustave Doré"}`} />
-            <figcaption className="mt-2 font-garamond text-[13px] italic leading-snug text-muted-foreground">{lensPlate.title}</figcaption>
+            <figcaption className="mt-2 font-garamond text-body italic leading-snug text-muted-foreground">{lensPlate.title}</figcaption>
           </figure>
         )}
       </aside>
@@ -224,7 +224,7 @@ function LiveVerse({ v, onOpen }: { v: Verse; onOpen: (r: Ref) => void }) {
   return (
     <button type="button" onClick={() => onOpen(v)} className="-mx-2 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-left transition-colors hover:bg-foreground/5">
       <span className="text-xs font-semibold text-brand">{formatRef(v)}</span>{" "}
-      <span className="font-garamond text-[15px] leading-6">
+      <span className="font-garamond text-[0.9375rem] leading-6">
         <VerseText raw={v.raw} />
       </span>
     </button>

@@ -66,11 +66,11 @@ export function Answer({ query, t, index, shelves, onOpen }: { query: string; t:
           <header className="flex items-center gap-3">
             <Sigil name="scroll" size={22} className="text-foreground" />
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">A note on the text</p>
+              <p className="text-caption uppercase tracking-[0.16em] text-muted-foreground">A note on the text</p>
               <h3 className="font-garamond text-2xl leading-tight">{note.title}</h3>
             </div>
           </header>
-          <div className="mt-3 space-y-2.5 font-garamond text-[17px] leading-7 text-foreground/90">
+          <div className="mt-3 space-y-2.5 font-garamond text-[1.0625rem] leading-7 text-foreground/90">
             {note.body.map((p, i) => (
               <p key={i}>{p}</p>
             ))}
@@ -88,14 +88,14 @@ export function Answer({ query, t, index, shelves, onOpen }: { query: string; t:
               })}
             </p>
           )}
-          <p className="mt-3 border-t border-border/50 pt-2 text-[11px] text-muted-foreground/80">Written for BibleLM about the Bible as a book. It is not Scripture.</p>
+          <p className="mt-3 border-t border-border/50 pt-2 text-caption text-muted-foreground">Written for BibleLM about the Bible as a book. It is not Scripture.</p>
         </article>
       )}
       {found.pick.passages.length > 0 && (
         <article className="rounded-2xl bg-card px-6 py-5 ring-1 ring-foreground/8">
           <header className="flex items-center gap-3">
             <Sigil name="key" size={22} className="text-foreground" />
-            <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Where Scripture speaks to this</p>
+            <p className="text-caption uppercase tracking-[0.16em] text-muted-foreground">Where Scripture speaks to this</p>
           </header>
           <div className="mt-3 space-y-3">
             {found.pick.passages.map(({ i, clause, level }) => {
@@ -110,7 +110,7 @@ export function Answer({ query, t, index, shelves, onOpen }: { query: string; t:
                       ))}
                     </span>
                   </span>
-                  <span className="mt-1 block font-garamond text-[17px] leading-7">
+                  <span className="mt-1 block font-garamond text-[1.0625rem] leading-7">
                     {p.clauses.map((c, j) => (
                       <span key={j} className={cn(clause === null || j === clause ? "text-foreground" : "text-muted-foreground")}>
                         {j === clause ? <mark className="rounded-sm bg-foreground/10 px-0.5 text-foreground">{c}</mark> : c}{" "}

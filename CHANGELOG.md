@@ -8,6 +8,19 @@ All notable changes to BibleLM. Format based on
 
 ### Fixed
 
+- **macOS traffic lights** sit centred on the title bar, and follow it as
+  the interface size changes (src-tauri/src/traffic_lights.rs, ported from
+  Nexis; nexis-design APP-FINDINGS, Nexis #1 and #2). In fullscreen the bar
+  drops their inset, and a double-click on it leaves fullscreen.
+- A page with a corner plate (Settings, Search and others) no longer pads
+  its column by more than the plate is wide, which squeezed the text on a
+  narrow window or at a larger interface size.
+- **Pictures on a laptop screen**: heroes keep their proportions instead of
+  being sliced to a strip on a short window. Home keeps at least its 4K share
+  of the plate and of the page, and banners (Daily, Gallery, Topics, the Lab)
+  hold their painting to the right, beside the title.
+  The sidebar vignette sizes to the room under the nav, so it no longer
+  covers Settings, and the Atlas cartouche and compass scale with the map.
 - The 2.2.0 installers shipped without Sub Rosa's art (the Bestiary's seals,
   its plates and paintings) and the woodcuts: the release job built them but
   never handed them to the installer builds. It now uploads all of
@@ -19,6 +32,10 @@ All notable changes to BibleLM. Format based on
   missing everywhere.
 
 ### Changed
+
+- Upgraded to **@nexis/design 0.5.0**. Appearance has a continuous Interface
+  size slider with Auto and Fixed modes, plus optional window glass and tint.
+  The Settings tree and the Home search bar use shared Nexis components.
 
 - Studies for young men: eighteen studies in four groups, up from eight.
   New: money and betting, bitterness and forgiving, guilt and shame,

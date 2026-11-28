@@ -222,3 +222,34 @@ export async function onFileDrop(cb: (e: DropEvent) => void): Promise<UnlistenFn
     cb({ type: p.type, paths: p.paths });
   });
 }
+
+// ── the macOS window chrome ──────────────────────────────────────────────
+
+/**
+ * Place the native traffic lights: `x` is the close button's left edge, `y`
+ * the buttons' vertical centre, in points (src-tauri/src/traffic_lights.rs).
+ * Tauri's `trafficLightPosition` is not used: it strands the buttons in
+ * native fullscreen. No-op in a browser.
+ */
+export function placeTrafficLights(x: number, y: number): Promise<void> {
+  if (!IN_TAURI) return Promise.resolve();
+  return tauriInvoke("window_traffic_lights", { x, y });
+}
+
+/** Whether the window is in native fullscreen, and a way to hear it change (both resize it). */
+export async function watchFullscreen(cb: (fullscreen: boolean) => void): Promise<UnlistenFn> {
+  if (!IN_TAURI) return () => {};
+  const { getCurrentWindow } = await import("@tauri-apps/api/window");
+  const w = getCurrentWindow();
+  const update = () => void w.isFullscreen().then(cb, () => {});
+  update();
+  return w.onResized(update);
+}
+
+/** Leave native fullscreen, if the window is in it. */
+export async function leaveFullscreen(): Promise<void> {
+  if (!IN_TAURI) return;
+  const { getCurrentWindow } = await import("@tauri-apps/api/window");
+  const w = getCurrentWindow();
+  if (await w.isFullscreen()) await w.setFullscreen(false);
+}

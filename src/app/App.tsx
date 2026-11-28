@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   fmtShortcut,
+  GlassBackdrop,
   Icon,
   MOD_KEY,
   MOD_PROP,
@@ -13,13 +14,17 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  stepInterfaceAdjust,
+  stepInterfaceScale,
   useCommandPaletteShortcut,
+  useTheme,
   ViewEnter,
   WindowResizeEdges,
   type PaletteCommand,
   type SidebarNavSection,
 } from "@nexis/design";
 import { Heptagram } from "@/art/Art";
+import { useTrafficLights } from "./titleBar";
 import { Palette } from "./Palette";
 import { Welcome } from "./Welcome";
 import { SidebarArt, SidebarOrnament } from "@/art/SidebarArt";
@@ -189,6 +194,7 @@ export default function App() {
   const subRosa = useStudy((s) => s.subRosa);
   const [palette, setPalette] = useState(false);
   const narrow = useNarrow();
+  const trafficLights = useTrafficLights();
   const nav = useMemo(() => navFor(showLab, subRosa), [showLab, subRosa]);
   const history = usePageHistory(page, go);
   useSwipeHistory(history);
@@ -249,11 +255,13 @@ export default function App() {
   }, [loadNotes]);
 
   return (
-    <div className={`flex h-full flex-col bg-background text-foreground ${redLetter ? "red-letter" : ""}`}>
+    <div data-app-shell className={`isolate flex h-full flex-col bg-background text-foreground ${redLetter ? "red-letter" : ""}`}>
+      <GlassBackdrop className="biblelm-glass-backdrop" />
       <WindowResizeEdges />
       <TitleBar
+        className={trafficLights ? "pl-[88px]" : "pl-gutter"}
         brand={<Heptagram className="size-[18px] text-brand" />}
-        title={<span className="font-blackletter text-[17px] tracking-wide">BibleLM</span>}
+        title={<span className="font-blackletter text-[1.0625rem] tracking-wide">BibleLM</span>}
         center={
           <button
             type="button"
@@ -262,7 +270,7 @@ export default function App() {
           >
             <Icon name="search" size="xs" />
             <span className="flex-1 truncate text-left transition-colors group-hover:text-foreground">Find a page, setting or command</span>
-            <kbd className="hidden font-mono text-[10px] opacity-70 md:inline">{fmtShortcut(MOD_KEY, SHIFT_KEY, "P")}</kbd>
+            <kbd className="hidden font-mono text-micro opacity-70 md:inline">{fmtShortcut(MOD_KEY, SHIFT_KEY, "P")}</kbd>
           </button>
         }
         actions={subRosa ? undefined : <ModeToggle />}
@@ -273,7 +281,7 @@ export default function App() {
           {!(narrow || folded) && <SidebarOrnament />}
           {!(narrow || folded) && <SidebarArt />}
         </div>
-        <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+        <main className="@container/study-pane relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <ViewEnter replayKey={page} className="flex min-h-0 flex-1 flex-col">
             <ViewBoundary resetKey={page}>{VIEWS[page]()}</ViewBoundary>
           </ViewEnter>
@@ -296,7 +304,7 @@ function ModeToggle() {
     <Tooltip>
       <TooltipTrigger asChild>
         <Button variant="ghost" size="icon-sm" aria-label={`Switch to ${label}`} onClick={() => setScheme(next)}>
-          <Icon name={scheme === "vellum" ? "theme-dark" : scheme === "nocturne" ? "contrast" : "theme-light"} />
+          <Icon name={scheme === "vellum" ? "theme-dark" : scheme === "nocturne" ? "contrast" : "theme-light"} swap />
         </Button>
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
@@ -333,7 +341,16 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
   const [subRosa, setSubRosa] = useSubRosa();
   const [catalog] = useCatalog();
   const { notebooks, setActive } = useNotebooks();
+  const { interfaceSize, interfaceAdjust, setInterfaceSize, setInterfaceAdjust } = useTheme();
   return useMemo(() => {
+    const stepInterface = (direction: 1 | -1) => {
+      if (interfaceSize === "auto") setInterfaceAdjust(stepInterfaceAdjust(interfaceAdjust, direction));
+      else setInterfaceSize(stepInterfaceScale(interfaceSize, direction));
+    };
+    const resetInterface = () => {
+      setInterfaceSize("auto");
+      setInterfaceAdjust(1);
+    };
     const nav = NAV.flatMap((s) => s.items).filter((i) => shown(i.id, study.showLab, subRosa)).map<PaletteCommand>((i) => ({
       id: `go-${i.id}`,
       label: `Go to ${i.label}`,
@@ -353,6 +370,9 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
       { id: "red-letter", label: study.redLetter ? "Words of Christ in black" : "Words of Christ in red", group: "Read", icon: "quote", keywords: ["red letter", "jesus"], run: () => study.set({ redLetter: !study.redLetter }) },
       { id: "bigger", label: "Larger text", group: "Read", icon: "zoom-in", run: () => study.set({ textSize: Math.min(28, study.textSize + 1) }) },
       { id: "smaller", label: "Smaller text", group: "Read", icon: "zoom-out", run: () => study.set({ textSize: Math.max(14, study.textSize - 1) }) },
+      { id: "ui-bigger", label: "Larger interface", group: "Appearance", icon: "zoom-in", shortcut: fmtShortcut(MOD_KEY, "="), keywords: ["interface size", "scale", "zoom", "4k"], run: () => stepInterface(1) },
+      { id: "ui-smaller", label: "Smaller interface", group: "Appearance", icon: "zoom-out", shortcut: fmtShortcut(MOD_KEY, "-"), keywords: ["interface size", "scale", "zoom"], run: () => stepInterface(-1) },
+      { id: "ui-auto", label: "Reset interface size", group: "Appearance", icon: "refresh", shortcut: fmtShortcut(MOD_KEY, "0"), keywords: ["interface size", "scale", "zoom", "reset", "auto"], run: resetInterface },
       ...(["garamond", "fell", "gothic"] as const).map((f) => ({
         id: `face-${f}`,
         label: `Reading face: ${{ garamond: "Garamond", fell: "Fell English", gothic: "Gothic (blackletter)" }[f]}`,

@@ -50,6 +50,20 @@ body {
   animation: none;
 }
 
+/* Keep the window backdrop quiet behind the illustrated pages. */
+.biblelm-glass-backdrop {
+  opacity: 0.2;
+}
+
+:root[data-saver] .nexis-glass {
+  --glass-tint-on: 1;
+}
+:root[data-saver] .nexis-glass > .nexis-glass-layer,
+html[data-saver][data-glass-chrome] [data-slot] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 /* ── Reading ──────────────────────────────────────────────────────────── */
 
 .scripture {
@@ -126,8 +140,8 @@ body {
   mix-blend-mode: multiply;
   filter: sepia(0.35) contrast(1.05);
   /* Feather the edges so an off-white scan never shows as a rectangle. */
-  mask-image: linear-gradient(to right, transparent, #000 0.8%, #000 99.2%, transparent),
-    linear-gradient(to bottom, transparent, #000 0.8%, #000 99.2%, transparent);
+  mask-image: linear-gradient(to right in oklch, transparent, #000 0.8%, #000 99.2%, transparent),
+    linear-gradient(to bottom in oklch, transparent, #000 0.8%, #000 99.2%, transparent);
   mask-composite: intersect;
   -webkit-mask-composite: source-in;
 }
@@ -221,7 +235,7 @@ body {
 .palette-seek,
 .search-field::after {
   color: var(--muted-foreground);
-  background-image: radial-gradient(circle, currentColor 0.7px, transparent 0.9px);
+  background-image: radial-gradient(circle in oklch, currentColor 0.7px, transparent 0.9px);
   background-size: 5px 2px;
   background-repeat: repeat-x;
   opacity: 0.35;
@@ -273,10 +287,10 @@ body {
 .era-hatch,
 .era-hatch-fine {
   background-color: var(--background);
-  background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--foreground) 32%, transparent) 0 1px, transparent 1px 4px);
+  background-image: repeating-linear-gradient(135deg in oklch, color-mix(in oklab, var(--foreground) 32%, transparent) 0 1px, transparent 1px 4px);
 }
 .era-hatch-fine {
-  background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--foreground) 22%, transparent) 0 1px, transparent 1px 6px);
+  background-image: repeating-linear-gradient(135deg in oklch, color-mix(in oklab, var(--foreground) 22%, transparent) 0 1px, transparent 1px 6px);
 }
 .era-band {
   animation: era-in 0.6s ease-out both;

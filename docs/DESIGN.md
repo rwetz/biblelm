@@ -66,8 +66,7 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 > **As built (Settings as a tree, 2.3):** Settings outgrew one long column,
 > so it follows Nexis R4.2 (`SettingsPage`, `SettingsGroup`, `SettingRow`:
 > left-aligned, hairline rows, controls in a 280px column) with one change:
-> the flat `SidebarNav` becomes `SettingsTree`
-> (`src/features/settings/SettingsTree.tsx`), a contents page. Seven chapters
+> the flat `SidebarNav` becomes the shared Nexis `SettingsTree`, a contents page. Seven chapters
 > carry Roman numerals in Garamond; a chapter's groups hang from a hairline
 > spine under it. Two rails from Nexis's `useGlidingRail` glide: a soft
 > highlight between chapters and a short accent mark down the spine to the
@@ -75,9 +74,15 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 > others. "Find a setting" filters the tree to matching settings with their
 > group beside them; Enter opens the first and flashes its row. The tree
 > itself is `src/features/settings/sections.ts`, which also makes the
-> palette's "Settings:" commands, so the two never disagree. `SettingsTree`
-> knows nothing about BibleLM and is meant to move into @nexis/design beside
-> `SidebarNav`, as R4.2's answer for apps with deep settings.
+> palette's "Settings:" commands.
+
+> **As built (Nexis 0.5):** Appearance groups Interface size and Glass under
+> Layout. Auto scales to both window dimensions and keeps the reader's
+> adjustment across screens. Fixed keeps the selected scale. Window glass
+> is optional and starts off. Tint also applies to the Home search field's
+> shared Nexis glass surface. Save battery disables the blur. Settings rows
+> stack their labels and controls as the pane narrows, and the corner plate
+> gives back room to the controls.
 
 > **As built (narrow windows):** the reader column is a container: below 36rem
 > its toolbar folds Interlinear, Two columns and the chapter arrows into a
@@ -164,6 +169,18 @@ machine, takes its pictures from beside the Bible (Doré's Milton and
 Coleridge, `scripts/art/literary.mjs`); each page has a corner plate and the
 sidebar a vignette; empty states get an `ArtSpot`. A plate beside its own
 passage is the one place art appears as a positive engraving, undithered.
+
+**As built: pictures keep their proportions.** Sizes were first tuned on a 4K
+screen, and on a laptop the same fixed heights sliced heroes to strips. Now
+every hero band with a window (`width`) or a cleared left (`clearLeft`) keeps
+at least `PLATE_SHOWN` of its picture's height in view, sizing its window from
+the band's height and the picture's own aspect (container units, so it follows
+a resize). Banners hold the picture from the band's middle rightward and centre
+its point of light in the part that stays solid. Home's band keeps at least
+`BAND_SHARE` of the page, both measured from the 4K design, and its plate
+runs the band's full height under a liquid-glass search bar. The sidebar
+vignette and the Atlas cartouche and compass size to the room they have.
+No sizes are per screen.
 
 ### Still to decide
 

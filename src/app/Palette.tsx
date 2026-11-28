@@ -56,6 +56,14 @@ function Highlight({ text, indices }: { text: string; indices: readonly number[]
 export function Palette({ open, onOpenChange, commands }: { open: boolean; onOpenChange: (o: boolean) => void; commands: readonly PaletteCommand[] }) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  const [previousOpen, setPreviousOpen] = useState(open);
+  if (open !== previousOpen) {
+    setPreviousOpen(open);
+    if (open) {
+      setQuery("");
+      setActive(0);
+    }
+  }
   const input = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const reduced = !!useReducedMotion();
@@ -67,11 +75,9 @@ export function Palette({ open, onOpenChange, commands }: { open: boolean; onOpe
 
   useEffect(() => {
     if (!open) return;
-    setQuery("");
-    setActive(0);
-    requestAnimationFrame(() => input.current?.focus());
+    const raf = requestAnimationFrame(() => input.current?.focus());
+    return () => cancelAnimationFrame(raf);
   }, [open]);
-  useEffect(() => setActive(0), [query]);
   useEffect(() => {
     list.current?.querySelector(`[data-i="${active}"]`)?.scrollIntoView({ block: "nearest" });
   }, [active]);
@@ -116,18 +122,18 @@ export function Palette({ open, onOpenChange, commands }: { open: boolean; onOpe
                 <input
                   ref={input}
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => { setQuery(e.target.value); setActive(0); }}
                   aria-label="Find a page, setting or command"
-                  className="h-14 w-full bg-transparent text-[15px] text-foreground outline-none"
+                  className="h-14 w-full bg-transparent text-[0.9375rem] text-foreground outline-none"
                 />
                 {!query && (
-                  <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 flex items-center text-[15px] text-muted-foreground">
-                    Find a page, setting or command{hint && <span className="text-muted-foreground/70">: {hint}</span>}
-                    <span className="ml-px inline-block h-4 w-px animate-pulse bg-muted-foreground/60" />
+                  <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 flex items-center text-[0.9375rem] text-muted-foreground">
+                    Find a page, setting or command{hint && <span className="text-muted-foreground">: {hint}</span>}
+                    <span className="ml-px inline-block h-4 w-px bg-muted-foreground/60" />
                   </span>
                 )}
               </div>
-              <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">Esc</kbd>
+              <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-micro text-muted-foreground">Esc</kbd>
               {/* A line of dots runs under the box while you type. */}
               <span aria-hidden className={cn("palette-seek absolute inset-x-0 -bottom-px h-px", query && "is-seeking")} />
             </div>
@@ -141,7 +147,7 @@ export function Palette({ open, onOpenChange, commands }: { open: boolean; onOpe
               {groups.map(([group, items], gi) => (
                 <section key={group || "_"} className="mb-1">
                   <m.p
-                    className="flex items-center gap-2 px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+                    className="flex items-center gap-2 px-2 pb-1 pt-2 text-micro font-semibold uppercase tracking-[0.18em] text-muted-foreground"
                     initial={reduced ? false : { opacity: 0, x: -6 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: reduced ? 0 : gi * 0.03 }}
@@ -161,17 +167,17 @@ export function Palette({ open, onOpenChange, commands }: { open: boolean; onOpe
                         disabled={c.disabled}
                         onMouseMove={() => active !== k && setActive(k)}
                         onClick={() => run(c)}
-                        className={cn("relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm", on ? "text-foreground" : "text-foreground/80")}
+                        className={cn("relative flex w-full items-center gap-3 rounded-palette-item px-2.5 py-2 text-left text-sm", on ? "text-foreground" : "text-foreground/80")}
                         initial={reduced ? false : { opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: reduced ? 0 : Math.min(k, 12) * 0.012, duration: 0.18 }}
                       >
-                        {on && <m.span layoutId="palette-active" className="absolute inset-0 -z-10 rounded-lg bg-accent" transition={{ type: "spring", stiffness: 500, damping: 38 }} />}
+                        {on && <m.span layoutId="palette-active" className="absolute inset-0 -z-10 rounded-palette-item bg-accent" transition={{ type: "spring", stiffness: 500, damping: 38 }} />}
                         {c.icon ? <Icon name={c.icon} className={cn("shrink-0", on ? "text-brand" : "text-muted-foreground")} /> : <span className="w-4" />}
                         <span className="flex-1 truncate">
                           <Highlight text={c.label} indices={indices} />
                         </span>
-                        {c.shortcut && <kbd className="font-mono text-[10px] text-muted-foreground">{c.shortcut}</kbd>}
+                        {c.shortcut && <kbd className="font-mono text-micro text-muted-foreground">{c.shortcut}</kbd>}
                         {on && <Icon name="arrow-right" size="xs" className="text-muted-foreground" />}
                       </m.button>
                     );
@@ -179,7 +185,7 @@ export function Palette({ open, onOpenChange, commands }: { open: boolean; onOpe
                 </section>
               ))}
             </div>
-            <div className="flex items-center gap-4 border-t border-border/60 px-4 py-2 text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-4 border-t border-border/60 px-4 py-2 text-caption text-muted-foreground">
               <span><kbd className="font-mono">↑↓</kbd> to move</span>
               <span><kbd className="font-mono">Enter</kbd> to open</span>
               <span className="flex-1" />

@@ -81,7 +81,7 @@ export function PrintNotebook({ nb, keep, subtitle, onDone }: { nb: Notebook; ke
                 </figure>
               ))}
               <h3 className="mt-6 font-garamond text-lg font-semibold">{spansLabel(spans, label)}</h3>
-              <blockquote className="scripture my-2 border-l-2 pl-4 !text-[15px] !leading-7">
+              <blockquote className="scripture my-2 border-l-2 pl-4 !text-[0.9375rem] !leading-7">
                 {ranges.map((rg, i) => (
                   <span key={rg.verse}>
                     {i > 0 && <span className="mx-1">…</span>}
@@ -94,7 +94,7 @@ export function PrintNotebook({ nb, keep, subtitle, onDone }: { nb: Notebook; ke
                   </span>
                 ))}
               </blockquote>
-              <Markdown text={n.body} className="font-garamond text-[15px] leading-7" />
+              <Markdown text={n.body} className="font-garamond text-[0.9375rem] leading-7" />
               {n.tags.length > 0 && <p className="mt-1 text-xs">{n.tags.map((x) => `#${x}`).join(" ")}</p>}
             </article>
           );

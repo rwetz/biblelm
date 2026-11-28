@@ -327,7 +327,7 @@ export function TrainingView() {
                           <span className="text-xs font-medium">
                             {t === "char" ? "Character-level" : "BPE"}
                           </span>
-                          {unavailable && <span className="text-[11px] text-muted-foreground">coming later</span>}
+                          {unavailable && <span className="text-caption text-muted-foreground">coming later</span>}
                         </label>
                         <InfoTip side="right">
                           {t === "char"
@@ -442,7 +442,7 @@ export function TrainingView() {
               )}
             </div>
             <Progress value={progress} />
-            <p className="text-xs text-muted-foreground/50">
+            <p className="text-xs text-muted-foreground">
               {progress.toFixed(1)}% complete
             </p>
           </div>
@@ -515,8 +515,8 @@ function VramMeter({
             Retry
           </button>
         </div>
-        <p className="mt-0.5 break-words text-xs text-muted-foreground/50">{gpuError}</p>
-        <p className="mt-1 text-xs text-muted-foreground/50">
+        <p className="mt-0.5 break-words text-xs text-muted-foreground">{gpuError}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
           Training can still run; the VRAM guard is just unavailable.
         </p>
       </div>
@@ -525,7 +525,7 @@ function VramMeter({
   if (!gpuInfo) {
     return (
       <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
-        <p className="text-xs text-muted-foreground/60">VRAM: querying GPU…</p>
+        <p className="text-xs text-muted-foreground">VRAM: querying GPU…</p>
       </div>
     );
   }
@@ -533,7 +533,7 @@ function VramMeter({
     return (
       <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
         <p className="text-xs text-muted-foreground">No GPU detected, training on CPU</p>
-        <p className="mt-0.5 text-xs text-muted-foreground/50">Expect significantly slower throughput</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">Expect significantly slower throughput</p>
       </div>
     );
   }
@@ -577,9 +577,9 @@ function VramMeter({
         />
       </div>
 
-      <p className="mt-1 text-xs text-muted-foreground/50">{gpuInfo.name}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{gpuInfo.name}</p>
       {gpuInfo.unified && (
-        <p className="mt-0.5 text-xs text-muted-foreground/50">Shared with the rest of the computer: close other apps before a large run.</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">Shared with the rest of the computer: close other apps before a large run.</p>
       )}
 
       {isOOM && (
@@ -606,7 +606,7 @@ function ConfigSection({
 }) {
   return (
     <div>
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </p>
       <div className="divide-y divide-border/50 rounded-lg border border-border overflow-hidden">
@@ -634,7 +634,7 @@ function ConfigRow({
           <p className="text-xs font-mono font-medium text-foreground">{label}</p>
           {help && <InfoTip side="right">{help}</InfoTip>}
         </div>
-        {hint && <p className="text-xs text-muted-foreground/60">{hint}</p>}
+        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
       {children}
     </div>

@@ -105,7 +105,7 @@ async function buildTranslation(t) {
  * borrows (src/lib/bible.ts). 1 Enoch, R. H. Charles (SPCK, 1917).
  */
 async function buildEnoch() {
-  const url = "https://www.gutenberg.org/cache/epub/77935/pg77935.txt";
+  const url = "https://gutenberg.pglaf.org/cache/epub/77935/pg77935.txt";
   const text = strFromU8(new Uint8Array(await cached(url, "gutenberg/77935.txt")));
   const out = [{ osis: "1En", chapters: parseCharles(text) }];
   const verses = out[0].chapters.reduce((n, c) => n + c.v.length, 0);

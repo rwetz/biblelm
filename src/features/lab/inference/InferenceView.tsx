@@ -90,7 +90,7 @@ export function InferenceView() {
                   key={p}
                   type="button"
                   onClick={() => setPrompt(p)}
-                  className="shrink-0 rounded-md px-2 py-0.5 font-garamond text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="shrink-0 rounded-md px-2 py-0.5 font-garamond text-body text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   {p}
                 </button>
@@ -208,7 +208,7 @@ export function InferenceView() {
             className="flex-1 overflow-auto px-5 py-4 nexis-scrollbar"
           >
             {output || isGenerating ? (
-              <p className="font-garamond text-[17px] leading-8 text-foreground whitespace-pre-wrap">
+              <p className="font-garamond text-[1.0625rem] leading-8 text-foreground whitespace-pre-wrap">
                 <span className="text-muted-foreground">{prompt}</span>
                 {output}
                 {isGenerating && (

@@ -88,7 +88,7 @@ export function GalleryView() {
                         <Engraving plate={it as Plate} size="thumb" className="h-full w-full object-cover" />
                       )}
                     </div>
-                    <p className="mt-2 font-garamond text-[15px] leading-snug group-hover:underline">{it.title}</p>
+                    <p className="mt-2 font-garamond text-[0.9375rem] leading-snug group-hover:underline">{it.title}</p>
                     <p className="text-xs text-muted-foreground">
                       {painting ? paintingCredit(painting) : plateCredit(it as Plate)}
                       {it.ref && <> · {formatRef(it.ref)}</>}

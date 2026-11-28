@@ -537,7 +537,7 @@ export function DataMissing({ message }: { message: string }) {
         <p className="mt-3 text-sm text-muted-foreground">
           The Bible texts have not been built yet. Run <code className="font-mono">pnpm data</code> in the project folder, then reload.
         </p>
-        <p className="mt-2 font-mono text-xs text-muted-foreground/70">{message}</p>
+        <p className="mt-2 font-mono text-xs text-muted-foreground">{message}</p>
       </div>
     </div>
   );

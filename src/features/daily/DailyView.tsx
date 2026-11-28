@@ -60,7 +60,7 @@ export function DailyView() {
 function RefButton({ label, r }: { label: string; r: Ref | null }) {
   const read = useStudy((s) => s.read);
   return (
-    <button type="button" disabled={!r} onClick={() => r && read(r, { select: !!r.verse })} className="rounded-md px-1.5 py-0.5 text-left font-garamond text-[17px] hover:bg-muted disabled:opacity-60">
+    <button type="button" disabled={!r} onClick={() => r && read(r, { select: !!r.verse })} className="rounded-md px-1.5 py-0.5 text-left font-garamond text-[1.0625rem] hover:bg-muted disabled:opacity-60">
       {label}
     </button>
   );
@@ -193,10 +193,10 @@ function ByHeart({ t }: { t: Translation | null }) {
   const memory = useNotebooks((s) => s.memory) ?? [];
   const reviewCard = useNotebooks((s) => s.reviewCard);
   const toggleMemory = useNotebooks((s) => s.toggleMemory);
-  const [shown, setShown] = useState(false);
+  const [revealed, setRevealed] = useState<{ id: string; reps: number } | null>(null);
   const due = memory.filter((c) => isDue(c)).sort((a, b) => a.due - b.due);
   const card: Card | undefined = due[0];
-  useEffect(() => setShown(false), [card?.id, card?.reps]);
+  const shown = !!card && revealed?.id === card.id && revealed.reps === card.reps;
   if (!t) return null;
   const refOf = (c: Card) => {
     const r = parseOsis(c.ref);
@@ -240,11 +240,11 @@ function ByHeart({ t }: { t: Translation | null }) {
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {!shown ? (
-              <Button variant="brand" size="sm" onClick={() => setShown(true)}>Show the verse</Button>
+              <Button variant="brand" size="sm" onClick={() => setRevealed({ id: card.id, reps: card.reps })}>Show the verse</Button>
             ) : (
               GRADES.map(([g, label]) => (
                 <Button key={g} variant={g === 3 ? "brand" : "outline"} size="sm" onClick={() => reviewCard(card.id, g)}>
-                  {label} <span className="text-[11px] opacity-70">{when(next![g])}</span>
+                  {label} <span className="text-caption opacity-70">{when(next![g])}</span>
                 </Button>
               ))
             )}

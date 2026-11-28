@@ -22,7 +22,7 @@ export function VerseWords({ osis, t, onStudy }: { osis: string; t: Translation;
       <div className="flex flex-wrap gap-1.5">
         {words.map(([w, c], i) => (
           <button key={i} type="button" onClick={() => onStudy(c)} className="rounded-md bg-muted px-2 py-0.5 text-xs hover:bg-accent">
-            {w} <span className="font-mono text-[10px] text-muted-foreground">{c}</span>
+            {w} <span className="font-mono text-micro text-muted-foreground">{c}</span>
           </button>
         ))}
       </div>
@@ -72,7 +72,7 @@ export function StrongsEntry({
       </div>
       {entry ? (
         <>
-          <p className="font-garamond text-[16px] leading-7">{entry.d}</p>
+          <p className="font-garamond text-base leading-7">{entry.d}</p>
           {entry.k && (
             <p className="text-xs text-muted-foreground">
               <span className="font-semibold uppercase tracking-wider">KJV renders</span> {entry.k}
@@ -111,7 +111,7 @@ export function StrongsEntry({
               return (
                 <button key={h.osis} type="button" onClick={() => onNavigate(r)} className="block w-full rounded-md p-1.5 text-left hover:bg-muted">
                   <span className="text-xs font-semibold text-brand">{formatRef(r)}</span>
-                  <span className="ml-2 text-[11px] text-muted-foreground">{h.words.join(", ")}</span>
+                  <span className="ml-2 text-caption text-muted-foreground">{h.words.join(", ")}</span>
                   {text && <span className="mt-0.5 line-clamp-2 block font-garamond text-sm text-foreground/85">{highlight(text, h.words)}</span>}
                 </button>
               );
@@ -124,7 +124,7 @@ export function StrongsEntry({
           )}
         </>
       )}
-      <p className="text-[10px] text-muted-foreground/70">Strong's Exhaustive Concordance (1890), in the Open Scriptures JSON edition (CC-BY-SA).</p>
+      <p className="text-micro text-muted-foreground">Strong's Exhaustive Concordance (1890), in the Open Scriptures JSON edition (CC-BY-SA).</p>
     </div>
   );
 }

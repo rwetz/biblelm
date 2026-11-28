@@ -52,7 +52,7 @@ PRESETS: dict[str, Source] = {
         id="kjv",
         name="King James Version",
         language="English",
-        url="https://www.gutenberg.org/cache/epub/10/pg10.txt",
+        url="https://gutenberg.pglaf.org/cache/epub/10/pg10.txt",
         license="Public domain · Project Gutenberg #10",
         verified=True,
     ),

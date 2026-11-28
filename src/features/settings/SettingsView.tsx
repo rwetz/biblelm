@@ -1,27 +1,27 @@
 // Settings: a tree of chapters (src/features/settings/sections.ts) beside
 // one chapter at a time, on Nexis's settings template (R4.2: SettingsPage,
 // SettingsGroup, SettingRow). The tree replaces R4.2's flat SidebarNav,
-// since BibleLM has too many settings for one list (SettingsTree.tsx).
+// since BibleLM has too many settings for one list.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Button,
+  GlassTintControl,
   Icon,
   IN_TAURI,
   Input,
-  INTERFACE_SCALES,
-  interfaceScaleLabel,
-  MOD_KEY,
-  parseInterfaceSize,
+  InterfaceSizeControl,
   Segmented,
   SettingRow,
   SettingsGroup,
   SettingsPage,
+  SettingsTree,
   Slider,
   Switch,
   toast,
   useTheme,
+  type SettingsTreeNode,
 } from "@nexis/design";
 import { PlatePage, usePagePlate } from "@/art/Art";
 import { RoseMark } from "@/art/RoseMark";
@@ -38,7 +38,6 @@ import { SCHEMES } from "@/app/theme";
 import { PageMark } from "@/art/SidebarArt";
 import { SubRosaSettings } from "./SubRosaPanel";
 import { findSettings, locateSetting, SETTINGS, type ChapterId } from "./sections";
-import { SettingsTree, type SettingsTreeNode } from "./SettingsTree";
 
 /** The chapter last open, so Settings comes back where you left it. */
 let lastChapter: ChapterId = "reading";
@@ -46,20 +45,24 @@ let lastChapter: ChapterId = "reading";
 /** A setting row the tree, the search and the palette can find by its label. */
 export function Row({ id, label, description, align, children }: { id: string; label?: React.ReactNode; description?: React.ReactNode; align?: "end" | "stretch"; children: React.ReactNode }) {
   return (
-    <div data-setting={id}>
-      <SettingRow label={label ?? id} description={description} align={align}>
-        {children}
-      </SettingRow>
-    </div>
+    <SettingRow
+      data-setting={id}
+      label={label ?? id}
+      description={description}
+      align={align}
+      className="@max-[32rem]/settings:grid-cols-1 @max-[32rem]/settings:[&>div:last-child]:justify-start"
+    >
+      {children}
+    </SettingRow>
   );
 }
 
 /** A group with an id the tree scrolls to and watches. */
 export function Group({ id, title, children }: { id: string; title: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div id={`settings-${id}`} data-settings-group={id} className="scroll-mt-6">
-      <SettingsGroup title={title}>{children}</SettingsGroup>
-    </div>
+    <SettingsGroup id={`settings-${id}`} data-settings-group={id} className="scroll-mt-6" title={title}>
+      {children}
+    </SettingsGroup>
   );
 }
 
@@ -159,9 +162,14 @@ export function SettingsView() {
   return (
     // PlatePage pads for a centred column; this one is left-aligned (R4.2),
     // tree, page and gutters about 70rem together, so it needs one plate's width, not two.
-    <PlatePage plate={plate} corner="tr" column="calc(70rem - min(28%, 20rem))">
-      <div className="relative flex w-full gap-x-12 gap-y-8 px-(--gutter) pb-24 pt-(--page-top) max-md:flex-col">
-        <aside className="md:sticky md:top-0 md:w-60 md:shrink-0 md:self-start md:pt-1">
+    <PlatePage
+      plate={plate}
+      corner="tr"
+      column="calc(70rem - var(--corner-plate-width))"
+      style={{ "--corner-plate-width": "clamp(0px, calc(100cqw - 51rem), min(28%, 20rem))" } as React.CSSProperties}
+    >
+      <div className="relative flex w-full gap-x-12 gap-y-8 px-(--gutter) pb-24 pt-(--page-top) @max-[42rem]/study-pane:flex-col">
+        <aside className="@min-[42rem]/study-pane:sticky @min-[42rem]/study-pane:top-0 @min-[42rem]/study-pane:w-60 @min-[42rem]/study-pane:shrink-0 @min-[42rem]/study-pane:self-start @min-[42rem]/study-pane:pt-1">
           <h1 className="flex items-center gap-3 font-blackletter text-4xl">
             <PageMark page="settings" />
             Settings
@@ -187,7 +195,7 @@ export function SettingsView() {
           )}
         </aside>
 
-        <div ref={page} className="min-w-0 flex-1 scroll-mt-6">
+        <div ref={page} className="@container/settings min-w-0 flex-1 scroll-mt-6">
           <SettingsPage
             key={chapter}
             className="max-w-190 p-0"
@@ -290,7 +298,7 @@ function Reading() {
             description={
               <>
                 {t.note && <span className="block">{t.note}</span>}
-                <span className="block text-[11px] text-muted-foreground/80">
+                <span className="block text-[11px] text-muted-foreground">
                   {t.books.length} books, {t.verses.toLocaleString()} verses · {t.licence} ·{" "}
                   <a href={t.source} target="_blank" rel="noreferrer" className="underline">eBible.org</a>
                   {t.hash && (
@@ -359,17 +367,11 @@ function Appearance() {
       </Group>
 
       <Group id="layout" title="Layout">
-        <Row
-          id="Interface size"
-          description={`Menus, panels and pages together. Auto follows the window's width (now ${interfaceScaleLabel(theme.interfaceScale)}); ${MOD_KEY}+= and ${MOD_KEY}+- step it, ${MOD_KEY}+0 returns to Auto.`}
-        >
-          <Segmented
-            label="Interface size"
-            size="sm"
-            value={String(theme.interfaceSize)}
-            onChange={(v) => theme.setInterfaceSize(parseInterfaceSize(v))}
-            segments={[{ id: "auto", label: "Auto" }, ...INTERFACE_SCALES.map((s) => ({ id: String(s), label: interfaceScaleLabel(s) }))]}
-          />
+        <Row id="Interface size" align="stretch" description="Scale menus, panels and pages. Auto fits the window's width and height.">
+          <InterfaceSizeControl />
+        </Row>
+        <Row id="Glass" align="stretch" description="Choose a window glass style and adjust its tint.">
+          <GlassTintControl />
         </Row>
         <Row id="Compact spacing" description="Tighter margins and lines, for a small screen.">
           <Switch aria-label="Compact spacing" checked={study.compact} onCheckedChange={(compact) => study.set({ compact })} />

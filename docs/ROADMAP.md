@@ -188,6 +188,10 @@ Still open outside this repo: Axon 0.10 and 0.11 wait on
 [rwetz/axon#1](https://github.com/rwetz/axon/pull/1) (`text-gpt` into `main`);
 the Lab already drives a locally installed Axon.
 
+### Design updates after 2.2
+
+- [x] Adopt Nexis Design 0.5 with continuous interface scaling, optional window glass and the shared settings tree (DESIGN.md).
+
 ## What changed from the plan
 
 Decisions taken while building 2.0, recorded in each doc's "As built" note:

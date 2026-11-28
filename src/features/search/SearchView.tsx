@@ -116,7 +116,7 @@ export function SearchView() {
           </div>
         )}
 
-        {!typing && t && index && parseCode(submitted) && <StrongsSearch code={parseCode(submitted)!} t={t} onOpen={(r) => read(r, { select: true })} />}
+        {!typing && t && index && parseCode(submitted) && <StrongsSearch key={submitted} code={parseCode(submitted)!} t={t} onOpen={(r) => read(r, { select: true })} />}
 
         {!typing && t && exact && index && !parseCode(submitted) && (
           <ResultArrival replayKey={submitted} className="mt-8 space-y-8">
@@ -203,7 +203,7 @@ function VerseRow({ v, onOpen, label }: { v: Verse; onOpen: (r: Ref) => void; la
   return (
     <button type="button" onClick={() => onOpen(v)} className="block w-full rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted/60">
       <span className="text-xs font-semibold text-brand">{label ?? formatRef(v)}</span>
-      <span className="scripture mt-0.5 block !text-[17px] !leading-7"><VerseText raw={v.raw} /></span>
+      <span className="scripture mt-0.5 block !text-[1.0625rem] !leading-7"><VerseText raw={v.raw} /></span>
     </button>
   );
 }
@@ -386,7 +386,7 @@ function Meaning({ query, t, index, onOpen }: { query: string; t: Translation; i
         })}
       </div>
       {hits && (
-        <p className={cn("mt-2 px-3 text-[11px] text-muted-foreground/70")}>
+        <p className={cn("mt-2 px-3 text-caption text-muted-foreground")}>
           Ranked by a small embedding model on this computer, which matches meaning rather than words. It can be wrong; the verses are the text.
         </p>
       )}
@@ -397,13 +397,17 @@ function Meaning({ query, t, index, onOpen }: { query: string; t: Translation; i
 /** A Strong's number typed into search: the entry and its concordance. */
 function StrongsSearch({ code, t, onOpen }: { code: string; t: T2; onOpen: (r: Ref) => void }) {
   // The reading translation if it is tagged, else the KJV.
-  const [tagged, setTagged] = useState<T2 | null>(t.meta.strongs ? t : null);
+  const [kjv, setKjv] = useState<T2 | null>(null);
   const [c, setC] = useState(code);
-  useEffect(() => setC(code), [code]);
+  const tagged = t.meta.strongs ? t : kjv;
   useEffect(() => {
-    if (t.meta.strongs) setTagged(t);
-    else loadTranslation("kjv").then(setTagged, () => setTagged(null));
-  }, [t]);
+    if (t.meta.strongs) return;
+    let live = true;
+    loadTranslation("kjv").then((translation) => {
+      if (live) setKjv(translation);
+    }, () => {});
+    return () => { live = false; };
+  }, [t.meta.strongs]);
   if (!tagged) return <div className="mt-8"><Spinner /></div>;
   return (
     <section className="mt-8 rounded-xl bg-card p-6 ring-1 ring-foreground/6">

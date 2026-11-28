@@ -105,6 +105,8 @@ name = "biblelm"
 version = "2.2.0"
 dependencies = [
  "keyring",
+ "objc2-app-kit",
+ "objc2-foundation",
  "serde",
  "serde_json",
  "tauri",
