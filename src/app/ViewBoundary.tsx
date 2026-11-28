@@ -38,7 +38,7 @@ export class ViewBoundary extends Component<{ children: ReactNode; resetKey: str
       <div className="grid flex-1 place-items-center p-8">
         <Dragon>
           <p className="mt-2 text-sm text-muted-foreground">Your notes are safe. Reloading usually fixes it.</p>
-          <p className="mt-3 break-words font-mono text-xs text-muted-foreground/80">{this.state.error.message}</p>
+          <p className="mt-3 break-words font-mono text-xs text-muted-foreground">{this.state.error.message}</p>
           <div className="mt-5 flex justify-center gap-2">
             <Button variant="brand" onClick={() => location.reload()}>Reload</Button>
             <Button variant="ghost" onClick={() => this.setState({ error: null })}>Try again</Button>

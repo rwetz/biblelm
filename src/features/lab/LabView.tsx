@@ -42,14 +42,14 @@ function Frontispiece({ hero }: { hero?: Hero }) {
       {/* The title has a row of its own, over both columns, so the picture never runs under it. */}
       <div className="col-span-full flex min-w-0 items-center gap-6 pt-2">
         <RoseMark label="BibleLM" dot={2} className="size-28 shrink-0 md:size-36" />
-        <h1 className="min-w-0 font-blackletter text-[clamp(3.5rem,8vw,8.5rem)] leading-[1.05]">The Lab</h1>
+        <h1 className="min-w-0 font-blackletter text-[3.5rem] leading-[1.05]">The Lab</h1>
       </div>
       <div className="flex min-w-0 flex-col gap-8">
         <p className="max-w-xl text-[0.9375rem] leading-relaxed text-muted-foreground">{LEDE}</p>
         {/* What the model is made of: the translation it reads and its whole alphabet. */}
         <CorpusView front />
         {show && (
-          <p className="font-garamond text-sm italic text-muted-foreground/80">
+          <p className="font-garamond text-sm italic text-muted-foreground">
             {hero.title}
             {hero.work ? `, from ${hero.work}` : ""}, after {heroArtist(hero)}
           </p>

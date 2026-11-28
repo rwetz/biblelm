@@ -15,6 +15,8 @@ jobs:
   web:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

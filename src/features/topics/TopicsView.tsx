@@ -156,7 +156,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 
 function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
   const [topics] = useTopics();
-  const selectedName = useStudy((s) => s.topic);
+  const sel = useStudy((s) => s.topic);
   const openTopic = useStudy((s) => s.openTopic);
   const [filter, setFilter] = useState("");
   const [kind, setKind] = useState<string | null>(null);
@@ -165,8 +165,6 @@ function TopicIndex({ t, index }: { t: Translation; index: VerseIndex }) {
   const [sort, setSort] = useState<Sort>("az");
   const [more, setMore] = useState(false);
   const [kinds, setKinds] = useState<TopicKinds | null>(null);
-  const [sel, setSel] = useState<string | null>(selectedName);
-  useEffect(() => setSel(selectedName), [selectedName]);
   useEffect(() => {
     loadTopicKinds().then(setKinds);
   }, []);

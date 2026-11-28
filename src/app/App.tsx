@@ -14,6 +14,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  stepInterfaceAdjust,
   stepInterfaceScale,
   useCommandPaletteShortcut,
   useTheme,
@@ -254,8 +255,8 @@ export default function App() {
   }, [loadNotes]);
 
   return (
-    <div data-app-shell className={`flex h-full flex-col bg-background text-foreground ${redLetter ? "red-letter" : ""}`}>
-      <GlassBackdrop />
+    <div data-app-shell className={`isolate flex h-full flex-col bg-background text-foreground ${redLetter ? "red-letter" : ""}`}>
+      <GlassBackdrop className="biblelm-glass-backdrop" />
       <WindowResizeEdges />
       <TitleBar
         className={trafficLights ? "pl-[88px]" : "pl-gutter"}
@@ -340,8 +341,16 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
   const [subRosa, setSubRosa] = useSubRosa();
   const [catalog] = useCatalog();
   const { notebooks, setActive } = useNotebooks();
-  const { interfaceScale, setInterfaceSize } = useTheme();
+  const { interfaceSize, interfaceAdjust, setInterfaceSize, setInterfaceAdjust } = useTheme();
   return useMemo(() => {
+    const stepInterface = (direction: 1 | -1) => {
+      if (interfaceSize === "auto") setInterfaceAdjust(stepInterfaceAdjust(interfaceAdjust, direction));
+      else setInterfaceSize(stepInterfaceScale(interfaceSize, direction));
+    };
+    const resetInterface = () => {
+      setInterfaceSize("auto");
+      setInterfaceAdjust(1);
+    };
     const nav = NAV.flatMap((s) => s.items).filter((i) => shown(i.id, study.showLab, subRosa)).map<PaletteCommand>((i) => ({
       id: `go-${i.id}`,
       label: `Go to ${i.label}`,
@@ -361,9 +370,9 @@ function useCommands(openPalette: () => void, history: { back: () => void; forwa
       { id: "red-letter", label: study.redLetter ? "Words of Christ in black" : "Words of Christ in red", group: "Read", icon: "quote", keywords: ["red letter", "jesus"], run: () => study.set({ redLetter: !study.redLetter }) },
       { id: "bigger", label: "Larger text", group: "Read", icon: "zoom-in", run: () => study.set({ textSize: Math.min(28, study.textSize + 1) }) },
       { id: "smaller", label: "Smaller text", group: "Read", icon: "zoom-out", run: () => study.set({ textSize: Math.max(14, study.textSize - 1) }) },
-      { id: "ui-bigger", label: "Larger interface", group: "Appearance", icon: "zoom-in", shortcut: fmtShortcut(MOD_KEY, "="), keywords: ["interface size", "scale", "zoom", "4k"], run: () => setInterfaceSize(stepInterfaceScale(interfaceScale, 1)) },
-      { id: "ui-smaller", label: "Smaller interface", group: "Appearance", icon: "zoom-out", shortcut: fmtShortcut(MOD_KEY, "-"), keywords: ["interface size", "scale", "zoom"], run: () => setInterfaceSize(stepInterfaceScale(interfaceScale, -1)) },
-      { id: "ui-auto", label: "Interface size: follow the window", group: "Appearance", icon: "refresh", shortcut: fmtShortcut(MOD_KEY, "0"), keywords: ["interface size", "scale", "zoom", "reset", "auto"], run: () => setInterfaceSize("auto") },
+      { id: "ui-bigger", label: "Larger interface", group: "Appearance", icon: "zoom-in", shortcut: fmtShortcut(MOD_KEY, "="), keywords: ["interface size", "scale", "zoom", "4k"], run: () => stepInterface(1) },
+      { id: "ui-smaller", label: "Smaller interface", group: "Appearance", icon: "zoom-out", shortcut: fmtShortcut(MOD_KEY, "-"), keywords: ["interface size", "scale", "zoom"], run: () => stepInterface(-1) },
+      { id: "ui-auto", label: "Reset interface size", group: "Appearance", icon: "refresh", shortcut: fmtShortcut(MOD_KEY, "0"), keywords: ["interface size", "scale", "zoom", "reset", "auto"], run: resetInterface },
       ...(["garamond", "fell", "gothic"] as const).map((f) => ({
         id: `face-${f}`,
         label: `Reading face: ${{ garamond: "Garamond", fell: "Fell English", gothic: "Gothic (blackletter)" }[f]}`,

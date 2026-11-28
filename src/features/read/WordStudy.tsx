@@ -124,7 +124,7 @@ export function StrongsEntry({
           )}
         </>
       )}
-      <p className="text-micro text-muted-foreground/70">Strong's Exhaustive Concordance (1890), in the Open Scriptures JSON edition (CC-BY-SA).</p>
+      <p className="text-micro text-muted-foreground">Strong's Exhaustive Concordance (1890), in the Open Scriptures JSON edition (CC-BY-SA).</p>
     </div>
   );
 }

@@ -287,7 +287,7 @@ function Reading() {
             description={
               <>
                 {t.note && <span className="block">{t.note}</span>}
-                <span className="block text-[11px] text-muted-foreground/80">
+                <span className="block text-[11px] text-muted-foreground">
                   {t.books.length} books, {t.verses.toLocaleString()} verses · {t.licence} ·{" "}
                   <a href={t.source} target="_blank" rel="noreferrer" className="underline">eBible.org</a>
                   {t.hash && (

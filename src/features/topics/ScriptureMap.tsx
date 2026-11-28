@@ -373,7 +373,7 @@ export function ScriptureMap({ t, index }: { t: Translation; index: VerseIndex }
           <p className="mt-1 font-garamond text-[0.9375rem] leading-6">{t.verse(hv)?.text ?? index.refs[hover!]}</p>
         </div>
       )}
-      <p className="absolute bottom-2 right-4 text-micro text-muted-foreground/70">
+      <p className="absolute bottom-2 right-4 text-micro text-muted-foreground">
         Each dot is a verse, placed by meaning. Zoom in to read them, hover one to trace its chapter, click to open it.
       </p>
     </div>

@@ -140,7 +140,11 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
   // Word study reads the first open translation that carries Strong's tags.
   const tagged = translations.find((t) => t.meta.strongs);
   const [study, setStudy] = useState<string | null>(null);
-  useEffect(() => setStudy(null), [osis]);
+  const [lastOsis, setLastOsis] = useState(osis);
+  if (osis !== lastOsis) {
+    setLastOsis(osis);
+    setStudy(null);
+  }
 
   return (
     <aside className={PANEL}>
@@ -182,7 +186,7 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
               );
             })}
             {v && <VerseReading reference={formatRef(refSel)} text={v.text} translation={main.meta.id} />}
-            {main.sourceOf(refSel.book) === main.meta && <CompareAll refSel={refSel} base={main} />}
+            {main.sourceOf(refSel.book) === main.meta && <CompareAll key={osis} refSel={refSel} base={main} />}
           </section>
 
           <SeenInArt refSel={refSel} />
@@ -323,7 +327,6 @@ function HighlightButton({ osis }: { osis: string }) {
 function CompareAll({ refSel, base }: { refSel: Ref; base: Translation }) {
   const [all, setAll] = useState<Translation[] | null>(null);
   const [loading, setLoading] = useState(false);
-  useEffect(() => setAll(null), [refSel.book, refSel.chapter, refSel.verse]);
   if (!all)
     return (
       <Button
@@ -542,7 +545,7 @@ function CrossRefs({ vi, index, main, onNavigate }: { vi: number; index: VerseIn
           {all ? "Fewer" : `All ${links.length}`}
         </Button>
       )}
-      <p className="text-micro text-muted-foreground/70">
+      <p className="text-micro text-muted-foreground">
         References and votes from OpenBible.info readers (CC-BY).{ranked ? " The top twelve are ordered by how closely each speaks to this verse." : ""}
       </p>
     </section>
@@ -603,7 +606,7 @@ function Similar({ vi, index, main, shelves, onNavigate }: { vi: number; index: 
           </button>
         );
       })}
-      {hits && <p className="text-micro text-muted-foreground/70">Found by meaning with a small embedding model, run on this computer. The verses are the text; the ranking is the machine's.</p>}
+      {hits && <p className="text-micro text-muted-foreground">Found by meaning with a small embedding model, run on this computer. The verses are the text; the ranking is the machine's.</p>}
     </section>
   );
 }

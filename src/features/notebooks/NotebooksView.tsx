@@ -336,7 +336,7 @@ function NoteCard({ n, onOpen, onChange, onTags, onDelete }: { n: Note; onOpen: 
             }
           }}
           placeholder="+ tag"
-          className="w-20 bg-transparent text-caption text-muted-foreground outline-none placeholder:text-muted-foreground/60"
+          className="w-20 bg-transparent text-caption text-muted-foreground outline-none placeholder:text-muted-foreground"
         />
       </div>
     </article>

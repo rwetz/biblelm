@@ -88,7 +88,7 @@ export function Answer({ query, t, index, shelves, onOpen }: { query: string; t:
               })}
             </p>
           )}
-          <p className="mt-3 border-t border-border/50 pt-2 text-caption text-muted-foreground/80">Written for BibleLM about the Bible as a book. It is not Scripture.</p>
+          <p className="mt-3 border-t border-border/50 pt-2 text-caption text-muted-foreground">Written for BibleLM about the Bible as a book. It is not Scripture.</p>
         </article>
       )}
       {found.pick.passages.length > 0 && (

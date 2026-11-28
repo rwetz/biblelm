@@ -6,6 +6,7 @@
 // translation) is one book no translation has: every translation borrows it,
 // so it reads and searches beside any of them, credited to its own source.
 
+import { fetchData, fetchJson } from "@nexis/design";
 import { book, BOOKS, type Ref, type Shelf } from "./canon";
 
 export interface TranslationMeta {
@@ -205,24 +206,12 @@ export function wholeSentence(verse: (r: Ref) => { raw: string } | undefined, st
 
 const BASE = `${import.meta.env.BASE_URL}data`;
 
-/**
- * A data file, or an error if it is missing. The desktop app and the dev
- * server answer a missing file with the app's own page (200, text/html)
- * rather than a 404, so that counts as missing too.
- */
-async function fetchData(path: string): Promise<Response> {
-  const res = await fetch(`${BASE}/${path}`);
-  const missing = !res.ok || (res.headers.get("content-type") ?? "").includes("text/html");
-  if (missing) throw new Error(`${path}: ${res.ok ? "missing" : res.status}. Run "pnpm data" to build the Bible data.`);
-  return res;
-}
-
-export async function getJson<T>(path: string): Promise<T> {
-  return (await fetchData(path)).json() as Promise<T>;
+export function getJson<T>(path: string): Promise<T> {
+  return fetchJson<T>(`${BASE}/${path}`);
 }
 
 export async function getBinary(path: string): Promise<ArrayBuffer> {
-  return (await fetchData(path)).arrayBuffer();
+  return (await fetchData(`${BASE}/${path}`)).arrayBuffer();
 }
 
 let catalog: Promise<TranslationMeta[]> | null = null;

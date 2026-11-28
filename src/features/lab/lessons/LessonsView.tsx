@@ -162,7 +162,7 @@ function LetterGrid({ text, hit, len }: { text: string; hit: ElsHit; len: number
             {Array.from({ length: cols }, (_, c) => {
               const i = centre - half + c;
               return (
-                <span key={c} className={cn("w-4 text-center", on.has(i) ? "font-bold text-brand" : "text-muted-foreground/70")}>
+                <span key={c} className={cn("w-4 text-center", on.has(i) ? "font-bold text-brand" : "text-muted-foreground")}>
                   {text[i] ?? " "}
                 </span>
               );

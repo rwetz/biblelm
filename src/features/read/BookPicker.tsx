@@ -133,7 +133,7 @@ function Section({ title, books, current, onPick, cols = 2 }: { title: string; b
   if (!books.length) return null;
   return (
     <section>
-      <p className="mb-1 text-caption font-medium uppercase tracking-wider text-muted-foreground/80">{title}</p>
+      <p className="mb-1 text-caption font-medium uppercase tracking-wider text-muted-foreground">{title}</p>
       <div className={cn("grid gap-x-1", cols === 3 ? "grid-cols-3" : "grid-cols-2")}>
         {books.map((b) => (
           <button

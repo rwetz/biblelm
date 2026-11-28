@@ -115,7 +115,7 @@ export function Structure({ t, index }: { t: Translation; index: VerseIndex }) {
                 </div>
               );
             })}
-            <p className="text-caption text-muted-foreground/70">
+            <p className="text-caption text-muted-foreground">
               A statistical hint, not a finding: likeness by a small model can echo vocabulary rather than design. Read the passage, then the commentaries.
             </p>
           </div>

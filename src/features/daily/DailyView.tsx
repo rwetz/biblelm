@@ -193,10 +193,10 @@ function ByHeart({ t }: { t: Translation | null }) {
   const memory = useNotebooks((s) => s.memory) ?? [];
   const reviewCard = useNotebooks((s) => s.reviewCard);
   const toggleMemory = useNotebooks((s) => s.toggleMemory);
-  const [shown, setShown] = useState(false);
+  const [revealed, setRevealed] = useState<{ id: string; reps: number } | null>(null);
   const due = memory.filter((c) => isDue(c)).sort((a, b) => a.due - b.due);
   const card: Card | undefined = due[0];
-  useEffect(() => setShown(false), [card?.id, card?.reps]);
+  const shown = !!card && revealed?.id === card.id && revealed.reps === card.reps;
   if (!t) return null;
   const refOf = (c: Card) => {
     const r = parseOsis(c.ref);
@@ -240,7 +240,7 @@ function ByHeart({ t }: { t: Translation | null }) {
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {!shown ? (
-              <Button variant="brand" size="sm" onClick={() => setShown(true)}>Show the verse</Button>
+              <Button variant="brand" size="sm" onClick={() => setRevealed({ id: card.id, reps: card.reps })}>Show the verse</Button>
             ) : (
               GRADES.map(([g, label]) => (
                 <Button key={g} variant={g === 3 ? "brand" : "outline"} size="sm" onClick={() => reviewCard(card.id, g)}>

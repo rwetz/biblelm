@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Button, Icon } from "@nexis/design";
+import { Button, Glass, Icon } from "@nexis/design";
 import { TrinityMark } from "@/art/TrinityMark";
 import { DitherHero, Engraving, Fleuron, useHeroes, usePaintings, usePlates } from "@/art/Art";
 import { paintingCredit, paintingForDay, paintingUrl, roseHero, seasonalHero } from "@/lib/art";
@@ -62,7 +62,7 @@ export function HomeView() {
       {/* The first screen is the picture, the search box and the verse of the
           day; the picture keeps at least BAND_SHARE of it, and fills whatever a
           tall window leaves. The plate runs the band's full height, under the
-          search bar, which is liquid glass over it (.liquid-glass in styles.css). Your
+          search bar, which is liquid glass over it. Your
           reading and notebooks wait below. */}
       <div className="flex min-h-full shrink-0 flex-col">
       <DitherHero hero={hero} height="auto" width="84rem" fadeFrom={80} focusY={30} className="flex-1" style={{ minHeight: `calc(100cqh * ${BAND_SHARE})` }}>
@@ -74,7 +74,7 @@ export function HomeView() {
               if (q.trim()) searchFor(q.trim());
             }}
           >
-            <div className="liquid-glass rounded-2xl p-2">
+            <Glass preset="regular" tint={0.76} blur={14} saturate={1.25} edge={0} refraction={0} className="rounded-2xl p-2">
               <SearchField size="lg" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search the Scriptures, or type a reference" className="bg-transparent hover:bg-transparent focus-within:bg-transparent" />
               <QueryReading query={q} className="px-2" />
               <div className="flex items-center gap-2 px-2 pb-1 pt-1 text-xs text-muted-foreground">
@@ -91,7 +91,7 @@ export function HomeView() {
                   <Icon name="arrow-right" />
                 </Button>
               </div>
-            </div>
+            </Glass>
           </form>
         </div>
       </DitherHero>
@@ -102,10 +102,10 @@ export function HomeView() {
             <Omen t={t} />
           ) : (
             <>
-              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
+              <p className="text-caption font-medium uppercase tracking-[0.22em] text-muted-foreground">Verse of the day</p>
               {passage?.verses.length ? (
                 <blockquote className="mt-4">
-                  <p className="font-garamond text-[2rem] leading-snug text-foreground md:text-[clamp(2rem,3.6vh,2.4rem)]">
+                  <p className="font-garamond text-[2rem] leading-snug text-foreground">
                     {passage.verses.map((v, i) => (
                       <span key={v.n}>
                         {i > 0 && <sup className="mr-1 font-sans text-[0.4em] font-semibold text-brand">{v.n}</sup>}

@@ -326,7 +326,7 @@ function TranslationRow({
               disabled={busy}
               aria-label={`Remove ${t.name}`}
               title="Remove this translation"
-              className="grid size-7 place-items-center rounded-md text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+              className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
             >
               <Icon name="delete" size="sm" />
             </button>
@@ -407,7 +407,7 @@ function AddForm({
         />
       </Field>
       <div className="flex items-center justify-between gap-3">
-        <span className="min-w-0 truncate text-caption text-muted-foreground/60">
+        <span className="min-w-0 truncate text-caption text-muted-foreground">
           {blocker ? blocker : <span className="font-mono">id: {id}</span>}
         </span>
         <Button

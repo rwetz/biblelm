@@ -394,7 +394,7 @@ export function ArtSpot({ plate, title, children, className }: { plate?: Plate; 
       )}
       <p className="font-garamond text-xl text-foreground">{title}</p>
       {children && <div className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{children}</div>}
-      {art && <p className="mt-3 font-garamond text-xs italic text-muted-foreground/70">{plate.title}, after {plate.artist ?? "Doré"}</p>}
+      {art && <p className="mt-3 font-garamond text-xs italic text-muted-foreground">{plate.title}, after {plate.artist ?? "Doré"}</p>}
     </div>
   );
 }
@@ -779,7 +779,7 @@ export function Ornament({
 /** A fleuron between sections. */
 export function Fleuron({ className }: { className?: string }) {
   return (
-    <div aria-hidden className={cn("my-8 flex items-center justify-center gap-3 text-muted-foreground/60", className)}>
+    <div aria-hidden className={cn("my-8 flex items-center justify-center gap-3 text-muted-foreground", className)}>
       <span className="h-px w-16 bg-current" />
       <Ornament name="fleuron" className="h-5 text-muted-foreground" />
       <span className="h-px w-16 bg-current" />

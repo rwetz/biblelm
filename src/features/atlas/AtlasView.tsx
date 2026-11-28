@@ -155,10 +155,14 @@ const placeName = (p: Place) => p.name.replace(/\s+\d+$/, "");
 
 function Places({ t, index, places, initial }: { t: Translation; index: VerseIndex; places: Place[]; initial: string | null }) {
   const [land, setLand] = useState<Land | null>(null);
-  const [sel, setSel] = useState<string | null>(initial);
+  const [sel, setSel] = useState(initial);
+  const [lastInitial, setLastInitial] = useState(initial);
+  if (initial !== lastInitial) {
+    setLastInitial(initial);
+    setSel(initial);
+  }
   const [q, setQ] = useState("");
   const [bookFilter, setBookFilter] = useState("");
-  useEffect(() => setSel(initial), [initial]);
   useEffect(() => {
     loadLand().then(setLand, () => setLand(null));
   }, []);
@@ -420,9 +424,13 @@ function EngravedMap({ land, places, selected, onSelect }: { land: Land; places:
 // ── people ──────────────────────────────────────────────────────────────────
 
 function People({ t, index, people, initial }: { t: Translation; index: VerseIndex; people: Person[]; initial: string | null }) {
-  const [sel, setSel] = useState<string | null>(initial);
+  const [sel, setSel] = useState(initial);
+  const [lastInitial, setLastInitial] = useState(initial);
+  if (initial !== lastInitial) {
+    setLastInitial(initial);
+    setSel(initial);
+  }
   const [q, setQ] = useState("");
-  useEffect(() => setSel(initial), [initial]);
   const byId = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();

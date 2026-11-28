@@ -21,7 +21,7 @@ export function TranslationPicker({ catalog, value, onChange }: { catalog: Trans
       <PopoverContent align="end" className="w-[min(30rem,calc(100vw-2rem))] gap-3 p-3">
         {languages.map((lang) => (
           <section key={lang}>
-            {languages.length > 1 && <p className="px-2 pb-1 text-caption font-medium uppercase tracking-wider text-muted-foreground/80">{lang}</p>}
+            {languages.length > 1 && <p className="px-2 pb-1 text-caption font-medium uppercase tracking-wider text-muted-foreground">{lang}</p>}
             <div className="space-y-0.5">
               {catalog
                 .filter((t) => t.language === lang)

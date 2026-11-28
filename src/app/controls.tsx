@@ -39,7 +39,7 @@ export function SearchField({
         type="text"
         {...props}
         className={cn(
-          "min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground/80",
+          "min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground",
           size === "sm" ? "text-body" : size === "lg" ? "text-base" : "text-sm",
           inputClassName,
         )}
@@ -83,9 +83,9 @@ export function Choice({
       >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent className="max-h-80 rounded-xl">
+      <SelectContent className="max-h-80">
         {options.map((o) => (
-          <SelectItem key={o.value || EMPTY} value={o.value || EMPTY} className="rounded-lg">
+          <SelectItem key={o.value || EMPTY} value={o.value || EMPTY}>
             {o.label}
           </SelectItem>
         ))}

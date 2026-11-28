@@ -50,46 +50,18 @@ body {
   animation: none;
 }
 
-/* ── Liquid glass ─────────────────────────────────────────────────────── */
+/* Keep the window backdrop quiet behind the illustrated pages. */
+.biblelm-glass-backdrop {
+  opacity: 0.2;
+}
 
-/* Glass over a picture (the home search bar over its plate): tinted with the
-   page's own tone, so smoked on Nocturne and vellum on Vellum, never the
-   accent; the picture behind blurred and a little richer, a specular line on
-   the top edge, a sheen that falls off down the pane, and a soft shadow
-   under it. Where the blur goes (saving battery, less transparency, high
-   contrast, Linux) the tint thickens so the words stay readable. */
-.liquid-glass {
-  position: relative;
-  isolation: isolate;
-  background: color-mix(in oklch, var(--background) 58%, transparent);
-  backdrop-filter: blur(14px) saturate(1.25);
-  -webkit-backdrop-filter: blur(14px) saturate(1.25);
-  border: 1px solid color-mix(in oklch, var(--foreground) 14%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklch, white 22%, transparent),
-    inset 0 -1px 0 color-mix(in oklch, var(--foreground) 5%, transparent),
-    0 18px 40px -18px color-mix(in oklch, black 55%, transparent);
+:root[data-saver] .nexis-glass {
+  --glass-tint-on: 1;
 }
-.liquid-glass::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(in oklch 180deg, color-mix(in oklch, var(--foreground) 9%, transparent), transparent 45%);
-}
-@media (prefers-reduced-transparency: reduce) {
-  .liquid-glass {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background: color-mix(in oklch, var(--background) 94%, transparent);
-  }
-}
-:is(:root[data-saver], html[data-contrast="high"], html[data-os="linux"]) .liquid-glass {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  background: color-mix(in oklch, var(--background) 94%, transparent);
+:root[data-saver] .nexis-glass > .nexis-glass-layer,
+html[data-saver][data-glass-chrome] [data-slot] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* ── Reading ──────────────────────────────────────────────────────────── */
@@ -168,8 +140,8 @@ body {
   mix-blend-mode: multiply;
   filter: sepia(0.35) contrast(1.05);
   /* Feather the edges so an off-white scan never shows as a rectangle. */
-  mask-image: linear-gradient(to right, transparent, #000 0.8%, #000 99.2%, transparent),
-    linear-gradient(to bottom, transparent, #000 0.8%, #000 99.2%, transparent);
+  mask-image: linear-gradient(to right in oklch, transparent, #000 0.8%, #000 99.2%, transparent),
+    linear-gradient(to bottom in oklch, transparent, #000 0.8%, #000 99.2%, transparent);
   mask-composite: intersect;
   -webkit-mask-composite: source-in;
 }
@@ -263,7 +235,7 @@ body {
 .palette-seek,
 .search-field::after {
   color: var(--muted-foreground);
-  background-image: radial-gradient(circle, currentColor 0.7px, transparent 0.9px);
+  background-image: radial-gradient(circle in oklch, currentColor 0.7px, transparent 0.9px);
   background-size: 5px 2px;
   background-repeat: repeat-x;
   opacity: 0.35;
@@ -315,10 +287,10 @@ body {
 .era-hatch,
 .era-hatch-fine {
   background-color: var(--background);
-  background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--foreground) 32%, transparent) 0 1px, transparent 1px 4px);
+  background-image: repeating-linear-gradient(135deg in oklch, color-mix(in oklab, var(--foreground) 32%, transparent) 0 1px, transparent 1px 4px);
 }
 .era-hatch-fine {
-  background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--foreground) 22%, transparent) 0 1px, transparent 1px 6px);
+  background-image: repeating-linear-gradient(135deg in oklch, color-mix(in oklab, var(--foreground) 22%, transparent) 0 1px, transparent 1px 6px);
 }
 .era-band {
   animation: era-in 0.6s ease-out both;
