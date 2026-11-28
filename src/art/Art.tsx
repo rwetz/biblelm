@@ -302,7 +302,7 @@ export function Dither({
  * (the host needs `isolate`), so text and cards always cover it.
  */
 /** A corner plate's width, shared with PlatePage's clearance. */
-const PLATE_WIDTH = "min(28%, 20rem)";
+const PLATE_WIDTH = "var(--corner-plate-width, min(28%, 20rem))";
 
 export function CornerPlate({
   plate,
@@ -344,6 +344,7 @@ export function PlatePage({
   hidePlate = false,
   column = "48rem",
   className,
+  style,
   children,
 }: {
   plate?: Plate;
@@ -351,6 +352,7 @@ export function PlatePage({
   hidePlate?: boolean;
   column?: string;
   className?: string;
+  style?: React.CSSProperties;
   children: React.ReactNode;
 }) {
   const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
@@ -363,7 +365,7 @@ export function PlatePage({
   const clear = `clamp(0px, calc(${column} + 2 * ${PLATE_WIDTH} - 100%), ${PLATE_WIDTH})`;
   const pad = plate && !hidePlate && mode !== "off" ? (corner === "bl" ? { paddingLeft: clear } : { paddingRight: clear }) : undefined;
   return (
-    <div className="relative isolate flex min-h-0 flex-1 flex-col">
+    <div className="relative isolate flex min-h-0 flex-1 flex-col" style={style}>
       {!hidePlate && <CornerPlate plate={plate} corner={corner} scatter={scroller} />}
       <div ref={setScroller} className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto", className)} style={pad}>
         {children}

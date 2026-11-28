@@ -80,7 +80,9 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 > Layout. Auto scales to both window dimensions and keeps the reader's
 > adjustment across screens. Fixed keeps the selected scale. Window glass
 > is optional and starts off. Tint also applies to the Home search field's
-> shared Nexis glass surface. Save battery disables the blur.
+> shared Nexis glass surface. Save battery disables the blur. Settings rows
+> stack their labels and controls as the pane narrows, and the corner plate
+> gives back room to the controls.
 
 > **As built (narrow windows):** the reader column is a container: below 36rem
 > its toolbar folds Interlinear, Two columns and the chapter arrows into a

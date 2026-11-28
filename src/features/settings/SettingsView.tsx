@@ -45,7 +45,13 @@ let lastChapter: ChapterId = "reading";
 /** A setting row the tree, the search and the palette can find by its label. */
 export function Row({ id, label, description, align, children }: { id: string; label?: React.ReactNode; description?: React.ReactNode; align?: "end" | "stretch"; children: React.ReactNode }) {
   return (
-    <SettingRow data-setting={id} label={label ?? id} description={description} align={align}>
+    <SettingRow
+      data-setting={id}
+      label={label ?? id}
+      description={description}
+      align={align}
+      className="@max-[32rem]/settings:grid-cols-1 @max-[32rem]/settings:[&>div:last-child]:justify-start"
+    >
       {children}
     </SettingRow>
   );
@@ -156,9 +162,14 @@ export function SettingsView() {
   return (
     // PlatePage pads for a centred column; this one is left-aligned (R4.2),
     // tree, page and gutters about 70rem together, so it needs one plate's width, not two.
-    <PlatePage plate={plate} corner="tr" column="calc(70rem - min(28%, 20rem))">
-      <div className="relative flex w-full gap-x-12 gap-y-8 px-(--gutter) pb-24 pt-(--page-top) max-md:flex-col">
-        <aside className="md:sticky md:top-0 md:w-60 md:shrink-0 md:self-start md:pt-1">
+    <PlatePage
+      plate={plate}
+      corner="tr"
+      column="calc(70rem - var(--corner-plate-width))"
+      style={{ "--corner-plate-width": "clamp(0px, calc(100cqw - 51rem), min(28%, 20rem))" } as React.CSSProperties}
+    >
+      <div className="relative flex w-full gap-x-12 gap-y-8 px-(--gutter) pb-24 pt-(--page-top) @max-[42rem]/study-pane:flex-col">
+        <aside className="@min-[42rem]/study-pane:sticky @min-[42rem]/study-pane:top-0 @min-[42rem]/study-pane:w-60 @min-[42rem]/study-pane:shrink-0 @min-[42rem]/study-pane:self-start @min-[42rem]/study-pane:pt-1">
           <h1 className="flex items-center gap-3 font-blackletter text-4xl">
             <PageMark page="settings" />
             Settings
@@ -184,7 +195,7 @@ export function SettingsView() {
           )}
         </aside>
 
-        <div ref={page} className="min-w-0 flex-1 scroll-mt-6">
+        <div ref={page} className="@container/settings min-w-0 flex-1 scroll-mt-6">
           <SettingsPage
             key={chapter}
             className="max-w-190 p-0"
