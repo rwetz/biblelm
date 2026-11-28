@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Icon, Input, SectionLabel,Spinner, VirtualList, cn } from "@nexis/design";
+import { Button, Icon, Input, SectionLabel, Spinner, VirtualList, cn } from "@nexis/design";
 import { CornerPlate, DitherHero, usePagePlate, usePaintings } from "@/art/Art";
 import { PAGE_PLATES, pagePainting } from "@/lib/art";
 import type { Translation, VerseIndex } from "@/lib/bible";
@@ -47,12 +47,12 @@ export function TopicsView() {
       <div className="mx-auto flex h-full w-full max-w-6xl items-end gap-4 px-(--gutter) pb-3 pt-8">
         <div>
           <h1 className="flex items-center gap-3 font-blackletter text-4xl"><PageMark page="topics" />Topics</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Themes across Scripture, the paths cross references draw, and the shape of a passage.</p>
         </div>
       </div>
       </DitherHero>
       <div className="relative z-10 border-b border-border/60">
         <div className="mx-auto w-full max-w-6xl px-(--gutter) py-2">
+          <p className="mb-2 text-sm text-muted-foreground">Themes across Scripture, cross references, and the shape of a passage.</p>
           <Sections
             label="Topics"
             value={tab}

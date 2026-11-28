@@ -5,14 +5,14 @@ import { useState } from "react";
 import { Button, Icon, Popover, PopoverContent, PopoverTrigger, cn } from "@nexis/design";
 import type { TranslationMeta } from "@/lib/bible";
 
-export function TranslationPicker({ catalog, value, onChange }: { catalog: TranslationMeta[]; value: string; onChange: (id: string) => void }) {
+export function TranslationPicker({ catalog, value, source, onChange }: { catalog: TranslationMeta[]; value: string; source?: TranslationMeta; onChange: (id: string) => void }) {
   const [open, setOpen] = useState(false);
-  const current = catalog.find((t) => t.id === value);
+  const current = source ?? catalog.find((t) => t.id === value);
   const languages = [...new Set(catalog.map((t) => t.language))];
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="secondary" size="sm" className="justify-between gap-2" aria-label="Translation">
+        <Button variant="secondary" size="sm" className="min-w-0 shrink-0 justify-between gap-2" aria-label="Translation" title={current?.name}>
           <span className="font-medium">{current?.abbr ?? value.toUpperCase()}</span>
           <span className="hidden max-w-44 truncate text-muted-foreground @2xl:inline">{current?.name}</span>
           <Icon name="chevron-down" size="xs" className="text-muted-foreground" />

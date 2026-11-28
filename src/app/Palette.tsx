@@ -93,7 +93,7 @@ export function Palette({ open, onOpenChange, commands }: { open: boolean; onOpe
     <AnimatePresence>
       {open && (
         <m.div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-background/55 pt-[14vh] backdrop-blur-[6px]"
+          className="fixed inset-0 z-50 flex items-start justify-center bg-background/80 pt-[14vh]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -101,12 +101,13 @@ export function Palette({ open, onOpenChange, commands }: { open: boolean; onOpe
           onMouseDown={(e) => e.target === e.currentTarget && onOpenChange(false)}
         >
           <m.div
+            data-glass-surface
             role="dialog"
             aria-modal
             aria-label="Commands"
             className="w-[min(40rem,calc(100vw-2rem))] overflow-hidden rounded-2xl bg-popover shadow-2xl ring-1 ring-foreground/10"
-            initial={reduced ? false : { opacity: 0, y: -10, scale: 0.97, filter: "blur(4px)" }}
-            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            initial={reduced ? false : { opacity: 0, y: -10, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduced ? undefined : { opacity: 0, y: -6, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 420, damping: 32 }}
             onKeyDown={(e) => {

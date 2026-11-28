@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Button, Glass, Icon } from "@nexis/design";
+import { Button, Icon } from "@nexis/design";
 import { TrinityMark } from "@/art/TrinityMark";
 import { DitherHero, Engraving, Fleuron, useHeroes, usePaintings, usePlates } from "@/art/Art";
 import { paintingCredit, paintingForDay, paintingUrl, roseHero, seasonalHero } from "@/lib/art";
@@ -74,7 +74,7 @@ export function HomeView() {
               if (q.trim()) searchFor(q.trim());
             }}
           >
-            <Glass preset="regular" tint={0.76} blur={14} saturate={1.25} edge={0} refraction={0} className="rounded-2xl p-2">
+            <div data-glass-surface className="rounded-2xl border border-border bg-card p-2 shadow-sm">
               <SearchField size="lg" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search the Scriptures, or type a reference" className="bg-transparent hover:bg-transparent focus-within:bg-transparent" />
               <QueryReading query={q} className="px-2" />
               <div className="flex items-center gap-2 px-2 pb-1 pt-1 text-xs text-muted-foreground">
@@ -91,7 +91,7 @@ export function HomeView() {
                   <Icon name="arrow-right" />
                 </Button>
               </div>
-            </Glass>
+            </div>
           </form>
         </div>
       </DitherHero>

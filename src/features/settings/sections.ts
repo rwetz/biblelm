@@ -51,7 +51,7 @@ export const SETTINGS: SettingsChapter[] = [
         id: "text",
         label: "The text",
         settings: [
-          { label: "Reading face", keywords: ["font", "typeface", "garamond", "fell", "gothic", "blackletter"] },
+          { label: "Reading face", keywords: ["font", "typeface", "garamond", "crimson", "source serif", "fell", "gothic", "blackletter"] },
           { label: "Text size", keywords: ["font size", "bigger", "smaller", "zoom"] },
           { label: "Red letter", keywords: ["words of christ", "jesus", "red"] },
           { label: "Two columns", keywords: ["columns", "layout", "printed bible"] },

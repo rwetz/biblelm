@@ -8,6 +8,8 @@
      17th-century Fell face or Garamond for reading. */
   --font-blackletter: "UnifrakturMaguntia", "Grenze Gotisch Variable", serif;
   --font-gothic: "Grenze Gotisch Variable", "UnifrakturMaguntia", serif;
+  --font-crimson: "Crimson Pro Variable", "EB Garamond Variable", Georgia, serif;
+  --font-source-serif: "Source Serif 4 Variable", "EB Garamond Variable", Georgia, serif;
   --font-fell: "IM Fell English", "EB Garamond Variable", Georgia, serif;
   --font-garamond: "EB Garamond Variable", "IM Fell English", Georgia, serif;
   --color-ink: var(--foreground);
@@ -20,6 +22,7 @@
    so a 1280x720 laptop (a 1080p panel at 150%) keeps its room for text and a
    wide monitor still breathes. Used as px-(--gutter) and pt-(--page-top). */
 :root {
+  --corner-plate-limit: min(14rem, 21vh);
   --gutter: clamp(1rem, 2.4vw, 2rem);
   --page-top: clamp(1.5rem, 4.5vh, 3rem);
 }
@@ -50,19 +53,70 @@ body {
   animation: none;
 }
 
-/* Keep the window backdrop quiet behind the illustrated pages. */
-.biblelm-glass-backdrop {
-  opacity: 0.2;
+/* Static glass colours and highlights keep scrolling content out of the filter pipeline. */
+html[data-biblelm-glass] {
+  --glass-opacity: 94%;
+  --glass-sheen: 5%;
+  --glass-hue: var(--background);
+}
+html[data-glass-style="clear"] {
+  --glass-opacity: 84%;
+  --glass-sheen: 3%;
+}
+html[data-glass-style="frosted"] {
+  --glass-opacity: 97%;
+  --glass-sheen: 10%;
+}
+html[data-glass-style="tinted"] { --glass-opacity: 96%; }
+html[data-glass-style="custom"] { --glass-opacity: var(--glass-custom-opacity, 94%); }
+html:is([data-glass-style="tinted"], [data-glass-style="custom"])[data-glass-color="ruby"] { --glass-hue: var(--terminal-ansi-red); }
+html:is([data-glass-style="tinted"], [data-glass-style="custom"])[data-glass-color="gold"] { --glass-hue: var(--terminal-ansi-yellow); }
+html:is([data-glass-style="tinted"], [data-glass-style="custom"])[data-glass-color="forest"] { --glass-hue: var(--terminal-ansi-green); }
+html:is([data-glass-style="tinted"], [data-glass-style="custom"])[data-glass-color="slate"] { --glass-hue: var(--terminal-ansi-blue); }
+
+html:is([data-biblelm-glass="components"], [data-biblelm-glass="window"]) {
+  --glass-ink: var(--popover);
+  --glass-light: color-mix(in oklab, var(--foreground) var(--glass-sheen), transparent);
+}
+html:is([data-glass-style="tinted"], [data-glass-style="custom"]) {
+  --glass-ink: color-mix(in oklab, var(--popover) 88%, var(--glass-hue));
+}
+html[data-biblelm-glass="window"] [data-app-shell] {
+  background-image: radial-gradient(ellipse at top right in oklch, color-mix(in oklab, var(--glass-hue) 14%, var(--muted)), transparent 65%);
+}
+html:is([data-biblelm-glass="components"], [data-biblelm-glass="window"]) :is(
+  [data-glass-surface], [data-slot="popover-content"], [data-slot="select-content"], [data-slot="dropdown-menu-content"],
+  [data-slot="context-menu-content"], [data-slot="dialog-content"], [data-slot="alert-dialog-content"], [data-slot="sheet-content"]
+),
+html[data-biblelm-glass="window"] [data-app-shell] :is([data-slot="title-bar"], [data-slot="sidebar-nav"], [data-slot="status-bar"]) {
+  background-color: color-mix(in oklab, var(--glass-ink) var(--glass-opacity), transparent);
+  background-image: linear-gradient(150deg in oklch, var(--glass-light), transparent 70%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html:is([data-saver], [data-contrast="high"]) {
+  --glass-opacity: 100% !important;
+  --glass-ink: var(--popover) !important;
+  --glass-light: transparent !important;
+}
+html:is([data-saver], [data-contrast="high"]) [data-app-shell] {
+  background-image: none;
+}
+@media (prefers-reduced-transparency: reduce) {
+  html[data-biblelm-glass] {
+    --glass-opacity: 100% !important;
+    --glass-ink: var(--popover) !important;
+    --glass-light: transparent !important;
+  }
+  html[data-biblelm-glass="window"] [data-app-shell] {
+    background-image: none;
+  }
 }
 
-:root[data-saver] .nexis-glass {
-  --glass-tint-on: 1;
-}
-:root[data-saver] .nexis-glass > .nexis-glass-layer,
-html[data-saver][data-glass-chrome] [data-slot] {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
+[data-reading-face="crimson"] { --scripture-face: var(--font-crimson); }
+[data-reading-face="source-serif"] { --scripture-face: var(--font-source-serif); }
+[data-reading-face="fell"] { --scripture-face: var(--font-fell); }
+[data-reading-face="gothic"] { --scripture-face: var(--font-gothic); }
 
 /* ── Reading ──────────────────────────────────────────────────────────── */
 
@@ -77,12 +131,17 @@ html[data-saver][data-glass-chrome] [data-slot] {
 :root[data-compact] .scripture {
   line-height: 1.6;
 }
+.verse-lead {
+  white-space: nowrap;
+}
 .scripture .vnum {
   font-family: var(--font-sans);
   font-size: 0.6em;
   font-weight: 600;
-  vertical-align: super;
-  line-height: 0;
+  position: relative;
+  top: -0.52em;
+  vertical-align: baseline;
+  line-height: 1;
   margin-inline: 0.15em 0.25em;
   color: var(--brand);
   font-variant-numeric: tabular-nums;
@@ -336,4 +395,15 @@ html[data-saver][data-glass-chrome] [data-slot] {
 /* A theme crossfade must not intercept the next click on the live app. */
 ::view-transition {
   pointer-events: none;
+}
+
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :root:not([data-saver]) .gallery-picture {
+    transition: transform var(--dur-panel) var(--ease-enter);
+  }
+
+  :root:not([data-saver]) .gallery-card:hover .gallery-picture {
+    transform: scale(1.035);
+  }
 }

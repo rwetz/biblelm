@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Icon, ScrollArea, SectionLabel, Spinner, Textarea, Tooltip, TooltipContent, TooltipTrigger, cn } from "@nexis/design";
-import { listTranslations, loadTranslation, type Translation, type VerseIndex } from "@/lib/bible";
+import { listTranslations, loadTranslation, type Translation, type TranslationMeta, type VerseIndex } from "@/lib/bible";
 import { book as bookOf, formatRef, osisOf, parseOsis, type Ref, type Shelf } from "@/lib/canon";
 import { useCatalog, useGraph, useIndex } from "@/lib/hooks";
 import { useFlip } from "@/lib/flip";
@@ -68,10 +68,9 @@ function PassagePanel({ book, chapter, verses, translations, onClose }: { book: 
   };
 
   return (
-    <aside className={PANEL}>
-      <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border/60 px-4">
-        <h2 className="min-w-0 truncate font-garamond text-xl" title={title}>{title}</h2>
-        <span className="flex-1" />
+    <aside className={PANEL} data-glass-surface>
+      <header className="flex min-h-11 shrink-0 items-center gap-1 border-b border-border/60 px-4 py-1.5">
+        <h2 className="min-w-0 flex-1 text-balance font-garamond text-lg leading-tight">{title}</h2>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -103,22 +102,21 @@ function PassagePanel({ book, chapter, verses, translations, onClose }: { book: 
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-6 p-4">
           <section>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{main.sourceOf(book).abbr} · {verses.length} verses</p>
-            <div className="scripture mt-1 space-y-2 !text-base !leading-7">
+            <p className="text-micro font-semibold uppercase tracking-widest text-muted-foreground">{main.sourceOf(book).abbr} · {verses.length} verses</p>
+            <div className="scripture mt-1 space-y-2">
               {ranges.map((r, i) => (
                 <p key={r.verse}>
                   {i > 0 && <span className="mr-1 text-muted-foreground">…</span>}
                   {main.range(r).map((v) => (
                     <span key={v.verse}>
-                      <sup className="vnum">{v.verse}</sup>
-                      <VerseText raw={v.raw} />{" "}
+                      <VerseText number={v.verse} raw={v.raw} />{" "}
                     </span>
                   ))}
                 </p>
               ))}
             </div>
           </section>
-          <Notes spans={spans} verses={osisList} />
+          <Notes spans={spans} verses={osisList} source={main.sourceOf(book)} />
           <p className="text-caption leading-relaxed text-muted-foreground">
             Ctrl-click a verse to add or drop it, shift-click to take every verse from the last one clicked. Click one verse alone for its cross references and words.
           </p>
@@ -147,10 +145,9 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
   }
 
   return (
-    <aside className={PANEL}>
-      <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border/60 px-4">
-        <h2 className="font-garamond text-xl">{formatRef(refSel)}</h2>
-        <span className="flex-1" />
+    <aside className={PANEL} data-glass-surface>
+      <header className="flex min-h-11 shrink-0 items-center gap-1 border-b border-border/60 px-4 py-1.5">
+        <h2 className="min-w-0 flex-1 text-balance font-garamond text-lg leading-tight">{formatRef(refSel)}</h2>
         <HighlightButton osis={osis} />
         <MemoryButton osis={osis} />
         <Tooltip>
@@ -181,7 +178,7 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
               return (
                 <div key={t.meta.id}>
                   <p className="text-micro font-semibold uppercase tracking-widest text-muted-foreground">{t.sourceOf(refSel.book).abbr}</p>
-                  <p className="scripture mt-1 !text-base !leading-7">{tv ? <VerseText raw={tv.raw} /> : <span className="text-muted-foreground">Not in this translation.</span>}</p>
+                  <p className="scripture mt-1">{tv ? <VerseText raw={tv.raw} /> : <span className="text-muted-foreground">Not in this translation.</span>}</p>
                 </div>
               );
             })}
@@ -205,7 +202,7 @@ function OneVerse({ refSel, translations, shelves, onClose, onNavigate }: PanelP
             </div>
           )}
 
-          <Notes spans={[{ start: osis }]} verses={one} />
+          <Notes spans={[{ start: osis }]} verses={one} source={main.sourceOf(refSel.book)} />
 
           {vi !== undefined && index && (
             <>
@@ -380,7 +377,7 @@ function missing(t: Translation, book: string): string {
 }
 
 /** Notes on the open verse or passage: those touching any of its verses, and a new one on all of it. */
-function Notes({ spans, verses }: { spans: Span[]; verses: string[] }) {
+function Notes({ spans, verses, source }: { spans: Span[]; verses: string[]; source: TranslationMeta }) {
   const { active, notebooks, notes, addNote, updateNote, deleteNote, createNotebook } = useNotebooks();
   const study = useStudy();
   const [catalog] = useCatalog();
@@ -452,9 +449,9 @@ function Notes({ spans, verses }: { spans: Span[]; verses: string[] }) {
           size="sm"
           variant="ghost"
           disabled={!draft.trim()}
-          onClick={() => add({ translation: study.translation, textHash: hashOf(study.translation) })}
+          onClick={() => add({ translation: source.id, textHash: source.hash ?? hashOf(source.id) })}
         >
-          About the {study.translation.toUpperCase()} wording
+          About the {source.abbr} wording
         </Button>
       </div>
     </section>

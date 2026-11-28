@@ -6,6 +6,17 @@ All notable changes to BibleLM. Format based on
 
 ## Unreleased
 
+- Added Crimson Pro and Source Serif 4 to Reading face. The verse panel
+  follows the chapter's selected font and size.
+- Resized the corner artwork and added Gallery filters for book, artist and
+  title, with paged results and a reduced-motion-aware hover effect.
+- Glass can cover components or the whole window. Presets set their own
+  opacity, Tinted and Custom offer a colour choice, and Custom adds an
+  opacity slider. Glass uses static fills, and corner plates stay still
+  while scrolling.
+- Kept verse numbers with their words in columns and used the displayed
+  text's attribution in the reader and verse notes.
+
 ### Fixed
 
 - **macOS traffic lights** sit centred on the title bar, and follow it as

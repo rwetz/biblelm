@@ -12,7 +12,31 @@ export type Page = "home" | "read" | "search" | "topics" | "atlas" | "gallery" |
 /** A picture opened to look at: a painting or a Doré plate, by id. */
 export type LookTarget = { kind: "painting" | "plate"; id: string };
 export type Illustrations = "full" | "margins" | "off";
-export type ReadingFace = "garamond" | "fell" | "gothic";
+export const READING_FACES = [
+  { id: "garamond", label: "EB Garamond" },
+  { id: "crimson", label: "Crimson Pro" },
+  { id: "source-serif", label: "Source Serif 4" },
+  { id: "fell", label: "Fell English" },
+  { id: "gothic", label: "Gothic" },
+] as const;
+export type ReadingFace = (typeof READING_FACES)[number]["id"];
+
+export const GLASS_SCOPES = [
+  { id: "off", label: "Off" },
+  { id: "components", label: "Components" },
+  { id: "window", label: "Whole window" },
+] as const;
+export const GLASS_STYLES = ["clear", "regular", "frosted", "tinted", "custom"] as const;
+export const GLASS_COLORS = [
+  { id: "theme", label: "Theme" },
+  { id: "ruby", label: "Ruby" },
+  { id: "gold", label: "Gold" },
+  { id: "forest", label: "Forest" },
+  { id: "slate", label: "Slate blue" },
+] as const;
+type GlassScope = (typeof GLASS_SCOPES)[number]["id"];
+type GlassStyle = (typeof GLASS_STYLES)[number];
+type GlassColor = (typeof GLASS_COLORS)[number]["id"];
 
 interface StudyState {
   page: Page;
@@ -22,6 +46,10 @@ interface StudyState {
   shelves: Shelf[];
   illustrations: Illustrations;
   face: ReadingFace;
+  glassScope: GlassScope;
+  glassStyle: GlassStyle;
+  glassColor: GlassColor;
+  glassOpacity: number;
   textSize: number;
   columns: boolean;
   /** Words of Christ in red, where the translation marks them. */
@@ -91,7 +119,7 @@ interface StudyState {
   answerQuiz: (q: Question, right: boolean) => void;
   /** Go under the rose (every shelf comes on, silently) or come back out (the shelves you had). */
   setSubRosa: (on: boolean, theme?: { themeId: string; mode: string }) => BeforeSubRosa | null;
-  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "textSize" | "columns" | "redLetter" | "ornaments" | "compact" | "sidebarFolded" | "saver" | "showLab" | "name" | "welcomed" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
+  set: (patch: Partial<Pick<StudyState, "translation" | "parallel" | "shelves" | "illustrations" | "face" | "glassScope" | "glassStyle" | "glassColor" | "glassOpacity" | "textSize" | "columns" | "redLetter" | "ornaments" | "compact" | "sidebarFolded" | "saver" | "showLab" | "name" | "welcomed" | "interlinear" | "devMode" | "devHero" | "devPlate">>) => void;
 }
 
 export type CabinetShelf = "library" | "dossiers" | "symbols" | "lodge" | "bestiary" | "numbers" | "quiz" | "beside";
@@ -126,6 +154,10 @@ const DEFAULTS = {
   shelves: ["protestant"] as Shelf[],
   illustrations: "full" as Illustrations,
   face: "garamond" as ReadingFace,
+  glassScope: "off" as GlassScope,
+  glassStyle: "regular" as GlassStyle,
+  glassColor: "theme" as GlassColor,
+  glassOpacity: 94,
   textSize: 18,
   columns: false,
   redLetter: true,
@@ -151,7 +183,15 @@ const DEFAULTS = {
 function load(): typeof DEFAULTS {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? { ...DEFAULTS, ...JSON.parse(raw), page: "home" } : DEFAULTS;
+    const saved = raw ? JSON.parse(raw) : {};
+    const legacy = localStorage.getItem("biblelm:glass-chrome");
+    const preset = GLASS_STYLES.find((id) => id === legacy);
+    return {
+      ...DEFAULTS,
+      ...(preset && { glassScope: "window", glassStyle: preset }),
+      ...saved,
+      page: "home",
+    };
   } catch {
     return DEFAULTS;
   }
@@ -159,8 +199,8 @@ function load(): typeof DEFAULTS {
 
 function save(s: StudyState) {
   try {
-    const { translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, cabinet, quiz, devMode, devHero, devPlate } = s;
-    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, cabinet, quiz, devMode, devHero, devPlate }));
+    const { translation, parallel, shelves, illustrations, face, glassScope, glassStyle, glassColor, glassOpacity, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, cabinet, quiz, devMode, devHero, devPlate } = s;
+    localStorage.setItem(KEY, JSON.stringify({ translation, parallel, shelves, illustrations, face, glassScope, glassStyle, glassColor, glassOpacity, textSize, columns, redLetter, ornaments, compact, sidebarFolded, saver, showLab, name, welcomed, interlinear, location, history, subRosa, beforeSubRosa, cabinet, quiz, devMode, devHero, devPlate }));
   } catch {
     // Storage blocked: preferences just won't persist.
   }

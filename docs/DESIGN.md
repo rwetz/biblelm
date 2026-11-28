@@ -79,8 +79,11 @@ Optional: a faint paper texture (noise at 3% opacity) on Vellum only.
 > **As built (Nexis 0.5):** Appearance groups Interface size and Glass under
 > Layout. Auto scales to both window dimensions and keeps the reader's
 > adjustment across screens. Fixed keeps the selected scale. Window glass
-> is optional and starts off. Tint also applies to the Home search field's
-> shared Nexis glass surface. Save battery disables the blur. Settings rows
+> is optional and starts off. Glass can cover selected components or extend
+> to the window chrome. Presets set their own opacity. Tinted and Custom
+> use a theme-palette colour, and Custom adds an opacity control. The
+> finish uses static highlights and translucent fills. Save battery, high
+> contrast and reduced transparency make these surfaces solid. Settings rows
 > stack their labels and controls as the pane narrows, and the corner plate
 > gives back room to the controls.
 
@@ -181,6 +184,18 @@ its point of light in the part that stays solid. Home's band keeps at least
 runs the band's full height under a liquid-glass search bar. The sidebar
 vignette and the Atlas cartouche and compass size to the room they have.
 No sizes are per screen.
+
+### As built (reading and Gallery)
+
+The reader and verse panel share the selected face and size. Crimson Pro
+and Source Serif 4 are bundled for offline reading under the SIL Open Font
+License. Their upstream sources are [Crimson Pro](https://github.com/Fonthausen/CrimsonPro)
+and [Source Serif](https://github.com/adobe-fonts/source-serif).
+Verse markers stay with the first word of each numbered verse in columns.
+Corner plates stay still during scrolling and their maximum width takes
+window height into account. Gallery shows a paged grid in Bible order and
+lets readers narrow it by book, artist, or text. Fine-pointer hover uses a
+brief scale transition. Reduced Motion and Save Battery keep the images still.
 
 ### Still to decide
 
